@@ -44,6 +44,7 @@ import com.antigravity.audioplayer.data.repository.LyricsRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun LyricsView(
@@ -61,6 +62,9 @@ fun LyricsView(
 
     val coroutineScope = rememberCoroutineScope()
     var isOnlineSearching by remember { mutableStateOf(false) }
+    val prefs = remember { com.antigravity.audioplayer.data.storage.LibraryPreferences.getInstance(context) }
+    val verticalOffsetDp by prefs.lyricsVerticalOffsetDp.collectAsState()
+    var showOffsetAdjustDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(track?.id) {
         LyricsRepository.loadLyricsForTrack(context, track)
@@ -373,7 +377,10 @@ fun LyricsView(
                     found
                 }
 
-                // Centering function to keep active lyric dead-center in the window
+                val density = LocalDensity.current
+                val verticalOffsetPx = with(density) { verticalOffsetDp.dp.roundToPx() }
+
+                // Centering function to keep active lyric dead-center in the window (accounting for user-configured offset)
                 suspend fun centerActiveItem(smooth: Boolean = true) {
                     if (activeIndex !in lines.indices) return
                     var visibleItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == activeIndex }
@@ -385,8 +392,8 @@ fun LyricsView(
                     val viewportHeight = listState.layoutInfo.viewportSize.height
                     if (visibleItem != null && viewportHeight > 0) {
                         val itemCenter = visibleItem.offset + visibleItem.size / 2
-                        val viewportCenter = viewportHeight / 2
-                        val delta = itemCenter - viewportCenter
+                        val targetCenter = (viewportHeight / 2) + verticalOffsetPx
+                        val delta = itemCenter - targetCenter
                         if (abs(delta) > 2) {
                             if (smooth) {
                                 listState.animateScrollBy(
@@ -400,7 +407,7 @@ fun LyricsView(
                     }
                 }
 
-                LaunchedEffect(activeIndex, isAutoScrollActive, track?.id) {
+                LaunchedEffect(activeIndex, isAutoScrollActive, verticalOffsetDp, track?.id) {
                     if (isAutoScrollActive && activeIndex >= 0 && activeIndex < lines.size) {
                         centerActiveItem(smooth = true)
                     }
@@ -408,10 +415,11 @@ fun LyricsView(
 
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val halfHeightDp = maxHeight / 2
-                    val verticalPadding = (halfHeightDp - 22.dp).coerceAtLeast(60.dp)
+                    val topPadding = (halfHeightDp - 22.dp + verticalOffsetDp.dp).coerceAtLeast(30.dp)
+                    val bottomPadding = (halfHeightDp - 22.dp - verticalOffsetDp.dp).coerceAtLeast(30.dp)
 
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Header with format badge
+                        // Header with format badge and tuning button
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -438,17 +446,36 @@ fun LyricsView(
                                 )
                             }
 
-                            Text(
-                                lyricsData!!.source.label,
-                                fontSize = 10.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    lyricsData!!.source.label,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                                Surface(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .clickable { showOffsetAdjustDialog = true },
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    shape = CircleShape
+                                ) {
+                                    Icon(
+                                        Icons.Default.Tune,
+                                        contentDescription = "Настройка высоты строки",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(4.dp).size(13.dp)
+                                    )
+                                }
+                            }
                         }
 
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(top = verticalPadding, bottom = verticalPadding),
+                            contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             itemsIndexed(lines, key = { idx, line -> "line_${idx}_${line.timestampMs}" }) { index, line ->
@@ -630,5 +657,63 @@ fun LyricsView(
                 }
             }
         }
+    }
+
+    if (showOffsetAdjustDialog) {
+        var tempOffset by remember(verticalOffsetDp) { mutableFloatStateOf(verticalOffsetDp.toFloat()) }
+        AlertDialog(
+            onDismissRequest = { showOffsetAdjustDialog = false },
+            title = {
+                Text("Высота строки текста", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = when {
+                            tempOffset.roundToInt() == 0 -> "Ровно по центру (0 dp)"
+                            tempOffset.roundToInt() < 0 -> "Смещение вверх: ${-tempOffset.roundToInt()} dp"
+                            else -> "Смещение вниз: +${tempOffset.roundToInt()} dp"
+                        },
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Slider(
+                        value = tempOffset,
+                        onValueChange = {
+                            tempOffset = it
+                            prefs.setLyricsVerticalOffsetDp(it.roundToInt())
+                        },
+                        valueRange = -120f..120f,
+                        steps = 47
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Выше (-120)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        TextButton(
+                            onClick = {
+                                tempOffset = 0f
+                                prefs.setLyricsVerticalOffsetDp(0)
+                            },
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text("В центр (0)", fontSize = 11.sp)
+                        }
+                        Text("Ниже (+120)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showOffsetAdjustDialog = false },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Готово")
+                }
+            }
+        )
     }
 }

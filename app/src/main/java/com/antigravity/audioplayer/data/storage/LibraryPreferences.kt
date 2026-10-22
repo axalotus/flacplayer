@@ -92,6 +92,16 @@ class LibraryPreferences private constructor(private val context: Context) {
         _isOnlineLyricsEnabled.value = value
     }
 
+    // Manual vertical centering offset for active lyric line (-150dp to +150dp, default 0 = dead center)
+    private val _lyricsVerticalOffsetDp = MutableStateFlow(prefs.getInt("lyrics_vertical_offset_dp", 0))
+    val lyricsVerticalOffsetDp = _lyricsVerticalOffsetDp.asStateFlow()
+
+    fun setLyricsVerticalOffsetDp(offset: Int) {
+        val clamped = offset.coerceIn(-150, 150)
+        prefs.edit().putInt("lyrics_vertical_offset_dp", clamped).apply()
+        _lyricsVerticalOffsetDp.value = clamped
+    }
+
     // OTA Update Settings
     private val _otaGithubRepo = MutableStateFlow(prefs.getString("ota_github_repo", "debil/flacplayer") ?: "debil/flacplayer")
     val otaGithubRepo = _otaGithubRepo.asStateFlow()

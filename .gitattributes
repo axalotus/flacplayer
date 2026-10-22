@@ -1,0 +1,7 @@
+app/src/main/cpp/dr_flac.h linguist-vendored
+app/src/main/cpp/dr_mp3.h linguist-vendored
+app/src/main/cpp/dr_wav.h linguist-vendored
+app/src/main/cpp/minimp3.h linguist-vendored
+app/src/main/cpp/minimp3_ex.h linguist-vendored
+desktop-native/** linguist-vendored
+test_win.c linguist-vendored

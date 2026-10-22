@@ -32,6 +32,7 @@ import com.antigravity.audioplayer.data.ota.OtaUpdateManager
 import com.antigravity.audioplayer.data.ota.OtaStatus
 import com.antigravity.audioplayer.ui.components.clearArtworkCache
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 enum class SettingsSection {
     NONE, INTERFACE, SOUND, SLEEP_TIMER, VISUALIZATION, BACKGROUND, COVERS, LYRICS, LIBRARY, BLUETOOTH, UPDATES
@@ -825,6 +826,61 @@ fun SettingsScreen(
                             Icon(Icons.Default.Folder, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(if (lyricsFolderUri != null) "Изменить папку текстов" else "Выбрать папку с текстами (.lrc / .txt)")
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                        val verticalOffsetDp by prefs.lyricsVerticalOffsetDp.collectAsState()
+                        var sliderOffset by remember(verticalOffsetDp) { mutableFloatStateOf(verticalOffsetDp.toFloat()) }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Положение строки в окне", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("Вертикальное смещение активной строки текста", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                                }
+                                TextButton(
+                                    onClick = {
+                                        sliderOffset = 0f
+                                        prefs.setLyricsVerticalOffsetDp(0)
+                                    }
+                                ) {
+                                    Text("В центр (0 dp)", fontSize = 11.sp)
+                                }
+                            }
+
+                            Text(
+                                text = when {
+                                    sliderOffset.roundToInt() == 0 -> "Ровно по центру (0 dp)"
+                                    sliderOffset.roundToInt() < 0 -> "Смещение вверх: ${-sliderOffset.roundToInt()} dp"
+                                    else -> "Смещение вниз: +${sliderOffset.roundToInt()} dp"
+                                },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            Slider(
+                                value = sliderOffset,
+                                onValueChange = {
+                                    sliderOffset = it
+                                    prefs.setLyricsVerticalOffsetDp(it.roundToInt())
+                                },
+                                valueRange = -120f..120f,
+                                steps = 47
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Выше (-120 dp)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                                Text("Ниже (+120 dp)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                            }
                         }
                     }
 
