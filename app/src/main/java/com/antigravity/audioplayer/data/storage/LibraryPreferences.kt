@@ -103,7 +103,7 @@ class LibraryPreferences private constructor(private val context: Context) {
     }
 
     // OTA Update Settings
-    private val _otaGithubRepo = MutableStateFlow(prefs.getString("ota_github_repo", "debil/flacplayer") ?: "debil/flacplayer")
+    private val _otaGithubRepo = MutableStateFlow(prefs.getString("ota_github_repo", "axalotus/flacplayer") ?: "axalotus/flacplayer")
     val otaGithubRepo = _otaGithubRepo.asStateFlow()
 
     fun setOtaGithubRepo(repo: String) {
