@@ -361,11 +361,7 @@ fun MainScreen(
                 sheetState = playerSheetState,
                 containerColor = MaterialTheme.colorScheme.background,
                 scrimColor = Color.Black.copy(alpha = 0.65f),
-                dragHandle = {
-                    BottomSheetDefaults.DragHandle(
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-                    )
-                },
+                dragHandle = null,
                 modifier = Modifier.fillMaxSize()
             ) {
                 PlayerScreen(

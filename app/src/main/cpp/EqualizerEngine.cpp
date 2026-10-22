@@ -121,3 +121,15 @@ void EqualizerEngine::processBuffer(float* buffer, int32_t numSamples) {
     
     mLock.unlock();
 }
+
+void EqualizerEngine::reset() {
+    std::lock_guard<std::mutex> lock(mLock);
+    for (auto& chFilters : mFilters) {
+        for (auto& filter : chFilters) {
+            filter.reset();
+        }
+    }
+    for (auto& filter : mBassFilters) {
+        filter.reset();
+    }
+}

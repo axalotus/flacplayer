@@ -16,6 +16,7 @@ public:
 
     void setParameters(FilterType type, float sampleRate, float frequency, float q, float gainDb);
     float process(float inSample);
+    void reset();
 
 private:
     float b0, b1, b2, a1, a2;

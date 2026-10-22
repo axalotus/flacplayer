@@ -23,6 +23,7 @@ public:
     void setBassBoost(float strength);
 
     void processBuffer(float* buffer, int32_t numSamples);
+    void reset();
 
 private:
     std::mutex mLock;

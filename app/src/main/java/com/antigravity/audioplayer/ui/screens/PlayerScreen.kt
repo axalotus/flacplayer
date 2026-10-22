@@ -60,6 +60,8 @@ import com.antigravity.audioplayer.data.parser.LyricsParser
 import com.antigravity.audioplayer.data.repository.LyricsRepository
 import com.antigravity.audioplayer.data.storage.LibraryPreferences
 import com.antigravity.audioplayer.data.storage.PlaylistManager
+import androidx.compose.ui.graphics.graphicsLayer
+import com.antigravity.audioplayer.ui.components.AddToPlaylistDialog
 import com.antigravity.audioplayer.ui.components.AlbumArtView
 import com.antigravity.audioplayer.ui.components.AudioOutputBottomSheet
 import com.antigravity.audioplayer.ui.components.LyricsView
@@ -123,8 +125,66 @@ fun PlayerScreen(
     var showOutputBottomSheet by remember { mutableStateOf(false) }
     var showSleepTimerModal by remember { mutableStateOf(false) }
     var showLyrics by remember { mutableStateOf(false) }
+    var showAddToPlaylist by remember { mutableStateOf(false) }
     val isSleepTimerActive by SleepTimerController.isActive.collectAsState()
     val sleepTimerRemainingSec by SleepTimerController.remainingSeconds.collectAsState()
+
+    val coroutineScope = rememberCoroutineScope()
+    val dismissOffsetY = remember { Animatable(0f) }
+    val density = LocalDensity.current
+    val dismissThresholdPx = with(density) { 130.dp.toPx() }
+
+    val albumArtScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.85f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "albumArtScale"
+    )
+
+    fun handleDragDismiss(curOffset: Float, velocityY: Float) {
+        if (curOffset > dismissThresholdPx || velocityY > 1000f) {
+            coroutineScope.launch {
+                dismissOffsetY.animateTo(curOffset + 900f, tween(160, easing = FastOutLinearInEasing))
+                onCollapsePlayer()
+                dismissOffsetY.snapTo(0f)
+            }
+        } else {
+            coroutineScope.launch {
+                dismissOffsetY.animateTo(
+                    0f,
+                    spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                )
+            }
+        }
+    }
+
+    val topBarDragModifier = Modifier.pointerInput(Unit) {
+        val velocityTracker = VelocityTracker()
+        detectVerticalDragGestures(
+            onDragStart = { velocityTracker.resetTracking() },
+            onVerticalDrag = { change, dragAmount ->
+                velocityTracker.addPosition(change.uptimeMillis, change.position)
+                if (dragAmount > 0 || dismissOffsetY.value > 0f) {
+                    coroutineScope.launch {
+                        val newOffset = (dismissOffsetY.value + dragAmount).coerceAtLeast(0f)
+                        dismissOffsetY.snapTo(newOffset)
+                    }
+                }
+            },
+            onDragEnd = {
+                val velocityY = velocityTracker.calculateVelocity().y
+                handleDragDismiss(dismissOffsetY.value, velocityY)
+            },
+            onDragCancel = {
+                coroutineScope.launch { dismissOffsetY.animateTo(0f) }
+            }
+        )
+    }
 
     val lyricsFilePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -148,7 +208,32 @@ fun PlayerScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .offset { IntOffset(0, dismissOffsetY.value.roundToInt()) }
             .background(MaterialTheme.colorScheme.background)
+            .pointerInput(showLyrics) {
+                if (!showLyrics) {
+                    val velocityTracker = VelocityTracker()
+                    detectVerticalDragGestures(
+                        onDragStart = { velocityTracker.resetTracking() },
+                        onVerticalDrag = { change, dragAmount ->
+                            velocityTracker.addPosition(change.uptimeMillis, change.position)
+                            if (dragAmount > 0 || dismissOffsetY.value > 0f) {
+                                coroutineScope.launch {
+                                    val newOffset = (dismissOffsetY.value + dragAmount).coerceAtLeast(0f)
+                                    dismissOffsetY.snapTo(newOffset)
+                                }
+                            }
+                        },
+                        onDragEnd = {
+                            val velocityY = velocityTracker.calculateVelocity().y
+                            handleDragDismiss(dismissOffsetY.value, velocityY)
+                        },
+                        onDragCancel = {
+                            coroutineScope.launch { dismissOffsetY.animateTo(0f) }
+                        }
+                    )
+                }
+            }
     ) {
         // Layer 1: Blurred Cover Artwork (configurable blur percentage)
         if (coverBitmap != null && isBlurBackground && blurRadiusDp > 0.dp) {
@@ -179,8 +264,17 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
+                Box(
+                    modifier = Modifier
+                        .then(topBarDragModifier)
+                        .padding(top = 4.dp, bottom = 8.dp)
+                        .size(width = 38.dp, height = 4.5.dp)
+                        .clip(RoundedCornerShape(2.5.dp))
+                        .background(Color.White.copy(alpha = 0.38f))
+                        .clickable { onCollapsePlayer() }
+                )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().then(topBarDragModifier),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -213,9 +307,22 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // Top drag pill inside blurred background (with swipe dismiss gesture)
+                Box(
+                    modifier = Modifier
+                        .then(topBarDragModifier)
+                        .padding(top = 4.dp, bottom = 6.dp)
+                        .size(width = 38.dp, height = 4.5.dp)
+                        .clip(RoundedCornerShape(2.5.dp))
+                        .background(Color.White.copy(alpha = 0.38f))
+                        .clickable { onCollapsePlayer() }
+                )
+
                 // ── TOP: Header Row ───────────────────────────────────────────────
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(topBarDragModifier),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -327,6 +434,10 @@ fun PlayerScreen(
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .aspectRatio(1f)
+                                    .graphicsLayer {
+                                        scaleX = albumArtScale
+                                        scaleY = albumArtScale
+                                    }
                                     .clip(RoundedCornerShape(22.dp))
                                     .clickable { showLyrics = true }
                             ) {
@@ -391,17 +502,31 @@ fun PlayerScreen(
                                         .padding(vertical = 2.dp, horizontal = 2.dp)
                                 )
                             }
-                            // Favorite heart button
-                            IconButton(
-                                onClick = { pm.toggleFavorite(currentTrack.id) },
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = "Избранное",
-                                    tint = if (isFavorite) Color(0xFFE44D7B) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(26.dp)
-                                )
+                            // Action buttons: Add to playlist + Favorite heart
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { showAddToPlaylist = true },
+                                    modifier = Modifier.size(42.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PlaylistAdd,
+                                        contentDescription = "Добавить в плейлист",
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { pm.toggleFavorite(currentTrack.id) },
+                                    modifier = Modifier.size(42.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = "Избранное",
+                                        tint = if (isFavorite) Color(0xFFE44D7B) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(25.dp)
+                                    )
+                                }
                             }
                         }
 
@@ -598,6 +723,13 @@ fun PlayerScreen(
         SleepTimerModalSheet(
             onDismissRequest = { showSleepTimerModal = false },
             onPausePlayback = onPlayPauseToggle
+        )
+    }
+
+    if (showAddToPlaylist && currentTrack != null) {
+        AddToPlaylistDialog(
+            track = currentTrack,
+            onDismissRequest = { showAddToPlaylist = false }
         )
     }
 }

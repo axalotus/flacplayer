@@ -27,7 +27,10 @@ bool AudioEngine::loadFile(const std::string& filePath) {
     std::lock_guard<std::mutex> lock(mLock);
     LOG_OBOE_I("loadFile: requesting to open '%s'", filePath.c_str());
 
-    // 1. Stop decode thread safely before touching decoder
+    // 1. Mark not playing so audio callback immediately outputs silence without racing
+    mIsPlaying = false;
+
+    // 2. Stop decode thread safely before touching decoder
     mDecodeThreadRunning = false;
     if (mDecodeThread.joinable()) {
         mDecodeThread.join();
@@ -38,6 +41,9 @@ bool AudioEngine::loadFile(const std::string& filePath) {
     mDecoderReachedEof = false;
     mPlayedSampleCount.store(0);
     mRingBuffer->clear();
+    if (mEqualizer) {
+        mEqualizer->reset();
+    }
 
     // 3. Open file in decoder
     if (!mDecoder->openFile(filePath)) {
@@ -113,6 +119,9 @@ int64_t AudioEngine::seekTo(int64_t targetFrame) {
     mPlayedSampleCount.store((uint64_t)(actualFrame * ch));
 
     mRingBuffer->clear();
+    if (mEqualizer) {
+        mEqualizer->reset();
+    }
 
     // Pre-decode frames immediately to prevent onAudioReady from returning silence
     const int32_t PREBUFFER_SIZE = 16384;
@@ -149,7 +158,7 @@ int64_t AudioEngine::getTotalFrames() const {
 bool AudioEngine::start() {
     std::lock_guard<std::mutex> lock(mLock);
     const char* curStateStr = mStream ? oboe::convertToText(mStream->getState()) : "null";
-    LOG_OBOE_I("start() called. Current stream state: %s, mIsPlaying: %d", curStateStr, mIsPlaying);
+    LOG_OBOE_I("start() called. Current stream state: %s, mIsPlaying: %d", curStateStr, (int)mIsPlaying.load());
 
     if (!mDecoder || mDecoder->getSampleRate() == 0) {
         LOG_OBOE_E("start() called but no file loaded in decoder");
@@ -204,7 +213,7 @@ bool AudioEngine::start() {
 
 void AudioEngine::pause() {
     std::lock_guard<std::mutex> lock(mLock);
-    LOG_OBOE_I("pause() called. mIsPlaying: %d", mIsPlaying);
+    LOG_OBOE_I("pause() called. mIsPlaying: %d", (int)mIsPlaying.load());
 
     if (!mIsPlaying || !mStream) return;
 
@@ -326,6 +335,11 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream
     int32_t channelCount = oboeStream->getChannelCount();
     int32_t totalSamples = numFrames * channelCount;
 
+    if (!mIsPlaying.load() || !mRingBuffer) {
+        memset(audioData, 0, totalSamples * sizeof(float));
+        return oboe::DataCallbackResult::Continue;
+    }
+
     int32_t samplesRead = mRingBuffer->read(floatData, totalSamples);
 
     // Track actual samples played for accurate position
@@ -348,9 +362,16 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream
         }
     }
 
-    // Process DSP (Equalizer & Bass Boost) in-place
-    if (mEqualizer) {
-        mEqualizer->processBuffer(floatData, totalSamples);
+    // Process DSP (Equalizer & Bass Boost) in-place on actual decoded audio
+    if (mEqualizer && samplesRead > 0) {
+        mEqualizer->processBuffer(floatData, samplesRead);
+    }
+
+    // Safety guard: ensure no NaN/Inf ever reaches audio hardware
+    for (int32_t i = 0; i < totalSamples; ++i) {
+        if (std::isnan(floatData[i]) || std::isinf(floatData[i])) {
+            floatData[i] = 0.0f;
+        }
     }
 
     return oboe::DataCallbackResult::Continue;
@@ -384,7 +405,7 @@ bool AudioEngine::reopenStream(bool restartIfPlaying) {
         return false;
     }
 
-    LOG_OBOE_I("reopenStream: Reopening stream (restartIfPlaying=%d, wasPlaying=%d)", restartIfPlaying, mIsPlaying);
+    LOG_OBOE_I("reopenStream: Reopening stream (restartIfPlaying=%d, wasPlaying=%d)", restartIfPlaying, (int)mIsPlaying.load());
 
     // Stop decode thread safely
     mDecodeThreadRunning = false;

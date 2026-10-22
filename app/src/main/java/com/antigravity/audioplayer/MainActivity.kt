@@ -138,6 +138,10 @@ class MainActivity : ComponentActivity() {
                 val dacInfo by dacDetector.activeDeviceFlow.collectAsState()
                 var showVisualizer by remember { mutableStateOf(true) }
 
+                LaunchedEffect(tracks) {
+                    AudioPlayerService.updateAllLibraryTracks(tracks)
+                }
+
                 LaunchedEffect(visibleTracks) {
                     AudioPlayerService.setInitialTracks(visibleTracks)
                 }

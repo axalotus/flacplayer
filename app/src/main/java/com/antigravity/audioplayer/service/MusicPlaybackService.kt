@@ -22,8 +22,12 @@ class MusicPlaybackService : Service() {
         fun start(context: Context) {
             val intent = Intent(context, MusicPlaybackService::class.java)
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent)
+                if (AudioPlayerService.isPlaying.value) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(intent)
+                    } else {
+                        context.startService(intent)
+                    }
                 } else {
                     context.startService(intent)
                 }
@@ -113,18 +117,20 @@ class MusicPlaybackService : Service() {
         val notification = AudioPlayerService.getNotificationForForeground(isPlaying, track)
         if (notification != null) {
             try {
+                // ALWAYS call startForeground first to satisfy Android's startForegroundService contract
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ServiceCompat.startForeground(
+                        this,
+                        MediaNotificationManager.NOTIFICATION_ID,
+                        notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                    )
+                } else {
+                    startForeground(MediaNotificationManager.NOTIFICATION_ID, notification)
+                }
+
                 if (isPlaying) {
                     acquireWakeLock()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        ServiceCompat.startForeground(
-                            this,
-                            MediaNotificationManager.NOTIFICATION_ID,
-                            notification,
-                            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-                        )
-                    } else {
-                        startForeground(MediaNotificationManager.NOTIFICATION_ID, notification)
-                    }
                 } else {
                     releaseWakeLock()
                     // Keep notification but detach foreground sticky lock when paused

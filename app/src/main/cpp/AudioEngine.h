@@ -51,7 +51,7 @@ public:
 private:
     std::mutex mLock;
     std::shared_ptr<oboe::AudioStream> mStream;
-    bool mIsPlaying = false;
+    std::atomic<bool> mIsPlaying{false};
 
     std::unique_ptr<AudioDecoder> mDecoder;
     std::unique_ptr<RingBuffer<float>> mRingBuffer;

@@ -62,6 +62,13 @@ object AudioPlayerService {
 
     private var lastSeekTimestamp = 0L
     private var eofHandled = false
+    private var allLibraryTracks: List<AudioFileMetadata> = emptyList()
+
+    fun updateAllLibraryTracks(tracks: List<AudioFileMetadata>) {
+        if (tracks.isNotEmpty()) {
+            allLibraryTracks = tracks
+        }
+    }
 
     fun init(context: Context) {
         if (appContext != null) return
@@ -214,11 +221,26 @@ object AudioPlayerService {
                 eofHandled = false
                 Log.d(TAG, "Repeat ONE play result: $startRes")
             }
-            else -> {
+            RepeatMode.ALL -> {
                 val nextIndex = (_currentTrackIndex.value + 1) % queue.size
                 val next = queue.getOrNull(nextIndex) ?: return
-                Log.d(TAG, "Advancing to track [${nextIndex}] '${next.title}' by '${next.artist}'")
+                Log.d(TAG, "Repeat ALL: Advancing to track [${nextIndex}] '${next.title}'")
                 playTrackAtIndex(nextIndex, queue, startPlayback = true)
+            }
+            RepeatMode.OFF -> {
+                val nextIndex = _currentTrackIndex.value + 1
+                if (nextIndex < queue.size) {
+                    val next = queue[nextIndex]
+                    Log.d(TAG, "Advancing to track [${nextIndex}] '${next.title}'")
+                    playTrackAtIndex(nextIndex, queue, startPlayback = true)
+                } else {
+                    // Queue / listening history finished! As requested: switch to an endless mix of tracks
+                    val pool = if (allLibraryTracks.isNotEmpty()) allLibraryTracks else queue
+                    val mix = pool.shuffled()
+                    Log.d(TAG, "Queue finished! Starting mix of ${mix.size} tracks")
+                    _isShuffleOn.value = true
+                    playTrackAtIndex(0, mix, startPlayback = true)
+                }
             }
         }
     }

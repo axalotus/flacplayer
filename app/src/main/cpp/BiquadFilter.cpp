@@ -50,9 +50,30 @@ void BiquadFilter::setParameters(FilterType type, float sampleRate, float freque
     this->a2 = a2 / a0;
 }
 
+void BiquadFilter::reset() {
+    x1 = 0.0f;
+    x2 = 0.0f;
+    y1 = 0.0f;
+    y2 = 0.0f;
+}
+
 float BiquadFilter::process(float inSample) {
+    if (std::isnan(inSample) || std::isinf(inSample)) {
+        inSample = 0.0f;
+    }
+
     float outSample = b0 * inSample + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
     
+    // Check for NaN or Inf in output to prevent IIR filter runaway/muting
+    if (std::isnan(outSample) || std::isinf(outSample)) {
+        reset();
+        return inSample;
+    }
+
+    // Clamp extreme resonance values to safe audible dynamic range
+    if (outSample > 3.0f) outSample = 3.0f;
+    else if (outSample < -3.0f) outSample = -3.0f;
+
     // Shift state
     x2 = x1;
     x1 = inSample;

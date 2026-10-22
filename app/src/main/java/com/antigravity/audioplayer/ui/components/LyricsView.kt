@@ -3,11 +3,15 @@ package com.antigravity.audioplayer.ui.components
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -488,62 +492,59 @@ fun LyricsView(
                                     0 // Blur disabled in manual scrolling mode!
                                 }
 
-                                val targetBlur = when {
-                                    !isAutoScrollActive -> 0.dp
-                                    distance == 0 -> 0.dp
-                                    distance == 1 -> 2.dp
-                                    distance == 2 -> 4.5.dp
-                                    else -> 7.dp
-                                }
-
                                 val targetAlpha = when {
                                     !isAutoScrollActive -> 0.88f
                                     distance == 0 -> 1.0f
-                                    distance == 1 -> 0.62f
-                                    distance == 2 -> 0.40f
-                                    else -> 0.22f
+                                    distance == 1 -> 0.58f
+                                    distance == 2 -> 0.35f
+                                    else -> 0.18f
                                 }
 
                                 val targetScale = when {
                                     !isAutoScrollActive -> 1.0f
-                                    distance == 0 -> 1.04f
-                                    else -> 0.98f
+                                    distance == 0 -> 1.08f
+                                    distance == 1 -> 0.96f
+                                    else -> 0.92f
                                 }
 
                                 val colorAnim by animateColorAsState(
-                                    targetValue = if (isActive) Color.White else Color.White.copy(alpha = 0.85f),
-                                    animationSpec = tween(durationMillis = 200),
+                                    targetValue = if (isActive) Color.White else Color.White.copy(alpha = 0.75f),
+                                    animationSpec = tween(durationMillis = 280),
                                     label = "lyricColor"
                                 )
-                                val blurAnim by animateDpAsState(
-                                    targetValue = targetBlur,
-                                    animationSpec = tween(durationMillis = 220),
-                                    label = "lyricBlur"
+                                val bgAnim by animateColorAsState(
+                                    targetValue = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent,
+                                    animationSpec = tween(durationMillis = 280),
+                                    label = "lyricBg"
                                 )
                                 val scaleAnim by animateFloatAsState(
                                     targetValue = targetScale,
-                                    animationSpec = tween(durationMillis = 220),
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioLowBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    ),
                                     label = "lyricScale"
                                 )
                                 val alphaAnim by animateFloatAsState(
                                     targetValue = targetAlpha,
-                                    animationSpec = tween(durationMillis = 220),
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioNoBouncy,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    ),
                                     label = "lyricAlpha"
                                 )
 
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .scale(scaleAnim)
-                                        .alpha(alphaAnim)
-                                        .then(
-                                            if (blurAnim > 0.dp && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                                Modifier.blur(blurAnim)
-                                            } else {
-                                                Modifier
-                                            }
-                                        )
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .graphicsLayer {
+                                            scaleX = scaleAnim
+                                            scaleY = scaleAnim
+                                            alpha = alphaAnim
+                                            transformOrigin = TransformOrigin(0f, 0.5f)
+                                        }
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(bgAnim)
                                         .clickable {
                                             userInteracting = false
                                             onSeekTo(line.timestampMs)
@@ -551,15 +552,15 @@ fun LyricsView(
                                                 centerActiveItem(smooth = true)
                                             }
                                         }
-                                        .padding(vertical = 4.dp, horizontal = 6.dp)
+                                        .padding(vertical = 6.dp, horizontal = 10.dp)
                                 ) {
                                     Text(
                                         text = line.text,
-                                        fontSize = if (isActive) 20.sp else 16.sp,
-                                        fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
+                                        fontSize = 19.sp,
+                                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                                         color = colorAnim,
                                         textAlign = TextAlign.Start,
-                                        lineHeight = if (isActive) 26.sp else 22.sp
+                                        lineHeight = 26.sp
                                     )
                                 }
                             }
