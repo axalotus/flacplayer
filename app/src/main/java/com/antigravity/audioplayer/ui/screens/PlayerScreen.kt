@@ -122,7 +122,6 @@ fun PlayerScreen(
 
     var showOutputBottomSheet by remember { mutableStateOf(false) }
     var showSleepTimerModal by remember { mutableStateOf(false) }
-    var showQueueSheet by remember { mutableStateOf(false) }
     var showLyrics by remember { mutableStateOf(false) }
     val isSleepTimerActive by SleepTimerController.isActive.collectAsState()
     val sleepTimerRemainingSec by SleepTimerController.remainingSeconds.collectAsState()
@@ -145,20 +144,6 @@ fun PlayerScreen(
             }
         }
     }
-
-    val swipeDownModifier = Modifier.draggable(
-        orientation = Orientation.Vertical,
-        state = rememberDraggableState { delta ->
-            if (delta > 25f) {
-                onCollapsePlayer()
-            }
-        },
-        onDragStopped = { velocity ->
-            if (velocity > 250f) {
-                onCollapsePlayer()
-            }
-        }
-    )
 
     Box(
         modifier = modifier
@@ -190,9 +175,7 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .statusBarsPadding()
-                    .padding(20.dp)
-                    .then(swipeDownModifier),
+                    .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
@@ -225,34 +208,17 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .statusBarsPadding()
                     .navigationBarsPadding()
-                    .padding(horizontal = 22.dp, vertical = 6.dp),
+                    .padding(horizontal = 22.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // ── TOP: Drag pill + header (draggable) ───────────────────────────
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(swipeDownModifier),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                // ── TOP: Header Row ───────────────────────────────────────────────
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Drag pill
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f))
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
                         // Collapse button
                         IconButton(onClick = onCollapsePlayer) {
                                 Icon(
@@ -326,7 +292,7 @@ fun PlayerScreen(
                                     )
                                 }
 
-                                IconButton(onClick = { showQueueSheet = true; onOpenQueue() }) {
+                                IconButton(onClick = onOpenQueue) {
                                     Icon(
                                         Icons.AutoMirrored.Filled.QueueMusic,
                                         contentDescription = "Очередь",
@@ -336,7 +302,6 @@ fun PlayerScreen(
                                 }
                             }
                         }
-                    }
 
                     // ── ALBUM ART / LYRICS TOGGLE (Unified Player Composition) ──────
                     Box(
@@ -364,7 +329,6 @@ fun PlayerScreen(
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(22.dp))
                                     .clickable { showLyrics = true }
-                                    .then(swipeDownModifier)
                             ) {
                                 AlbumArtView(
                                     track = currentTrack,
@@ -634,23 +598,6 @@ fun PlayerScreen(
         SleepTimerModalSheet(
             onDismissRequest = { showSleepTimerModal = false },
             onPausePlayback = onPlayPauseToggle
-        )
-    }
-
-    if (showQueueSheet) {
-        val currentIndex = queueTracks.indexOfFirst { it.id == currentTrack?.id }.coerceAtLeast(0)
-        QueueModalSheet(
-            queueTracks = queueTracks,
-            currentTrackIndex = currentIndex,
-            isShuffleOn = isShuffleOn,
-            repeatMode = repeatMode,
-            onToggleShuffle = onToggleShuffle,
-            onToggleRepeat = onToggleRepeat,
-            onTrackSelect = { index ->
-                queueTracks.getOrNull(index)?.let { onTrackSelect(it) }
-                showQueueSheet = false
-            },
-            onDismiss = { showQueueSheet = false }
         )
     }
 }
