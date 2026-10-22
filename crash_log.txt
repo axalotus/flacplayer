@@ -1,0 +1,1034 @@
+--------- beginning of main
+08-16 02:45:53.679  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:53.680  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:45:53.756  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:53.756  1219  1374 I OriginChannel: now system_time:524935498	pwm_rgb: system_time:524935299, lux:30, time_delta:100, pwm_turbo:0, bri:1759, r:1439, g:650, b:375, c:2539, algo:2, end:0, ts:524935297501164	
+08-16 02:45:53.757  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1424.0/650.0/375.0/2492.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:53.883  1609  2049 D ULogGuard: Monitoring: 23 threads, 0 requests, 0 time-bombs; 32 guards. ResetFlags = 0x7
+08-16 02:45:53.956  1219  1374 I OriginChannel: now system_time:524935698	pwm_rgb: system_time:524935498, lux:29, time_delta:100, pwm_turbo:0, bri:1759, r:1424, g:650, b:375, c:2492, algo:2, end:0, ts:524935497513491	
+08-16 02:45:53.957  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:53.960  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:54.035  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:54.041  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:45:54.049  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.93 dur=1014.53 max=208.23 min=199.36
+08-16 02:45:54.088  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:54.154  1258  1365 D [ANTI_EXPANSION]: mKeyAntiExpansionData :1786809953,1786802753,0,0,0,31,0,29,27,6,36,0,27,34,25,4,28,27,35,0,1,3,0,0,37,25,0,43629,0.C=@.L=106!!!
+08-16 02:45:54.154  1258  1365 D [ANTI_EXPANSION]: chg_update_anti_expansion_check_thread In progress: [9,false] [1786812354,442615] [8,3],[0,0,17] 116
+08-16 02:45:54.156  1219  1374 I OriginChannel: now system_time:524935898	pwm_rgb: system_time:524935698, lux:30, time_delta:100, pwm_turbo:0, bri:1759, r:1439, g:665, b:389, c:2523, algo:2, end:0, ts:524935697495722	
+08-16 02:45:54.157  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1454.0/665.0/389.0/2539.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:54.159  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:54.186  3269  3917 D MtkRadioService: getRRCStatus
+08-16 02:45:54.187  3269  3917 D RadioProxyJ[0]: [59693]> getRRCStatus
+08-16 02:45:54.193  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:45:54.196  9414 17373 D ShellSubscriberWorkerThread: the first 8 bytes empty, and RestData length > 8 
+08-16 02:45:54.203  1508  1540 D MipcProxy: handleMessage msg is 4001, instance 0
+08-16 02:45:54.204  1508  1540 D RadioProxy: getRRCStatus : response cb for instance 0
+08-16 02:45:54.212  3269 16670 D RadioProxyJ[0]: [59693]< getRRCStatusResponse 0
+08-16 02:45:54.212  3269  3917 D CoexRfService: report RRC state:false
+08-16 02:45:54.357  1219  1374 I OriginChannel: now system_time:524936098	pwm_rgb: system_time:524935898, lux:30, time_delta:100, pwm_turbo:0, bri:1759, r:1454, g:665, b:389, c:2539, algo:2, end:0, ts:524935897507318	
+08-16 02:45:54.357  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:54.358  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:54.384  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:45:54.385  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:54.385  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:54.385  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:54.424  1219  1372 W AString : ctor got NULL, using empty string instead
+08-16 02:45:54.425  1219  1372 I sensors-hal-SensorSavedChannel: [-4390,-119,331]==>gyro_bias.json
+08-16 02:45:54.433  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:54.485  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:54.487  3125  4617 D OplusCellularNetworkConfig: getDnsQueryPriority value=https://connectivitycheck.gstatic.com/generate_204
+08-16 02:45:54.489  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:54.489  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:54.490  3125  4617 D OplusCellularNetworkConfig: getDnsQueryPriority value=https://connectivitycheck.gstatic.com/generate_204
+08-16 02:45:54.490  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:54.490  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:54.491  3125  4617 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://play.googleapis.com/generate_204
+08-16 02:45:54.491  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:54.491  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:54.492  3125  4617 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://www.google.com/generate_204
+08-16 02:45:54.492  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:54.492  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:54.504  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:45:54.506  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:45:54.507  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:45:54.556  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:54.556  1219  1374 I OriginChannel: now system_time:524936298	pwm_rgb: system_time:524936098, lux:30, time_delta:100, pwm_turbo:0, bri:1759, r:1454, g:665, b:389, c:2523, algo:2, end:0, ts:524936097489428	
+08-16 02:45:54.558  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1439.0/665.0/389.0/2508.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:54.680  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:45:54.681  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:45:54.756  1219  1374 I OriginChannel: now system_time:524936498	pwm_rgb: system_time:524936298, lux:29, time_delta:100, pwm_turbo:0, bri:1759, r:1439, g:665, b:389, c:2508, algo:2, end:0, ts:524936297501428	
+08-16 02:45:54.757  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:54.759  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:54.796 14987 14987 D WifiHAL : WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+08-16 02:45:54.802 14987 14987 D WifiHAL : WifiCommand::requestResponse: receive
+08-16 02:45:54.803 14987 14987 I WifiHAL : LLS RSP: data=0xb400007baf26f020, len=5668
+08-16 02:45:54.803 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=20
+08-16 02:45:54.803 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=16
+08-16 02:45:54.803 14987 14987 I WifiHAL : LLS check_data_sanity: confirmed_size=5668, len=5668
+08-16 02:45:54.812  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:54.821  1987  2525 D OplusWifiRoamingUtils: No related better BSSID.
+08-16 02:45:54.821  3269  3269 D VendorWifiService: onEvent event:9,action:1
+08-16 02:45:54.830  1987  2525 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=0
+08-16 02:45:54.831  1987  2525 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+08-16 02:45:54.832  1987  2525 D OplusWifiResidenceRecognition: No available relateBssidList
+08-16 02:45:54.835  3269  3742 D RadioProxyJ[1]: startChannelMonitoring update mLatestRequestId:-1
+08-16 02:45:54.835  3269  6110 D RadioProxyJ[0]: startChannelMonitoring update mLatestRequestId:-1
+08-16 02:45:54.863  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:54.914  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:54.957  1219  1374 I OriginChannel: now system_time:524936698	pwm_rgb: system_time:524936498, lux:29, time_delta:100, pwm_turbo:0, bri:1759, r:1439, g:665, b:389, c:2508, algo:2, end:0, ts:524936497513717	
+08-16 02:45:54.958  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1454.0/665.0/389.0/2523.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:54.985  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:55.040  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:45:55.045  1297  1297 I BufferQueueProducer: [StatusBar#94](this:0xb4000073267e3af8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=1.00 dur=1992.41 max=996.55 min=995.86
+08-16 02:45:55.070  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.90 dur=1020.81 max=214.57 min=191.48
+08-16 02:45:55.104  2691  2699 I ndroid.systemui: Background young concurrent mark compact GC freed 63MB AllocSpace bytes, 23(636KB) LOS objects, 49% free, 65MB/129MB, paused 1.135ms,7.977ms total 68.884ms
+08-16 02:45:55.106  2691  2851 D HWUI    : SkiaOpenGLPipeline::setSurface: this=0xb4000079fec75a00, surface=NULL
+08-16 02:45:55.110  2691  2701 W System  : A resource failed to call release. 
+08-16 02:45:55.111  2691  2701 W System  : A resource failed to call release. 
+08-16 02:45:55.111  2691  2701 W System  : A resource failed to call release. 
+08-16 02:45:55.111  2691  2701 W System  : A resource failed to call release. 
+08-16 02:45:55.111  2691  2701 W System  : A resource failed to call release. 
+08-16 02:45:55.111  2691  2701 W System  : A resource failed to call release. 
+08-16 02:45:55.157  1219  1374 I OriginChannel: now system_time:524936899	pwm_rgb: system_time:524936698, lux:30, time_delta:100, pwm_turbo:0, bri:1759, r:1454, g:665, b:389, c:2523, algo:2, end:0, ts:524936697491241	
+08-16 02:45:55.158  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:55.160  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:55.193  1987  2123 D AES     : AEEIOCTL_GET/SET_SF_STATE IOCTL,cmd= 1074294797, lParam=0. 
+08-16 02:45:55.193  1987  2123 D AES     : AEEIOCTL_RT_MON_Kick IOCTL,cmd= 2147774474, lParam=300. 
+08-16 02:45:55.228  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:55.279  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:55.346  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:55.357  1219  1374 I OriginChannel: now system_time:524937099	pwm_rgb: system_time:524936899, lux:29, time_delta:100, pwm_turbo:0, bri:1759, r:1439, g:665, b:389, c:2508, algo:2, end:0, ts:524936897503909	
+08-16 02:45:55.358  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1454.0/679.0/402.0/2539.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:55.410  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:45:55.411  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:55.411  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:55.411  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:55.556  1219  1374 I OriginChannel: now system_time:524937298	pwm_rgb: system_time:524937099, lux:30, time_delta:100, pwm_turbo:0, bri:1759, r:1454, g:679, b:402, c:2539, algo:2, end:0, ts:524937097678150	
+08-16 02:45:55.557  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:55.557  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:55.628  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:55.654  1338  1357 D ccci_mdinit: (1):monitor_time_update_thread round:28430 ########
+08-16 02:45:55.680  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:55.680  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:45:55.681  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:45:55.730  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:55.756  1219  1374 I OriginChannel: now system_time:524937498	pwm_rgb: system_time:524937298, lux:33, time_delta:100, pwm_turbo:0, bri:1759, r:1559, g:752, b:442, c:2741, algo:2, end:0, ts:524937297720780	
+08-16 02:45:55.757  1987  2345 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(system_server) ==
+08-16 02:45:55.757  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1559.0/752.0/442.0/2757.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:55.800  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:55.957  1219  1374 I OriginChannel: now system_time:524937699	pwm_rgb: system_time:524937498, lux:33, time_delta:100, pwm_turbo:0, bri:1759, r:1559, g:752, b:442, c:2757, algo:2, end:0, ts:524937497071280	
+08-16 02:45:55.958  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:55.959  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.027  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:56.033  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:45:56.043 24199 24220 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.oplus.camera) ==
+08-16 02:45:56.043 24199 24220 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+08-16 02:45:56.078  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.084  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.93 dur=1013.82 max=207.89 min=198.82
+08-16 02:45:56.130  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:56.156  1219  1374 I OriginChannel: now system_time:524937898	pwm_rgb: system_time:524937699, lux:31, time_delta:100, pwm_turbo:0, bri:1759, r:1514, g:723, b:415, c:2664, algo:2, end:0, ts:524937697495102	
+08-16 02:45:56.158  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1529.0/723.0/429.0/2679.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:56.356  1219  1374 I OriginChannel: now system_time:524938098	pwm_rgb: system_time:524937898, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:723, b:429, c:2679, algo:2, end:0, ts:524937897503573	
+08-16 02:45:56.358  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:56.359  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.429  1219  1372 W AString : ctor got NULL, using empty string instead
+08-16 02:45:56.430  1219  1372 I sensors-hal-SensorSavedChannel: [-4416,-76,463]==>gyro_bias.json
+08-16 02:45:56.431  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:56.431  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:45:56.431  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:56.432  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:56.432  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:56.482  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.533  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.556  1219  1374 I OriginChannel: now system_time:524938298	pwm_rgb: system_time:524938098, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2695, algo:2, end:0, ts:524938097485202	
+08-16 02:45:56.558  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1514.0/723.0/415.0/2664.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:56.604  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:56.679  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:45:56.681  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:45:56.756  1219  1374 I OriginChannel: now system_time:524938498	pwm_rgb: system_time:524938298, lux:31, time_delta:100, pwm_turbo:0, bri:1759, r:1514, g:723, b:415, c:2664, algo:2, end:0, ts:524938297497188	
+08-16 02:45:56.757  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:56.758  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.812  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:56.863  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.887  1609  2049 D ULogGuard: Monitoring: 23 threads, 0 requests, 0 time-bombs; 32 guards. ResetFlags = 0x7
+08-16 02:45:56.915  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:56.957  1219  1374 I OriginChannel: now system_time:524938699	pwm_rgb: system_time:524938498, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:723, b:415, c:2679, algo:2, end:0, ts:524938497509405	
+08-16 02:45:56.958  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1529.0/723.0/415.0/2695.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:56.968  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:56.998  1258  1363 D vendor.oplus.hardware.charger-V10-service: ret_value:120, read content:,362,368,3732,3732,-273,9,9,1,1,0,415,4650,9,1,4470,600,500,0,4,-22,4,0,1,0,2,0,0,0,1,57064,100,0,470,5706,0,0,0,0,0,75
+08-16 02:45:56.999  1258  1363 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-08-16-02-45-56
+08-16 02:45:57.000  1258  1363 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:-2147483648
+08-16 02:45:57.039  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:45:57.039 32434   543 E Cm      : Network error
+08-16 02:45:57.039 32434   543 E Cm      : java.net.SocketTimeoutException: Read timed out
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.net.SocketInputStream.socketRead0(Native Method)
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.net.SocketInputStream.socketRead(SocketInputStream.java:118)
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.net.SocketInputStream.read(SocketInputStream.java:173)
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.net.SocketInputStream.read(SocketInputStream.java:143)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.readFromSocket(ConscryptEngineSocket.java:1015)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.processDataFromSocket(ConscryptEngineSocket.java:979)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.org.conscrypt.ConscryptEngineSocket$SSLInputStream.-$$Nest$mprocessDataFromSocket(ConscryptEngineSocket.java:0)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.org.conscrypt.ConscryptEngineSocket.doHandshake(ConscryptEngineSocket.java:243)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.org.conscrypt.ConscryptEngineSocket.startHandshake(ConscryptEngineSocket.java:225)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.io.RealConnection.connectTls(RealConnection.java:196)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.io.RealConnection.connectSocket(RealConnection.java:153)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.io.RealConnection.connect(RealConnection.java:116)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.http.StreamAllocation.findConnection(StreamAllocation.java:186)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.http.StreamAllocation.findHealthyConnection(StreamAllocation.java:128)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.http.StreamAllocation.newStream(StreamAllocation.java:97)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.http.HttpEngine.connect(HttpEngine.java:289)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.http.HttpEngine.sendRequest(HttpEngine.java:232)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:465)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.connect(HttpURLConnectionImpl.java:131)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.connect(DelegatingHttpsURLConnection.java:90)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.connect(HttpsURLConnectionImpl.java:30)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.facebook.ads.redexgen.X.Cl.A01(:32378)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.facebook.ads.redexgen.X.Cl.A0J(:32557)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.facebook.ads.redexgen.X.Cr.A00(:32655)
+08-16 02:45:57.039 32434   543 E Cm      : 	at com.facebook.ads.redexgen.X.Cr.doInBackground(:32678)
+08-16 02:45:57.039 32434   543 E Cm      : 	at android.os.AsyncTask$3.call(AsyncTask.java:394)
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+08-16 02:45:57.039 32434   543 E Cm      : 	at java.lang.Thread.run(Thread.java:1572)
+08-16 02:45:57.040  1297  1297 I BufferQueueProducer: [StatusBar#94](this:0xb4000073267e3af8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=1.00 dur=1994.60 max=1004.82 min=989.78
+08-16 02:45:57.098  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.93 dur=1014.18 max=216.18 min=190.41
+08-16 02:45:57.156  1219  1374 I OriginChannel: now system_time:524938898	pwm_rgb: system_time:524938699, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:723, b:415, c:2695, algo:2, end:0, ts:524938697495357	
+08-16 02:45:57.157  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:57.157  3125  3125 D OplusTelephonyController: onSignalStrengthChanged: SignalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 level=0,mLte=CellSignalStrengthLte: rssi=-85 rsrp=-94 rsrq=-9 rssnr=20 cqiTableIndex=2147483647 cqi=0 ta=0 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiCqiTableIndex = 2147483647 csiCqiReport = [] ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 level = 0 parametersUseForLevel = 0 timingAdvance = 2147483647 },primary=CellSignalStrengthLte}
+08-16 02:45:57.157  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:57.163  3269  3269 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onSignalStrengthsChanged
+08-16 02:45:57.166  2691  2691 D Tile.OplusCellularTile: refreshState: tile not listening, ignore
+08-16 02:45:57.167  2691  2846 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:1 isSoftSimCard:false slotId:0
+08-16 02:45:57.196  3269  3917 D MtkRadioService: getRRCStatus
+08-16 02:45:57.197  3269  3917 D RadioProxyJ[0]: [59694]> getRRCStatus
+08-16 02:45:57.207  1508  1540 D MipcProxy: handleMessage msg is 4001, instance 0
+08-16 02:45:57.207  1508  1540 D RadioProxy: getRRCStatus : response cb for instance 0
+08-16 02:45:57.211  3269 28804 D RadioProxyJ[0]: [59694]< getRRCStatusResponse 0
+08-16 02:45:57.215  3269  3917 D CoexRfService: report RRC state:false
+08-16 02:45:57.224  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:57.237  7257  5512 I PTC.DISC.AndroidMultiLanServer: Watcher sysNif=[wlan0], userNif=[wlan0 state=(LISTEN JOIN(682724|36863)), , null], clientNif=[wlan0 state=(LISTEN), , ], tcpServer state=LISTEN, ipv4=**8.1.221
+08-16 02:45:57.276  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:57.315 14328 23449 I VkpnsPushProvider:CheckServiceAlive: Service PushService is active
+08-16 02:45:57.327  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:57.328 14120  6322 I NearbyMediums: No BLE Fast/GATT advertisements found in the latest cycle.
+08-16 02:45:57.329 14120  6322 I NearbyMediums: Current Tracked Scanning Clients are : {NearbyConnections.EnvironmentMonitor, NearbySharing}
+08-16 02:45:57.330 14120  5969 I NearbyConnections: Processing lost BlePeripheral BlePeripheral{advertisement=BleAdvertisement { version=2, socketVersion=2, isFast=true, serviceIdHash=null, data=[ 0x23 0x52 0x45 0x33 0x39 0x11 0x32 0x30 0x59 0x42 0x20 0x70 0x7a 0xe6 0x56 0xf0 0x61 0x8c 0xe5 0xf8 0x88 0xe0 0x9d ], deviceToken=[ 0x16 0xd9 ], rxAdvertisement=null }, dctAdvertisement=null, address=null, psm=0, deviceToken=<ByteString@5b1fe26 size=2 contents="\026\331">, isSecondProfile=false, rxInstantConnectionAdv=null}.
+08-16 02:45:57.331 14120  5969 I NearbyConnections: Lost BleEndpoint for BlePeripheral BlePeripheral{advertisement=BleAdvertisement { version=2, socketVersion=2, isFast=true, serviceIdHash=null, data=[ 0x23 0x52 0x45 0x33 0x39 0x11 0x32 0x30 0x59 0x42 0x20 0x70 0x7a 0xe6 0x56 0xf0 0x61 0x8c 0xe5 0xf8 0x88 0xe0 0x9d ], deviceToken=[ 0x16 0xd9 ], rxAdvertisement=null }, dctAdvertisement=null, address=null, psm=0, deviceToken=<ByteString@5b1fe26 size=2 contents="\026\331">, isSecondProfile=false, rxInstantConnectionAdv=null} (with EndpointId RE39 and EndpointInfo [ 0x32 0x30 0x59 0x42 0x20 0x70 0x7a 0xe6 0x56 0xf0 0x61 0x8c 0xe5 0xf8 0x88 0xe0 0x9d ]).
+08-16 02:45:57.331 14120  5969 I NearbyConnections: Unable to record lost endpoint due to null currentDiscoveryPhase
+08-16 02:45:57.332 14120  5969 I NearbyConnections: ClientProxy(68348431) reporting onEndpointLost(RE39)
+08-16 02:45:57.337 14120  6322 I NearbySharing: NearbySharing Internal event EndpointLost(endpointId=RE39)
+08-16 02:45:57.338 14120  5969 I NearbySharing: [NS_DISCOVERY] DiscoveryController reported Lost(endpointId=RE39)
+08-16 02:45:57.356  1219  1374 I OriginChannel: now system_time:524939098	pwm_rgb: system_time:524938898, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524938897507896	
+08-16 02:45:57.357  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:57.360  1631  2491 D AALLightSensor: oldLux=0 [SA:-1 LA:-1] newLux=0 (oriLux: 0)
+08-16 02:45:57.363  1219  1374 I sensors-hal-HfManager: cali_gyro value = [-0.000052, -0.000242, 0.000495]->[-0.000052, -0.000242, 0.000495], cnt 3600
+08-16 02:45:57.402  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:57.456  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:45:57.459  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:57.460  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:57.460  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:57.557  1219  1374 I OriginChannel: now system_time:524939298	pwm_rgb: system_time:524939098, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524939097519659	
+08-16 02:45:57.558  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:57.560  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:57.631  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:57.680  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:45:57.682  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:57.682  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:45:57.735  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:57.757  1219  1374 I OriginChannel: now system_time:524939499	pwm_rgb: system_time:524939298, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:737, b:429, c:2695, algo:2, end:0, ts:524939297500953	
+08-16 02:45:57.758  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2695.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:57.805  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:57.818 14987 14987 D WifiHAL : WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+08-16 02:45:57.833 14987 14987 D WifiHAL : WifiCommand::requestResponse: receive
+08-16 02:45:57.833 14987 14987 I WifiHAL : LLS RSP: data=0xb400007baf26f020, len=5668
+08-16 02:45:57.834 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=20
+08-16 02:45:57.834 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=16
+08-16 02:45:57.834 14987 14987 I WifiHAL : LLS check_data_sanity: confirmed_size=5668, len=5668
+08-16 02:45:57.842 14120  6459 I NearbySharing: [NS_CONTROL] DiscoveryStateManager emitted ReportLost(id=7).
+08-16 02:45:57.843 14120  6459 I NearbySharing: NearbySharing Internal event ReceiverLost(receiverId=7)
+08-16 02:45:57.845 14120  6461 I NearbySharing: SendProvider: SendManager event Lost(receiverId=7)
+08-16 02:45:57.846 14120  6459 I NearbySharing: ShareTargetDiscoveredCallback: onShareTargetLost()
+--------- beginning of system
+08-16 02:45:57.854  1987  2611 D ShortcutService: rescanPackageIfNeeded 0@com.google.android.gms, forceRescan=false , isNewApp=false
+08-16 02:45:57.856  1987  2525 D OplusWifiRoamingUtils: No related better BSSID.
+08-16 02:45:57.858  3269  3269 D VendorWifiService: onEvent event:9,action:1
+08-16 02:45:57.860 14120 14120 I NearbySharing: ShortcutInfoManager removed shortcut Redmi 9T
+08-16 02:45:57.861  1987  2129 W NotificationHistory: Attempted to remove conversation for locked/gone/disabled user 0
+08-16 02:45:57.865  1987  2525 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=0
+08-16 02:45:57.866  1987  2525 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+08-16 02:45:57.867  1987  2525 D OplusWifiResidenceRecognition: No available relateBssidList
+08-16 02:45:57.957  1219  1374 I OriginChannel: now system_time:524939699	pwm_rgb: system_time:524939499, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2695, algo:2, end:0, ts:524939497513420	
+08-16 02:45:57.958  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:57.959  1987  2115 D ShortcutService: Getting shortcuts for launcher= com.android.launcheruserId=0 pkg=com.google.android.gms
+08-16 02:45:57.960  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:57.960  1987  2476 D ShortcutService: Saving package item com.google.android.gms to /data/system_ce/0/shortcut_service/packages/com.google.android.gms.xml
+08-16 02:45:57.960  1987  2115 D ShortcutService: Getting shortcuts for launcher= com.android.systemuiuserId=0 pkg=com.google.android.gms
+08-16 02:45:57.964  1987  2476 D ShortcutService: Persisting shortcuts from 0@com.google.android.gms
+08-16 02:45:58.036  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:45:58.040  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:58.045  1297  1297 I BufferQueueProducer: [StatusBar#94](this:0xb4000073267e3af8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=1.00 dur=1004.77 max=1004.77 min=1004.77
+08-16 02:45:58.092  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:58.128  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.85 dur=1029.95 max=216.75 min=198.58
+08-16 02:45:58.145  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:58.157  1219  1374 I OriginChannel: now system_time:524939899	pwm_rgb: system_time:524939699, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2695, algo:2, end:0, ts:524939697491294	
+08-16 02:45:58.158  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:58.356  1219  1374 I OriginChannel: now system_time:524940098	pwm_rgb: system_time:524939899, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524939897507684	
+08-16 02:45:58.356  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:58.357  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:58.434  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:58.435  1219  1372 W AString : ctor got NULL, using empty string instead
+08-16 02:45:58.436  1219  1372 I sensors-hal-SensorSavedChannel: [-4253,-129,600]==>gyro_bias.json
+08-16 02:45:58.482  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:45:58.483  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:58.485  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:58.485  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:58.486  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:58.536  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:58.557  1219  1374 I OriginChannel: now system_time:524940299	pwm_rgb: system_time:524940098, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2695, algo:2, end:0, ts:524940097510054	
+08-16 02:45:58.558  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/723.0/415.0/2695.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:58.606  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:58.632  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:45:58.681  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:45:58.683  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:45:58.756  1219  1374 I OriginChannel: now system_time:524940498	pwm_rgb: system_time:524940299, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:723, b:415, c:2695, algo:2, end:0, ts:524940297780631	
+08-16 02:45:58.757  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:58.758  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:58.812  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:58.842 14328 23449 D VkpnsPushProvider:NotifierConnection: Can send message to web socket: true
+08-16 02:45:58.864  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:58.916  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:58.953 14328 23449 D VkpnsPushProvider:Notifier: Parse request response: 337
+08-16 02:45:58.957  1219  1374 I OriginChannel: now system_time:524940699	pwm_rgb: system_time:524940498, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:737, b:415, c:2695, algo:2, end:0, ts:524940497076578	
+08-16 02:45:58.958  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1529.0/737.0/429.0/2695.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:59.042  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:45:59.133  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.98 dur=1004.87 max=207.48 min=198.89
+08-16 02:45:59.156  1219  1374 I OriginChannel: now system_time:524940898	pwm_rgb: system_time:524940699, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:737, b:429, c:2695, algo:2, end:0, ts:524940697495963	
+08-16 02:45:59.157  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:59.159  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:59.193  9414 17373 D ShellSubscriberWorkerThread: the first 8 bytes empty, and RestData length > 8 
+08-16 02:45:59.230  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:59.282  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:59.333  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:59.356  1219  1374 I OriginChannel: now system_time:524941098	pwm_rgb: system_time:524940898, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2695, algo:2, end:0, ts:524940897503601	
+08-16 02:45:59.356  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:59.501  3125  7857 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://developers.google.com/generate_204
+08-16 02:45:59.504  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:59.504  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:59.507  3125  7857 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://www.google.com/generate_204
+08-16 02:45:59.508  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:59.509  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:59.510  3125  7857 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://developers.google.com/generate_204
+08-16 02:45:59.511  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:59.511  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:59.511  3125  7857 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://www.google.com/generate_204
+08-16 02:45:59.512  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:45:59.512  3269  5004 D SubsysThreadPool: execute task
+08-16 02:45:59.513  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:45:59.513  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:59.514  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:59.514  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:45:59.516  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:45:59.520  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:45:59.556  1219  1374 I OriginChannel: now system_time:524941298	pwm_rgb: system_time:524941098, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524941097485443	
+08-16 02:45:59.558  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:59.559  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:59.631  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:45:59.682  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:45:59.682  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:59.683  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:45:59.733  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:45:59.756  1219  1374 I OriginChannel: now system_time:524941498	pwm_rgb: system_time:524941298, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2695, algo:2, end:0, ts:524941297501213	
+08-16 02:45:59.757  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:45:59.890  1609  2049 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(camerahalserver) ==
+08-16 02:45:59.890  1609  2049 D ULogGuard: Monitoring: 23 threads, 0 requests, 0 time-bombs; 32 guards. ResetFlags = 0x7
+08-16 02:45:59.956  1219  1374 I OriginChannel: now system_time:524941698	pwm_rgb: system_time:524941498, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524941497514377	
+08-16 02:45:59.958  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:45:59.962  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:00.001  1987  2354 V AlarmManager: sending alarm Alarm{2e76c04 type 3 origWhen 524941742 whenElapsed 524941742 android} uid 1000 whenElapsed 524941742 windowLength 0 maxWhenElapsed 524941742 repeatInterval 0 action null component null tag TIME_TICK flags 0x9 procName system_server
+08-16 02:46:00.010  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:00.014  1987  2586 D CommSceneService: notify align tick changed state=1
+08-16 02:46:00.014  1987  1987 D LightsServiceExtImpl: currentTime is not belong to 700 - 2330
+08-16 02:46:00.014  1987  2586 I CommSceneListener: on scene=1006 state=1 pId=-1
+08-16 02:46:00.014  1987  2586 I LinkPower: [Main] handleCommSceneListener scene:1006 state:1 phoneId:-1
+08-16 02:46:00.014  1987  2586 I LinkPower: [Main] notifyLoopTick in
+08-16 02:46:00.014  1987  2586 I LinkPower: [JudgeRule] name:freeze finalCheckAction scene is 1001
+08-16 02:46:00.014  1987  2586 I LinkPower: [JudgeCommSceneProcess] commInfo mRusTimeInfo is 300 mSceneState is 1 mActiveFlag is 0 runTime is 0
+08-16 02:46:00.014  1987  2586 I LinkPower: [JudgeRule] name:freeze finalCheckAction TIME_UNSATISFY
+08-16 02:46:00.014  1987  2586 E LinkPower: [JudgeMonitorProcess] failed to deleteLastRecord, mMonitorRecordAccumulate is empty!
+08-16 02:46:00.014  1987  2586 E LinkPower: [JudgeMonitorProcess] failed to deleteLastRecord, mMonitorRecordAccumulate is empty!
+08-16 02:46:00.014  1987  2586 I LinkPower: [JudgeRule] name:freeze finalCheckAction resule ruleState: false commSeceneFlag: 0 monitorFlag: 0
+08-16 02:46:00.015  3269  3269 D SubsysBroadcastManager: onReceive action:android.intent.action.TIME_TICK
+08-16 02:46:00.015  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:00.016  3174  3842 D AMC     : [TriggerSystem] handleLoopTick trigger:vowifihandover phoneId:0 voWifiHandoverCount:0
+08-16 02:46:00.017  3174  3842 D AMC     : [TriggerSystem] handleLoopTick trigger:vowifihandover phoneId:1 voWifiHandoverCount:0
+08-16 02:46:00.017  3174  3842 I AMC     : [P-idle_meas/0] execute single in triggers[0]:[loop:true][loop:true, still5min:true] successfully!
+08-16 02:46:00.017  3174  3842 E AMC     : [P-idle_meas/0] execute failed check triggers[0]:[loop:true][sleept:289, screen:true]
+08-16 02:46:00.017  3174  3842 I AMC     : [P-idle_meas/1] execute single in triggers[0]:[loop:true][loop:true, still5min:true] successfully!
+08-16 02:46:00.017  3174  3842 E AMC     : [P-idle_meas/1] failed to execute check triggers, non active subId!
+08-16 02:46:00.022  1987  2170 D OplusDisplayBrightnessBroadcastReceiver: onReceive action = android.intent.action.TIME_TICK , listeners = [com.android.server.display.feature.marvels.module.ORBrightnessMarvelsDataCollector$ScreenStateReceiver@471a165, com.android.server.display.feature.ambience.events.event.TimeEvent$TimeChangeReceiver@4772f77, com.android.server.display.color.eyeprotect.manager.AiCurveManager$RhythmBroadcastReceiver@43fa7e4]
+08-16 02:46:00.026  3394  5671 D PhoneUsageTime: lastChargeFullTime=1786812300045 LastChargeFullDurationTime=86660047
+08-16 02:46:00.027  1987  2586 I LinkPower: [MonitorService] update scene:S_ON name:wifi_sta_conn_primary mr:{d=71986, t={android.uid.system=71986}}
+08-16 02:46:00.027  1987  2586 I LinkPower: [JudgeRule] name:freeze JudgeRule info RuleID 1 Name freeze ActionName data_app_request_freeze PriorityID 20 TimeGap 0
+08-16 02:46:00.027  1987  2586 I LinkPower: [JudgeRule] name:freeze finalCheckAction scene is 1001
+08-16 02:46:00.027  1987  2586 I LinkPower: [JudgeCommSceneProcess] commInfo mRusTimeInfo is 300 mSceneState is 1 mActiveFlag is 0 runTime is 0
+08-16 02:46:00.027  1987  2586 I LinkPower: [JudgeRule] name:freeze finalCheckAction TIME_UNSATISFY
+08-16 02:46:00.027  1987  2586 E LinkPower: [JudgeMonitorProcess] failed to deleteLastRecord, mMonitorRecordAccumulate is empty!
+08-16 02:46:00.027  1987  2586 E LinkPower: [JudgeMonitorProcess] failed to deleteLastRecord, mMonitorRecordAccumulate is empty!
+08-16 02:46:00.027  1987  2586 I LinkPower: [JudgeRule] name:freeze finalCheckAction resule ruleState: false commSeceneFlag: 0 monitorFlag: 0
+08-16 02:46:00.040  1297  1297 I BufferQueueProducer: [StatusBar#94](this:0xb4000073267e3af8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=1.00 dur=1995.18 max=998.10 min=997.09
+08-16 02:46:00.042  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:46:00.066  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:00.118  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:00.133  1987  2586 I LinkPower: [MonitorLeafBpfWakeup] Origin WakeupInfoMain Diff:71s InWakeup:null OutWakeup:null WakeupDuration(ms):null
+08-16 02:46:00.133  1987  2586 I LinkPower: [MonitorLeafBpfWakeup] Origin WakeupInfoDetails Diff:71s OutImHbWakeup:null OutAlignWakeup:null InKeepWakeup:null ReInWakeup:null ReOutWakeup:null
+08-16 02:46:00.134  3191  3410 W ModemAci: [KernelWakeupInfo] failed to update kernel wakeup due to empty map!
+08-16 02:46:00.147  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.93 dur=1013.88 max=216.90 min=190.57
+08-16 02:46:00.156  1219  1374 I OriginChannel: now system_time:524941898	pwm_rgb: system_time:524941698, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:723, b:429, c:2695, algo:2, end:0, ts:524941697491362	
+08-16 02:46:00.157  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:00.202  3269  3917 D MtkRadioService: getRRCStatus
+08-16 02:46:00.202  3269  3917 D RadioProxyJ[0]: [59695]> getRRCStatus
+08-16 02:46:00.213  1508  1540 D MipcProxy: handleMessage msg is 4001, instance 0
+08-16 02:46:00.213  1508  1540 D RadioProxy: getRRCStatus : response cb for instance 0
+08-16 02:46:00.215  3269 28804 D RadioProxyJ[0]: [59695]< getRRCStatusResponse 0
+08-16 02:46:00.216  3269  3917 D CoexRfService: report RRC state:false
+08-16 02:46:00.251  3191  3410 W ModemAci: [AppInfo] failed to update app info due to empty map!
+08-16 02:46:00.356  1219  1374 I OriginChannel: now system_time:524942098	pwm_rgb: system_time:524941898, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524941897507544	
+08-16 02:46:00.356  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:00.357  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:00.390  1216  1216 D healthd : system healthd: battery l=9 v=3 t=36.2 h=2 st=2 c=-135 fc=6000000 cc=267 chg=u
+08-16 02:46:00.402  6880  7275 D gaia-GaiaConnectChecker: start connect check++
+08-16 02:46:00.406  1258  1258 D ChargerInfo: getInfo: type: 0x1, update: 1
+08-16 02:46:00.406  1258  1342 D ChargerInfo: chargerInfoUpdateThread: update start
+08-16 02:46:00.408  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:00.411  1258  1342 D ChargerInfo: enableTx: path(/proc/wireless/enable_tx): not exist
+08-16 02:46:00.411  1258  1342 D ChargerInfo: wlsAdapterPower: path(/sys/class/oplus_chg/wireless/max_w_power): not exist
+08-16 02:46:00.411  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:00.413  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:00.414  1258  1342 D ChargerInfo: get_ui_charge_icon_type: [0 0] [0 0] 1
+08-16 02:46:00.415  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:00.415  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:00.416  1258  1342 D vendor.oplus.hardware.charger-V10-service: get_config_path : [graphite, single_, ]
+08-16 02:46:00.417  1258  1342 D vendor.oplus.hardware.charger-V10-service: get_config_path : /odm/firmware/fastchg/24742/graphite_single_charging_hyper_mode_config.txt
+08-16 02:46:00.417  1258  1342 E ChargerInfo: SingleHyperPath not found
+08-16 02:46:00.418  1258  1342 D ChargerInfo: chargerInfoUpdateThread: update end
+08-16 02:46:00.418  1258  1342 D ChargerInfo: chargerInfoUpdateThread: update wait
+08-16 02:46:00.418  1258  1258 D ChargerInfo: enableTx: path(/proc/wireless/enable_tx): not exist
+08-16 02:46:00.418  1258  1258 D ChargerInfo: wlsAdapterPower: path(/sys/class/oplus_chg/wireless/max_w_power): not exist
+08-16 02:46:00.418  1258  1258 D ChargerInfo: getInfo: {"Update":{"batteryFcc":5706,"batteryRm":470,"bddLeakCurr":0,"bmsStatus":0,"bypassChgStatus":2,"chargeTimeRemaining":0,"cpaPower":2,"enableTx":true,"fastCharge":0,"isSupportSpeedCharge":0,"notifyCode":0,"otgOnline":1,"ppsChargePower":0,"ppsCharging":0,"shortCHwStatus":0,"shortIcOtpStatus":0,"uiIconType":0,"uiPower":0,"usbStatus":0,"wlsAdapterPower":0}}
+08-16 02:46:00.419  1987  3735 D OplusWifiService: notifyBatteryInfoChanged: feature not supported
+08-16 02:46:00.443  1219  1372 W AString : ctor got NULL, using empty string instead
+08-16 02:46:00.444  1219  1372 I sensors-hal-SensorSavedChannel: [-4374,-124,389]==>gyro_bias.json
+08-16 02:46:00.461  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:00.527  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:46:00.527  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:00.528  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:00.528  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:00.537  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:00.556  1219  1374 I OriginChannel: now system_time:524942298	pwm_rgb: system_time:524942098, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524942097489170	
+08-16 02:46:00.557  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:00.756  1219  1374 I OriginChannel: now system_time:524942498	pwm_rgb: system_time:524942298, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524942297497761	
+08-16 02:46:00.757  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:00.759  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:00.792  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:00.811  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:00.855 14987 14987 D WifiHAL : WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+08-16 02:46:00.862  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:00.867 14987 14987 D WifiHAL : WifiCommand::requestResponse: receive
+08-16 02:46:00.868 14987 14987 I WifiHAL : LLS RSP: data=0xb400007baf26f020, len=5668
+08-16 02:46:00.868 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=20
+08-16 02:46:00.868 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=16
+08-16 02:46:00.868 14987 14987 I WifiHAL : LLS check_data_sanity: confirmed_size=5668, len=5668
+08-16 02:46:00.871  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:00.898  1987  2525 D OplusWifiRoamingUtils: No related better BSSID.
+08-16 02:46:00.899  3269  3269 D VendorWifiService: onEvent event:9,action:1
+08-16 02:46:00.908  1987  2525 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=0
+08-16 02:46:00.908  1987  2525 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+08-16 02:46:00.910  1987  2525 D OplusWifiResidenceRecognition: No available relateBssidList
+08-16 02:46:00.931  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:00.958  1219  1374 I OriginChannel: now system_time:524942700	pwm_rgb: system_time:524942498, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524942497513429	
+08-16 02:46:00.959  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:01.034  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:46:01.044  1297  1297 I BufferQueueProducer: [StatusBar#94](this:0xb4000073267e3af8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=1.00 dur=1003.89 max=1003.89 min=1003.89
+08-16 02:46:01.045 24199 24220 I APS_ALOG: flushRoutine g_immediateFlush=0 g_pendingCount=0 g_oobCount=0
+08-16 02:46:01.157  1219  1374 I OriginChannel: now system_time:524942899	pwm_rgb: system_time:524942700, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524942697495847	
+08-16 02:46:01.158  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:01.160  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:01.177  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.85 dur=1030.61 max=216.38 min=190.70
+08-16 02:46:01.212  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:01.264  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:01.340  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:01.357  1219  1374 I OriginChannel: now system_time:524943099	pwm_rgb: system_time:524942899, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524942897689154	
+08-16 02:46:01.359  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1544.0/737.0/429.0/2710.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:01.360  1631  2491 D AALLightSensor: oldLux=0 [SA:-1 LA:-1] newLux=0 (oriLux: 0)
+08-16 02:46:01.550  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:46:01.551  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:01.551  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:01.551  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:01.556  1219  1374 I OriginChannel: now system_time:524943298	pwm_rgb: system_time:524943099, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524943097708271	
+08-16 02:46:01.557  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:01.558  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:01.610  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:01.661  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:01.684  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:46:01.685  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:46:01.729  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:01.756  1219  1374 I OriginChannel: now system_time:524943498	pwm_rgb: system_time:524943298, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1544, g:737, b:429, c:2710, algo:2, end:0, ts:524943297628189	
+08-16 02:46:01.757  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1529.0/737.0/429.0/2695.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:01.956  1219  1374 I OriginChannel: now system_time:524943698	pwm_rgb: system_time:524943498, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:737, b:429, c:2695, algo:2, end:0, ts:524943497575016	
+08-16 02:46:01.958  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:01.959  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:02.001  1258  1363 D vendor.oplus.hardware.charger-V10-service: ret_value:120, read content:,362,368,3735,3733,-287,9,9,1,1,0,415,4650,9,1,4470,600,500,0,4,-22,4,0,1,0,2,0,0,0,1,57064,100,0,470,5706,0,0,0,0,0,75
+08-16 02:46:02.002  1258  1363 D vendor.oplus.hardware.charger-V10-service: gmtime: 2026-08-16-02-46-02
+08-16 02:46:02.003  1258  1363 D vendor.oplus.hardware.charger-V10-service: usb_online:1, ac_online:-2147483648, wireless_online:-2147483648
+08-16 02:46:02.012  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:02.042  2691  2691 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.android.systemui) ==
+08-16 02:46:02.042  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:46:02.063  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:02.116  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:02.157  1219  1374 I OriginChannel: now system_time:524943898	pwm_rgb: system_time:524943698, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:737, b:429, c:2679, algo:2, end:0, ts:524943697495261	
+08-16 02:46:02.158  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1514.0/708.0/402.0/2679.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:02.182  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.98 dur=1004.75 max=208.47 min=190.28
+08-16 02:46:02.276  3125  3125 D OplusTelephonyController: onSignalStrengthChanged: SignalStrength=SignalStrength:{mCdma=CellSignalStrengthCdma: cdmaDbm=2147483647 cdmaEcio=2147483647 evdoDbm=2147483647 evdoEcio=2147483647 evdoSnr=2147483647 level=0,mGsm=CellSignalStrengthGsm: rssi=2147483647 ber=2147483647 mTa=2147483647 mLevel=0,mWcdma=CellSignalStrengthWcdma: ss=2147483647 ber=2147483647 rscp=2147483647 ecno=2147483647 level=0,mTdscdma=CellSignalStrengthTdscdma: rssi=2147483647 ber=2147483647 rscp=2147483647 level=0,mLte=CellSignalStrengthLte: rssi=-85 rsrp=-93 rsrq=-9 rssnr=20 cqiTableIndex=2147483647 cqi=0 ta=0 level=4 parametersUseForLevel=0,mNr=CellSignalStrengthNr:{ csiRsrp = 2147483647 csiRsrq = 2147483647 csiCqiTableIndex = 2147483647 csiCqiReport = [] ssRsrp = 2147483647 ssRsrq = 2147483647 ssSinr = 2147483647 level = 0 parametersUseForLevel = 0 timingAdvance = 2147483647 },primary=CellSignalStrengthLte}
+08-16 02:46:02.280  3269  3269 D SubsysEventListenerManager-SubsysTelephonyCallback[0]: onSignalStrengthsChanged
+08-16 02:46:02.280  2691  2691 D Tile.OplusCellularTile: refreshState: tile not listening, ignore
+08-16 02:46:02.286  2691  2846 I SystemUi--Statusbar: MobileConnectionRepositoryImpl-->subId:1 isSoftSimCard:false slotId:0
+08-16 02:46:02.356  1219  1374 I OriginChannel: now system_time:524944098	pwm_rgb: system_time:524943898, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1514, g:708, b:402, c:2679, algo:2, end:0, ts:524943897507607	
+08-16 02:46:02.357  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:02.358  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:02.411  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:02.450  1219  1372 W AString : ctor got NULL, using empty string instead
+08-16 02:46:02.452  1219  1372 I sensors-hal-SensorSavedChannel: [-4258,-71,247]==>gyro_bias.json
+08-16 02:46:02.462  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:02.530  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:02.545  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=2, returnCode=0, uid=10529
+08-16 02:46:02.557  1219  1374 I OriginChannel: now system_time:524944298	pwm_rgb: system_time:524944098, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1514, g:708, b:402, c:2679, algo:2, end:0, ts:524944097520232	
+08-16 02:46:02.558  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1514.0/708.0/402.0/2664.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:02.580  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:46:02.580  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:02.581  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:02.581  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:02.654 10878 10878 I adbd    : adbd_auth: loading keys from /data/misc/adb/adb_keys
+08-16 02:46:02.682  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:46:02.684  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:46:02.702  1987  2348 D ActivityManager: freezing 32627 com.oplus.notificationmanager
+08-16 02:46:02.758  1219  1374 I OriginChannel: now system_time:524944499	pwm_rgb: system_time:524944298, lux:31, time_delta:100, pwm_turbo:0, bri:1759, r:1514, g:708, b:402, c:2664, algo:2, end:0, ts:524944297501113	
+08-16 02:46:02.759  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:02.760  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:02.811  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:02.863  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:02.892  1609  2049 D ULogGuard: Monitoring: 23 threads, 0 requests, 0 time-bombs; 32 guards. ResetFlags = 0x7
+08-16 02:46:02.935  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:02.956  1219  1374 I OriginChannel: now system_time:524944698	pwm_rgb: system_time:524944499, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1514, g:708, b:402, c:2679, algo:2, end:0, ts:524944497513564	
+08-16 02:46:02.958  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1529.0/708.0/402.0/2695.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:03.031  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:46:03.064  1297  1297 I BufferQueueProducer: [StatusBar#94](this:0xb4000073267e3af8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=0.99 dur=2019.82 max=1021.67 min=998.15
+08-16 02:46:03.088  1216  1216 D healthd : system healthd: battery l=9 v=3 t=36.2 h=2 st=2 c=-186 fc=6000000 cc=267 chg=u
+08-16 02:46:03.101  1258  1258 D ChargerInfo: getInfo: type: 0x1, update: 1
+08-16 02:46:03.101  1258  1342 D ChargerInfo: chargerInfoUpdateThread: update start
+08-16 02:46:03.102  1258  1342 D ChargerInfo: enableTx: path(/proc/wireless/enable_tx): not exist
+08-16 02:46:03.102  1258  1342 D ChargerInfo: wlsAdapterPower: path(/sys/class/oplus_chg/wireless/max_w_power): not exist
+08-16 02:46:03.102  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:03.102  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:03.102  1258  1342 D ChargerInfo: get_ui_charge_icon_type: [0 0] [0 0] 1
+08-16 02:46:03.103  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:03.103  1258  1342 D ChargerInfo: unknown: path(/sys/class/oplus_chg/ac/online) and backupPath(/sys/class/power_supply/ac/online) not exist
+08-16 02:46:03.103  1258  1342 D vendor.oplus.hardware.charger-V10-service: get_config_path : [graphite, single_, ]
+08-16 02:46:03.104  1258  1342 D vendor.oplus.hardware.charger-V10-service: get_config_path : /odm/firmware/fastchg/24742/graphite_single_charging_hyper_mode_config.txt
+08-16 02:46:03.104  1258  1342 E ChargerInfo: SingleHyperPath not found
+08-16 02:46:03.104  1258  1342 D ChargerInfo: chargerInfoUpdateThread: update end
+08-16 02:46:03.104  1258  1342 D ChargerInfo: chargerInfoUpdateThread: update wait
+08-16 02:46:03.104  1258  1258 D ChargerInfo: enableTx: path(/proc/wireless/enable_tx): not exist
+08-16 02:46:03.105  1258  1258 D ChargerInfo: wlsAdapterPower: path(/sys/class/oplus_chg/wireless/max_w_power): not exist
+08-16 02:46:03.105  1258  1258 D ChargerInfo: getInfo: {"Update":{"batteryFcc":5706,"batteryRm":470,"bddLeakCurr":0,"bmsStatus":0,"bypassChgStatus":2,"chargeTimeRemaining":0,"cpaPower":2,"enableTx":true,"fastCharge":0,"isSupportSpeedCharge":0,"notifyCode":0,"otgOnline":1,"ppsChargePower":0,"ppsCharging":0,"shortCHwStatus":0,"shortIcOtpStatus":0,"uiIconType":0,"uiPower":0,"usbStatus":0,"wlsAdapterPower":0}}
+08-16 02:46:03.108  1987  3735 D OplusWifiService: notifyBatteryInfoChanged: feature not supported
+08-16 02:46:03.156  1219  1374 I OriginChannel: now system_time:524944898	pwm_rgb: system_time:524944698, lux:32, time_delta:100, pwm_turbo:0, bri:1759, r:1529, g:708, b:402, c:2695, algo:2, end:0, ts:524944697495317	
+08-16 02:46:03.159  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:03.161  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:03.204  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=4.90 dur=1021.37 max=216.19 min=190.64
+08-16 02:46:03.207  3269  3917 D MtkRadioService: getRRCStatus
+08-16 02:46:03.207  3269  3917 D RadioProxyJ[0]: [59696]> getRRCStatus
+08-16 02:46:03.210  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:03.212  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:03.216  1508  1540 D MipcProxy: handleMessage msg is 4001, instance 0
+08-16 02:46:03.216  1508  1540 D RadioProxy: getRRCStatus : response cb for instance 0
+08-16 02:46:03.218  3269 28804 D RadioProxyJ[0]: [59696]< getRRCStatusResponse 0
+08-16 02:46:03.219  3269  3917 D CoexRfService: report RRC state:false
+08-16 02:46:03.264  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:03.339  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:03.357  1219  1374 I OriginChannel: now system_time:524945099	pwm_rgb: system_time:524944898, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1648, g:781, b:442, c:2897, algo:2, end:0, ts:524944897513424	
+08-16 02:46:03.358  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1634.0/781.0/442.0/2897.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:03.557  1219  1374 I OriginChannel: now system_time:524945299	pwm_rgb: system_time:524945099, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1634, g:781, b:442, c:2897, algo:2, end:0, ts:524945097491260	
+08-16 02:46:03.559  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:03.560  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:03.600  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:46:03.601  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:03.602  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:03.602  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:03.616  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:03.669  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:03.684  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:46:03.686  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:46:03.706  1987  2348 D ActivityManager: Freezer deadlock watchdog
+08-16 02:46:03.741  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:03.757  1219  1374 I OriginChannel: now system_time:524945498	pwm_rgb: system_time:524945299, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1619, g:766, b:442, c:2866, algo:2, end:0, ts:524945297501712	
+08-16 02:46:03.758  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1604.0/766.0/442.0/2850.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:03.900 14987 14987 D WifiHAL : WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+08-16 02:46:03.911 14987 14987 D WifiHAL : WifiCommand::requestResponse: receive
+08-16 02:46:03.912 14987 14987 I WifiHAL : LLS RSP: data=0xb400007baf26f020, len=5668
+08-16 02:46:03.912 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=20
+08-16 02:46:03.912 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=16
+08-16 02:46:03.912 14987 14987 I WifiHAL : LLS check_data_sanity: confirmed_size=5668, len=5668
+08-16 02:46:03.932  1987  2525 D OplusWifiRoamingUtils: No related better BSSID.
+08-16 02:46:03.933  3269  3269 D VendorWifiService: onEvent event:9,action:1
+08-16 02:46:03.942  1987  2525 D ScorerUtils: isLowTraffic: txTputKBps=0, rxTputKBps=0
+08-16 02:46:03.943  1987  2525 D OplusWifiPower_TriggerCenter: mComponentCallback: wifistat
+08-16 02:46:03.945  1987  2525 D OplusWifiResidenceRecognition: No available relateBssidList
+08-16 02:46:03.957  1219  1374 I OriginChannel: now system_time:524945699	pwm_rgb: system_time:524945498, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1604, g:766, b:442, c:2850, algo:2, end:0, ts:524945497514040	
+08-16 02:46:03.959  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:03.960  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:03.971  7257  7646 D connection::usb::device: [usb_device]current proxy server is running
+08-16 02:46:03.972  7257  7646 D connection::usb::device: [usb_device]current ipsync server is running
+08-16 02:46:04.009  1395  1395 I touch_boost: enable=0, boost_up=0, boost_down=1, render_deboost=1, active_time=100, duration=100, idleprefer(TA,FG)=(1,1), util(TA,FG)=(0,30), freq(c0,c1,c2)=(1300000,1200000,1200000)
+08-16 02:46:04.010  1395  1395 I touch_boost: set_top_grp_aware
+08-16 02:46:04.011  1395  1395 I touch_boost: enable=1, boost_up=0, boost_down=1, render_deboost=1, active_time=100, duration=100, idleprefer(TA,FG)=(1,1), util(TA,FG)=(0,30), freq(c0,c1,c2)=(1300000,1200000,1200000)
+08-16 02:46:04.013  1987  2778 I [UAH_CLIENT]: UahEventAcquire, cmdid:37, pkg:none, identity:OplusUAwareInputHelper
+08-16 02:46:04.013  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:04.014  1987  2778 D UAH-UahAdaptHelper: adaptSetNotification identity = OplusUAwareInputHelpersrc = 1000 , type 0 ,p1 = -1 ,p2 = -1 ,p3 = -1 ,p4 =
+08-16 02:46:04.014  1987  2778 I [UAH_CLIENT]: uahRuleCtl, ruleId:1000, status:0
+08-16 02:46:04.017  1987  2167 D PowerManagerService: userActivityNoUpdateLocked: groupId=0, eventTime=442625239, event=touch, flags=0x0, uid=1000
+08-16 02:46:04.018  1297  1872 D SurfaceFlinger: calculateTimeoutTime, triggerInterval = 2 sec + 999999923 nsec
+08-16 02:46:04.018  1987  2167 D PowerManagerService: userActivityNoUpdateLocked: groupId=0, eventTime=442625239, event=touch, flags=0x0, uid=1000
+08-16 02:46:04.018  1987  2540 D GestureLog_OplusMultiPointerDetector: onTouchEvent------>start, mCurNumPointers=1, mCurrStatus=0 mIsDownIntervalTimeout=true, action=0 downTime=442625239 deviceId=2
+08-16 02:46:04.018  6302  6302 I DynamicFramerate [AnimationSpeedAware]: onEventHandled: info: InputEventInfo: mX = 0, mY = 0, mAction = 0, mVsyncTime = 442625248, mIsMoving = true, mUpdated = true
+08-16 02:46:04.018  6302  6302 E IJankManager: slideSceneEnd unknown scene 1000 mScene:-1
+08-16 02:46:04.018  6302  6302 V AutofillManager: requestHideFillUi(null): anchor = null
+08-16 02:46:04.019  1395  1395 I touch_boost: set_top_grp_aware
+08-16 02:46:04.019  1232  1353 I [UAH_CLIENT]: UahPlatformResAcquire
+08-16 02:46:04.019  1232  1353 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:1395 1395 -1 3, identity:mtk-powerd
+08-16 02:46:04.029  1395  1395 I touch_boost: enable=0, boost_up=0, boost_down=1, render_deboost=1, active_time=100, duration=100, idleprefer(TA,FG)=(1,1), util(TA,FG)=(0,30), freq(c0,c1,c2)=(1300000,1200000,1200000)
+08-16 02:46:04.030  1232  1353 I [UAH_CLIENT]: UahRelease, handle:182253
+08-16 02:46:04.030  1395  1395 I touch_boost: set_top_grp_aware
+08-16 02:46:04.032  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:46:04.071  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:04.090  2691  2754 D OneHandedTouchHandler: onMotionEvent: mIsInOutsideRegion = false, mIsOnStopTransitioning = false, rawY = 2390.875
+08-16 02:46:04.091  6302  6302 I DynamicFramerate [AnimationSpeedAware]: onEventHandled: info: InputEventInfo: mX = 0, mY = 0, mAction = 1, mVsyncTime = 442625321, mIsMoving = false, mUpdated = true
+08-16 02:46:04.091  1987  2778 D UAH-UahAdaptHelper: adaptSetNotification identity = OplusUAwareInputHelpersrc = 1000 , type 1 ,p1 = -1 ,p2 = -1 ,p3 = -1 ,p4 =
+08-16 02:46:04.091  1987  2778 I [UAH_CLIENT]: uahRuleCtl, ruleId:1000, status:1
+08-16 02:46:04.094  6302  6302 D AAudio  : AAudioStream_requestPause(s#2) called
+08-16 02:46:04.094  6302  6302 D AAudioStream: setState(s#2) from 4 to 5
+08-16 02:46:04.094  6302  6302 D AudioTrack: pause(4821): prior state:STATE_ACTIVE output 509 stream 3 session 19545
+08-16 02:46:04.096  1987  3735 E AppOps  : attributionTag  not declared in manifest of com.antigravity.audioplayer
+08-16 02:46:04.097  1987  3735 E AppOps  : attributionTag  not declared in manifest of com.antigravity.audioplayer
+08-16 02:46:04.100  6302  6401 D NativeAudioEngine: Decode thread finished
+08-16 02:46:04.101  6302  6302 D NativeAudioEngine: AudioEngine paused
+08-16 02:46:04.102  6302  6302 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-16 02:46:04.108 26972 27029 W MTS_BaseSceneDetectorFactory: [m]illegal pkgName: xyz.mpv.rex
+08-16 02:46:04.110 26972 27029 W MTS_AppSceneDetector: [m]create detector fail
+08-16 02:46:04.110  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:04.111 26972 27029 W MTS_AppSceneDetector: [m]detect play change when get detector is null, uid: 10557
+08-16 02:46:04.111  1203  1929 I BTAudioSessionAidl: UpdateSourceMetadata - SessionType=A2DP_SOFTWARE_ENCODING_DATAPATH,1 track(s)
+08-16 02:46:04.111 26972 27029 W MTS_BaseSceneDetectorFactory: [m]illegal pkgName: android.uid.systemui:10243
+08-16 02:46:04.111 26972 27029 W MTS_AppSceneDetector: [m]create detector fail
+08-16 02:46:04.111 26972 27029 W MTS_AppSceneDetector: [m]detect play change when get detector is null, uid: 10243
+08-16 02:46:04.112 26972 27029 W MTS_BaseSceneDetectorFactory: [m]illegal pkgName: com.antigravity.audioplayer
+08-16 02:46:04.111 12414 13308 I bluetooth: [bluetooth_audio_port_impl.cc:136] updateSourceMetadata: 1 track(s)
+08-16 02:46:04.112 26972 27029 W MTS_AppSceneDetector: [m]create detector fail
+08-16 02:46:04.112 12414 13308 I bluetooth: [bluetooth_audio_port_impl.cc:142] updateSourceMetadata: metadata tags size: 0
+08-16 02:46:04.112 26972 27029 W MTS_AppSceneDetector: [m]detect play change when get detector is null, uid: 10423
+08-16 02:46:04.112 12414 13308 W bluetooth-a2dp: [btif_av.cc:5408]  btif_av_meta_data_changed: track_count=1
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusAvrcpUseA2dpOnly, check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro return 0
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак) return 0
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:797] interop_oplus_match_ver: [OplusAvrcpUseA2dpOnly] check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:04.112 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:04.116  4252  4252 I midasd  : OplusObrainService::notifyEventIntString eventId:14 iParam:3 strParam:com.antigravity.audioplayer
+08-16 02:46:04.116  9414  9483 I OplusObrain: OplusObrainClientInvoke.nativeGetAudioPackageList
+08-16 02:46:04.119 12414 12884 D AvrcpTargetJni: [com_android_bluetooth_avrcp_target.cpp:653] getCurrentPlayStatus: 
+08-16 02:46:04.121 12414 13333 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:151] stack_down_sync_action: type=38, len=29
+08-16 02:46:04.121 12414 13333 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:425] stack_down_sync_action: audio type update  previous audio type =CURRENT_IS_AV_AUDIO, current audio type : CURRENT_IS_NO_AUDIO
+08-16 02:46:04.122  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:04.124 12414 12884 D AvrcpTargetJni: [com_android_bluetooth_avrcp_target.cpp:653] getCurrentPlayStatus: 
+08-16 02:46:04.126 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusAvrcpUseMusicOnly, check xx:xx:xx:xx:1b:c3 return true
+08-16 02:46:04.126 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusAvrcpUseA2dpOnly, check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro return 0
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак) return 0
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:797] interop_oplus_match_ver: [OplusAvrcpUseA2dpOnly] check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:04.127 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:04.128  1277 27153 D AudioFlinger: prepareTracks_l: track 4326 sid 19545 s=00189840 [NOT READY] on thread 509, framesReady=1920, minFrames=962, isReady=1, isTerminated=0, isShare=1, state=8, Ignor=2, desirFs=962
+08-16 02:46:04.130  1277 27153 D AudioFlinger: 0xb40000768ac19bc0:threadLoop_write write muted data to hw, mixerStatus 0 start, mId 509, mBytesWritten 9676800
+08-16 02:46:04.132  1232  1254 E libPowerHal: [getHintRscSize] hint_id 56 cannot be found in PowerScnTbl
+08-16 02:46:04.141  1987  3640 W Settings: Setting notification_bubbles has moved from android.provider.Settings.Global to android.provider.Settings.Secure, returning read-only value.
+08-16 02:46:04.141  1987  3640 W Settings: Setting apply_ramping_ringer has moved from android.provider.Settings.Global to android.provider.Settings.System, returning read-only value.
+08-16 02:46:04.143  1987  3640 W SettingsStatsUtil: Can not parse value to float: +network
+08-16 02:46:04.144  1987  3640 E SettingsTelemetryUtils: PEAK_REFRESH_RATE value is null
+08-16 02:46:04.145  1987  3640 W SettingsStatsUtil: Can not parse value to float: +network
+08-16 02:46:04.150  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:04.150  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: already had this task.
+08-16 02:46:04.157  1219  1374 I OriginChannel: now system_time:524945899	pwm_rgb: system_time:524945699, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1604, g:766, b:442, c:2835, algo:2, end:0, ts:524945697494919	
+08-16 02:46:04.157  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1589.0/766.0/442.0/2835.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:04.195  9414 17373 D ShellSubscriberWorkerThread: the first 8 bytes empty, and RestData length > 8 
+08-16 02:46:04.209  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=25.86 dur=1005.27 max=207.57 min=6.27
+08-16 02:46:04.272 14987 14987 D WifiHAL : WifiRequest::create vendor command to iface 40, vendor_id=0x1a11, subcmd=0x1200, res=0
+08-16 02:46:04.282 14987 14987 D WifiHAL : WifiCommand::requestResponse: receive
+08-16 02:46:04.283 14987 14987 I WifiHAL : LLS RSP: data=0xb400007baf26f020, len=5668
+08-16 02:46:04.283 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=20
+08-16 02:46:04.283 14987 14987 I WifiHAL : LLS check_data_sanity: 1821: current_radio_stat->num_channels=16
+08-16 02:46:04.283 14987 14987 I WifiHAL : LLS check_data_sanity: confirmed_size=5668, len=5668
+08-16 02:46:04.291  1169 25215 E TetherController: property_get sys.radio.data.modem_share_flag return 0, 1!
+08-16 02:46:04.357  1219  1374 I OriginChannel: now system_time:524946099	pwm_rgb: system_time:524945899, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1589, g:766, b:442, c:2835, algo:2, end:0, ts:524945897693813	
+08-16 02:46:04.357  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:04.358  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:04.411  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:04.455  1219  1372 W AString : ctor got NULL, using empty string instead
+08-16 02:46:04.456  1219  1372 I sensors-hal-SensorSavedChannel: [-4316,-145,357]==>gyro_bias.json
+08-16 02:46:04.462  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:04.513  1277  1640 D AudioPolicyEffects: releaseOutputSessionEffects: no output processing was attached to this stream
+08-16 02:46:04.514  1277  1640 D AudioPolicyInterfaceImpl: mSessionLatestHandleList removeItem on session 19545, port = 4821
+08-16 02:46:04.514  1277 27153 D AudioBoost: removeActiveTrack id 4326
+08-16 02:46:04.514  1277  1640 D AudioPolicyManagerCustomImpl: hifiAudio_stopOutputSamplerate() -output = 509, porId = 4821, samplerate = 48000  HifiState = 1,  stream 3, session 19545
+08-16 02:46:04.514  1277 27153 D AudioBoost: doStopBoostForWake id 4326 +++
+08-16 02:46:04.514  1277  1640 D APM_AudioPolicyManager: stopOutput portId 4821
+08-16 02:46:04.514  1277 27153 D AudioBoost: audioSchedBoost, pid=6302, tid=6399, enable=0, ret=0
+08-16 02:46:04.514  1987  3735 I IPCThreadState: oneway function results for code 10007 on binder at 0xb400007a1279a240 will be dropped but finished with status UNKNOWN_TRANSACTION
+08-16 02:46:04.514  1277 27153 D AudioBoost: doStopBoostForWake id 4326 ---
+08-16 02:46:04.514  1277  1640 D APM_AudioPolicyManager: stopOutput() output 509, stream 3, session 19545
+08-16 02:46:04.514  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:04.514  1277 27153 D AudioFlingerExtImpl: updateMetaScenes mMetaScenesOwnerMap[4]=[0,-1]
+08-16 02:46:04.514  1277 27153 D AudioFlingerExtImpl: updateMetaScenes mMetaScenesOwnerMap[5]=[0,-1]
+08-16 02:46:04.514  1277 27153 D AudioFlinger_PlaybackThreadExtImpl: addActiveTrackPid isSpatialzierTrackPlaying:0 isMetaTrackPlaying:0 isMetaTrack:0
+08-16 02:46:04.514  1277 27153 D AudioFlingerExtImpl: getSplitScreenSwitch: screenSwitch = 0
+08-16 02:46:04.515  1987  4072 I OStatsManager_Calc: noteAudio: uid = 10423, start = false
+08-16 02:46:04.515  1987  2131 W QosScheduler: executeSceneQosStrategy failed! qos feature no enable
+08-16 02:46:04.515  1277  1640 D APM_AudioPolicyManager: setOutputDevice() output 509 device AUDIO_DEVICE_NONE force 0 delayMs 300
+08-16 02:46:04.515  1277  1640 W AudioPolicyManagerCustomImpl: [MTK_APM_Route]setOutputDevices() mIoHandle 509 mId 4607 device (0x80)(0x80, 0x100, 0x200) delayMs 300 force 0 size 7
+08-16 02:46:04.517  1277 27153 D AudioFlinger_PlaybackThreadExtImpl: notifyAudioTrackRemove event:atlas_event_audio_track_distroy info:pid:6302,sessionId:19545,streamType:3,sampleRate:48000,flags:524288,isOffloadThread:0,deviceTypes:128,hasFastMixer:0,isSpatialized:0,stopvl:1.000,stopvr:1.000,metaAudioScene:0,window_rendering:0,mss_mode:0,mss_ratio_vocal:0,mss_ratio_other:0,volumeswitch:0,trackvolumepkg:com.antigravity.audioplayer
+08-16 02:46:04.517  1277 27153 D AtlasEventUploadUtils: setEvent event:atlas_event_audio_track_distroy
+08-16 02:46:04.519  1277 27153 D AudioFlingerExtImpl: removeActiveAudioSession, remove 19545, map size 1
+08-16 02:46:04.519  1277 27153 D AFExtImpl: ~TrackInfo() 0xb4000076d3262c40
+08-16 02:46:04.519  1277 27153 D AFExtImpl: clearDumpBuffer() 0xb4000076d3262c40, mDumpBufferCount 0
+08-16 02:46:04.519  1277 27153 D AudioFlinger: updateWakeLockUids_l AudioOut_1FD uids:
+08-16 02:46:04.521  3125  4111 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://www.google.com/generate_204
+08-16 02:46:04.522  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:46:04.522  3269  5004 D SubsysThreadPool: execute task
+08-16 02:46:04.525  3125  4111 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://developers.google.com/generate_204
+08-16 02:46:04.526  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:46:04.526  3269  5004 D SubsysThreadPool: execute task
+08-16 02:46:04.526  3125  4111 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://play.googleapis.com/generate_204
+08-16 02:46:04.527  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:46:04.527  3269  5004 D SubsysThreadPool: execute task
+08-16 02:46:04.527  3125  4111 D OplusCellularNetworkConfig: getDnsQueryPriority value=http://play.googleapis.com/generate_204
+08-16 02:46:04.527  3269  5004 D NetworkService[0]: getActiveNetworks networkList size:1
+08-16 02:46:04.527  3269  5004 D SubsysThreadPool: execute task
+08-16 02:46:04.529  1277  1640 D GameAudioEffects: hasAliveFastEffectTracks  return (0)
+08-16 02:46:04.529  1277  1640 D AudioPolicyManagerExtImpl: oplusSelectOutputForMusicEffects: pendingOutput  => 509  flags => 0x00080000  outputTageName =>a2dp output outputs.size(2) older music effect ouput(509), hasAliveGameTracks(0)
+08-16 02:46:04.529  1277  1640 D GameAudioEffects: hasAliveRequestFastTracks  return (0)
+08-16 02:46:04.531  1987  3640 D AS.AudioService: uid 1000, callingApp = android.uid.system:1000
+08-16 02:46:04.532  4090  4090 I AEC.PlaybackManager: Received action: android.Multimedia.AudioEffect.AudioTrack_BROADCAST
+08-16 02:46:04.535  3269  3269 D SysBroadcastReceiver: android.media.ACTION_AUDIO_PLAYBACK_STATE_CHANGED
+08-16 02:46:04.535  3269  3269 D SysBroadcastReceiver: EventId=1010003	ID_AUDIO_PLAYBACK_STATE_CHANGED	TimeStamp =1786812364535	Intent =Intent { act=android.media.ACTION_AUDIO_PLAYBACK_STATE_CHANGED flg=0x4000010 xflg=0x4 (has extras) }	Content =null	Pid =0	PkgName =null
+08-16 02:46:04.537  1277  3716 D AudioFlingerExtImpl: getAllActiveMusicTrackPids dump Music pids => 
+08-16 02:46:04.537  1987  3735 V AudioServiceExtImpl: oplusGetParameters() keyValuePairs:OPLUS_AUDIO_GET_DEVICE_VOLUME_INDEX_FORMUSIC:2, uid: 1000
+08-16 02:46:04.537  1987  3735 D AudioServiceExtImpl: KEYS_GET_DEVICE_VOLUME_INDEX vol:29 device2
+08-16 02:46:04.538  3269  3269 D SubsysBroadcastManager: onReceive action:android.media.ACTION_AUDIO_DEVICE_ROUTE_CHANGED
+08-16 02:46:04.538  3269  3269 D HeadNearEvent: Recevice audioDeviceRoute status:0
+08-16 02:46:04.538  1987  3735 V AudioServiceExtImpl: oplusGetParameters() keyValuePairs:OPLUS_AUDIO_GET_DEVICE_FORSTREAM:3, uid: 1000
+08-16 02:46:04.538  4090  9494 E AEC.SpatializerManager: setSpkVolParam(): new value: 2; old value: -1
+08-16 02:46:04.539  1987  3735 I AS.SpatializerHelper: isEnabled false
+08-16 02:46:04.539  4090  9494 E AEC.SpatializerManager: setParameter failed because spatializer is not available! 
+08-16 02:46:04.539  1987  1987 D OplusWifiBroadCastDispatcher: mBroadcastReceiver: onReceiver  action=android.media.ACTION_AUDIO_DEVICE_ROUTE_CHANGED
+08-16 02:46:04.539  4090  9494 E AEC.SpatializerManager: setFlodingModeParam param is the same
+08-16 02:46:04.539  1987  3735 V AudioServiceExtImpl: oplusGetParameters() keyValuePairs:OPLUS_AUDIO_GET_DEVICE_FORSTREAM:3, uid: 1000
+08-16 02:46:04.539  1987  2525 I OplusWifiSarManager: Received action: android.media.ACTION_AUDIO_DEVICE_ROUTE_CHANGED
+08-16 02:46:04.540  3269  5072 W AppSenseEventManager: handleMessage dispatcher is null.
+08-16 02:46:04.540  2691  2691 I SystemUi--Volume: MultiMediaRepository-->musicStateReceiver onReceive
+08-16 02:46:04.540  4090  9494 E AEC.SpatializerManager: setRevChnParam param is the same
+08-16 02:46:04.540  4090  9494 E AEC.SpatializerManager: setRotationParam(): new value: 0; old value: -1
+08-16 02:46:04.540  3174  3842 I AMC     : [TriggerForeground] update top pkg to:null
+08-16 02:46:04.540  2691  2813 I SystemUi--Volume: MultiMediaRepository-->updateMultiMediaPlayState pid:6302,state:0,sessionId:19545,packageName:com.antigravity.audioplayer
+08-16 02:46:04.540  2691  2813 I SystemUi--Volume: MultiMediaRepository-->onMultiMediaStateChange pid= 6302,state= 0 ,sessionId=19545,packageName=com.antigravity.audioplayer
+08-16 02:46:04.540  2691  2691 I SystemUi--Volume: VolumeListAdapter-->removeItem VibePlayer Hi-Restrue
+08-16 02:46:04.540  1987  3735 I AS.SpatializerHelper: isEnabled false
+08-16 02:46:04.540  2691  2691 I SystemUi--Volume: MultiMediaRepository-->updateMultiMediaPlayState removeView row.stream :6302,pid :6302,row.sessionId:19545,sessionId :19545,panelVisible:false
+08-16 02:46:04.540  4090  9494 E AEC.SpatializerManager: setParameter failed because spatializer is not available! 
+08-16 02:46:04.540  4090  9494 E AEC.SpatializerManager: setSpatBtTypeParam(): new value: 1; old value:-1
+08-16 02:46:04.541  1987  3735 I AS.SpatializerHelper: isEnabled false
+08-16 02:46:04.541  4090  9494 E AEC.SpatializerManager: setParameter failed because spatializer is not available! 
+08-16 02:46:04.541  4090  9494 E AEC.AudioxService: setEffectBtDevice param is the same
+08-16 02:46:04.542  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:46:04.542  4090  7740 I OplusAtlasAudioDataRecorder:  stopPid:6302 stopSession:19545 containsKey:true mAllVolumpMap size:1 packageName: com.antigravity.audioplayer window_rendering: 0 mReduceVolumeMap size: 0 stopvl: 1.0 stopvr: 1.0 volumeswitch: 0
+08-16 02:46:04.542  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:46:04.542  3174  3748 D DnsDomainBlock: onDnsEvent: latencyMs=0, returnCode=11, uid=1000
+08-16 02:46:04.542  4090  7740 D OplusAtlasFeedback: uploadMMCollectData MM_FB_EventID#20002#TopUidRxt#-1#MetaAudioPos#[0.0|0.0|0.0]#MinFC#2886#ChannelCount#2#PackageName#com.antigravity.audioplayer#EffectChains#1#TopUidTxt#-1#OldScore#0#mss_ratio_other#0#StreamVolume#34#multivolumeswitch#0#mss_ratio_vocal#0#AppName#VibePlayer Hi-Res#SampleRate#48000#Format#5#MetaAudioScene#0#balance#0.0#IsSpatialized#0#TotalTime#34195#TopActivity##AudioID#d343410bf268#StreamType#3#RequestFC#0#mss_mode#0#trackVolumePkg#com.antigravity.audioplayer#Versioncode#1#FrameCount#2886#StartTime#2026/08/16 02:45:30#stopvr#1.0#UsingDevice#128#stopvl#1.0#Flag#524288#NewScore#0#startvl#1.0#startvr#1.0#window_rendering#0#Foreground#1#Id#509#NetState#1
+08-16 02:46:04.556  1219  1374 I OriginChannel: now system_time:524946298	pwm_rgb: system_time:524946099, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1589, g:766, b:442, c:2835, algo:2, end:0, ts:524946097737775	
+08-16 02:46:04.558  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1604.0/766.0/442.0/2850.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:04.601  1987  2444 D AS.AudioService: uid 1000, callingApp = android.uid.system:1000
+08-16 02:46:04.605  1277 14725 D APM_AudioPolicyManager: [MTK_APM_Route]setForceUse() usage 1, config 0, mPhoneState 0
+08-16 02:46:04.607  1277  1640 D AudioPolicyManagerExtImpl: setParameters spatializer_enable=off
+08-16 02:46:04.607  1277  1640 D AudioPolicyManagerExtImpl: set spatializer_enable off
+08-16 02:46:04.628  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000001, index 112, muted 0
+08-16 02:46:04.629  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:46:04.630  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:04.630  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:04.630  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:04.632  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000002, index 29, muted 0
+08-16 02:46:04.638  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000020, index 100, muted 0
+08-16 02:46:04.640  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000080, index 34, muted 0
+08-16 02:46:04.644  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 04000000, index 42, muted 0
+08-16 02:46:04.648  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 40000000, index 100, muted 0
+08-16 02:46:04.665  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000001, index 11, muted 0
+08-16 02:46:04.668  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000002, index 3, muted 0
+08-16 02:46:04.670  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000020, index 10, muted 0
+08-16 02:46:04.672  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000080, index 3, muted 0
+08-16 02:46:04.675  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 04000000, index 4, muted 0
+08-16 02:46:04.677  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 40000000, index 10, muted 0
+08-16 02:46:04.682  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000001, index 11, muted 0
+08-16 02:46:04.685  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000002, index 4, muted 0
+08-16 02:46:04.687  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:46:04.688  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000020, index 10, muted 0
+08-16 02:46:04.689  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:46:04.690  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000080, index 4, muted 0
+08-16 02:46:04.693  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 04000000, index 5, muted 0
+08-16 02:46:04.694  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 40000000, index 10, muted 0
+08-16 02:46:04.698  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000001, index 11, muted 0
+08-16 02:46:04.702  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000002, index 3, muted 0
+08-16 02:46:04.704  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000020, index 10, muted 0
+08-16 02:46:04.705  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 00000080, index 3, muted 0
+08-16 02:46:04.707  1277 14725 D APM_AudioPolicyManager: setVolumeCurveIndex device 04000000, index 4, muted 0
+08-16 02:46:04.711  1277  3716 D APM_AudioPolicyManager: setVolumeCurveIndex device 40000000, index 10, muted 0
+08-16 02:46:04.757  1219  1374 I OriginChannel: now system_time:524946498	pwm_rgb: system_time:524946298, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1604, g:766, b:442, c:2850, algo:2, end:0, ts:524946297251116	
+08-16 02:46:04.757  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:04.759  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:04.770  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:04.811  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:04.812  1395  1395 I touch_boost: enable=0, boost_up=0, boost_down=1, render_deboost=1, active_time=100, duration=100, idleprefer(TA,FG)=(1,1), util(TA,FG)=(0,30), freq(c0,c1,c2)=(1300000,1200000,1200000)
+08-16 02:46:04.813  1395  1395 I touch_boost: set_top_grp_aware
+08-16 02:46:04.814  1395  1395 I touch_boost: enable=1, boost_up=0, boost_down=1, render_deboost=1, active_time=100, duration=100, idleprefer(TA,FG)=(1,1), util(TA,FG)=(0,30), freq(c0,c1,c2)=(1300000,1200000,1200000)
+08-16 02:46:04.816  1395  1395 I touch_boost: set_top_grp_aware
+08-16 02:46:04.816  2691  2949 I SystemUi--NavBar: SideGestureDetector-->isInvalidEvent:false ,isMisTouchInvalidEvent = false  ,disableCui:false  ,ev:MotionEvent { action=ACTION_DOWN, actionButton=0, id[0]=0, x[0]=257.625, y[0]=2591.5, toolType[0]=TOOL_TYPE_FINGER, buttonState=0, classification=NONE, metaState=0, flags=0x0, edgeFlags=0x0, pointerCount=1, historySize=0, eventTime=442626042, downTime=442626042, deviceId=2, source=0x1002, displayId=0, eventId=428594104 }
+08-16 02:46:04.816  2866  2866 W OPLUS_LOG_LOAD: ==LOGS PROG INFO, prog(com.android.launcher) ==
+08-16 02:46:04.816  6302  6302 I DynamicFramerate [AnimationSpeedAware]: onEventHandled: info: InputEventInfo: mX = 0, mY = 0, mAction = 0, mVsyncTime = 442626046, mIsMoving = true, mUpdated = true
+08-16 02:46:04.816  2866  2866 D AnimSeqTimeStamp: getTimeGapToLastStartAppTime: 442626046
+08-16 02:46:04.816  6302  6302 E IJankManager: slideSceneEnd unknown scene 1000 mScene:-1
+08-16 02:46:04.816  2691  2949 I SystemUi--NavBar: NoBackGesture-->display_id_0 Start gesture: MotionEvent { action=ACTION_DOWN, actionButton=0, id[0]=0, x[0]=257.625, y[0]=2591.5, toolType[0]=TOOL_TYPE_FINGER, buttonState=0, classification=NONE, metaState=0, flags=0x0, edgeFlags=0x0, pointerCount=1, historySize=0, eventTime=442626042, downTime=442626042, deviceId=2, source=0x1002, displayId=0, eventId=428594104 } ,mRotation = 0
+08-16 02:46:04.816  2691  2949 I SystemUi--NavBar: NoBackGesture-->display_id_0 isWithinInsets mDisplaySize.x = 1272  mDisplaySize.y = 2800 mSideGestureAreaWidthRight = 84 mSideGestureAreaWidthLeft 84
+08-16 02:46:04.816  2691  2949 I SystemUi--NavBar: NoBackGesture-->display_id_0 Not in side gesture area
+08-16 02:46:04.816  1232  1353 I [UAH_CLIENT]: UahPlatformResAcquire
+08-16 02:46:04.816  1232  1353 I [UAH_CLIENT]: UahEventAcquire, cmdid:-3, pkg:1395 1395 -1 3, identity:mtk-powerd
+08-16 02:46:04.816  6302  6302 V AutofillManager: requestHideFillUi(null): anchor = null
+08-16 02:46:04.816  1987  2167 D PowerManagerService: userActivityNoUpdateLocked: groupId=0, eventTime=442626042, event=touch, flags=0x0, uid=1000
+08-16 02:46:04.816  2866  2866 W OplusBaseTouchInteractionService[u0]: onInputEvent(), ACTION_DOWN, Consumer=TYPE_NO_OP:TYPE_ONE_HANDED
+08-16 02:46:04.817  1987  2778 I [UAH_CLIENT]: UahEventAcquire, cmdid:37, pkg:none, identity:OplusUAwareInputHelper
+08-16 02:46:04.818  1987  2778 D UAH-UahAdaptHelper: adaptSetNotification identity = OplusUAwareInputHelpersrc = 1000 , type 0 ,p1 = -1 ,p2 = -1 ,p3 = -1 ,p4 =
+08-16 02:46:04.818  1987  2778 I [UAH_CLIENT]: uahRuleCtl, ruleId:1000, status:0
+08-16 02:46:04.819  1987  2167 D PowerManagerService: userActivityNoUpdateLocked: groupId=0, eventTime=442626042, event=touch, flags=0x0, uid=1000
+08-16 02:46:04.819  1987  2540 D GestureLog_OplusMultiPointerDetector: onTouchEvent------>start, mCurNumPointers=1, mCurrStatus=0 mIsDownIntervalTimeout=true, action=0 downTime=442626042 deviceId=2
+08-16 02:46:04.835  1395  1395 I touch_boost: enable=0, boost_up=0, boost_down=1, render_deboost=1, active_time=100, duration=100, idleprefer(TA,FG)=(1,1), util(TA,FG)=(0,30), freq(c0,c1,c2)=(1300000,1200000,1200000)
+08-16 02:46:04.835  1395  1395 I touch_boost: set_top_grp_aware
+08-16 02:46:04.835  1232  1353 I [UAH_CLIENT]: UahRelease, handle:182254
+08-16 02:46:04.854  2866  2866 D AnimSeqTimeStamp: getTimeGapToLastStartAppTime: 442626085
+08-16 02:46:04.862  1215 30791 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:04.884  6302  6302 I DynamicFramerate [AnimationSpeedAware]: onEventHandled: info: InputEventInfo: mX = 0, mY = 0, mAction = 1, mVsyncTime = 442626114, mIsMoving = false, mUpdated = true
+08-16 02:46:04.884  2691  2754 D OneHandedTouchHandler: onMotionEvent: mIsInOutsideRegion = false, mIsOnStopTransitioning = false, rawY = 2591.5
+08-16 02:46:04.884  1987  2778 D UAH-UahAdaptHelper: adaptSetNotification identity = OplusUAwareInputHelpersrc = 1000 , type 1 ,p1 = -1 ,p2 = -1 ,p3 = -1 ,p4 =
+08-16 02:46:04.884  1987  2778 I [UAH_CLIENT]: uahRuleCtl, ruleId:1000, status:1
+08-16 02:46:04.885  2866  2866 D AnimSeqTimeStamp: getTimeGapToLastStartAppTime: 442626115
+08-16 02:46:04.886  2691  2949 I SystemUi--NavBar: SideGestureDetector-->isInvalidEvent:false ,isMisTouchInvalidEvent = false  ,disableCui:false  ,ev:MotionEvent { action=ACTION_UP, actionButton=0, id[0]=0, x[0]=257.625, y[0]=2591.5, toolType[0]=TOOL_TYPE_FINGER, buttonState=0, classification=NONE, metaState=0, flags=0x0, edgeFlags=0x0, pointerCount=1, historySize=0, eventTime=442626113, downTime=442626042, deviceId=2, source=0x1002, displayId=0, eventId=137026973 }
+08-16 02:46:04.886  6302  6302 D ViewRootImplExtImpl: the up motion event handled by client, just return
+08-16 02:46:04.890  1203 27246 E GetPresentationPositionTaskManager: GetPresentationPosition: timeout.
+08-16 02:46:04.913  1215 30791 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:04.937  1232  1254 E libPowerHal: [getHintRscSize] hint_id 56 cannot be found in PowerScnTbl
+08-16 02:46:04.956  1219  1374 I OriginChannel: now system_time:524946698	pwm_rgb: system_time:524946498, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1604, g:766, b:429, c:2850, algo:2, end:0, ts:524946497509544	
+08-16 02:46:04.957  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1604.0/766.0/442.0/2850.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:05.034  7963  7963 V DeepThinker: BroadcastReceiverWrapper: onReceive, start dispatch android.media.ACTION_AUDIO_PLAYBACK_STATE_CHANGED
+08-16 02:46:05.034  7963  7963 V DeepThinker: BroadcastReceiverWrapper: onReceive, finish dispatch android.media.ACTION_AUDIO_PLAYBACK_STATE_CHANGED  category : null  Time consuming : 0 ms
+08-16 02:46:05.039  2691  2691 I SystemUi--Notification: SimpleQsClock-->textWidth:220.0, mPaddingEnd 21, dynamicWidth 285, systemFontScale 1.0
+08-16 02:46:05.040  1297  1297 I BufferQueueProducer: [StatusBar#94](this:0xb4000073267e3af8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=1.01 dur=1976.20 max=997.44 min=978.76
+08-16 02:46:05.041  3269  5072 D AppSenseEventManager: MSG_DELAY_DISPATCH_INPUT_EVENT
+08-16 02:46:05.041  3269  5072 D AppSenseEventManager: MSG_DELAY_DISPATCH_CAMERA_STOP
+08-16 02:46:05.119  1277 27153 D AFExtImpl: removeThread() 0xb40000768ac19bc0, id=509
+08-16 02:46:05.120  1203  1929 I BTAudioHalDeviceProxyAIDL: Suspend: session_type=A2DP_SOFTWARE_ENCODING_DATAPATH, cookie=0x100, state=STARTED request
+08-16 02:46:05.121 12414 13308 I bluetooth-a2dp: [btif_av.cc:4875] btif_av_stream_started_ready: active_peer=xx:xx:xx:xx:1b:c3 state=3 flags=0x0(None) ready=true
+08-16 02:46:05.121 12414 13308 I BTAudioA2dpAIDL: [a2dp_encoding_aidl.cc:182] SuspendRequest: accepted
+08-16 02:46:05.121 12414 13308 I bluetooth-a2dp: [btif_av.cc:4778] btif_av_stream_suspend: 
+08-16 02:46:05.122 12414 12687 I bluetooth-a2dp: [btif_av.cc:4004] btif_av_handle_event: peer=xx:xx:xx:xx:1b:c3 handle=0x0 event=BTIF_AV_SUSPEND_STREAM_REQ_EVT(0x1e)
+08-16 02:46:05.122 12414 12687 I bluetooth-a2dp: [btif_av.cc:3250] ProcessEvent: state=Started peer=xx:xx:xx:xx:1b:c3 event=BTIF_AV_SUSPEND_STREAM_REQ_EVT(0x1e) flags=0x0(None) active_peer=true
+08-16 02:46:05.122 12414 12687 I bluetooth-a2dp: [btif_av.cc:3271] ProcessEvent: Peer xx:xx:xx:xx:1b:c3 : event=BTIF_AV_SUSPEND_STREAM_REQ_EVT(0x1e) flags=0x0(None)
+08-16 02:46:05.122 12414 12687 I bluetooth-a2dp: [btif_a2dp_source.cc:911] btif_a2dp_source_set_tx_flush: enable=true state=STATE_RUNNING
+08-16 02:46:05.122 12414 12687 I bluetooth-a2dp: [bta_av_api.cc:282] BTA_AvStop: bta_handle=0x41 suspend=true
+08-16 02:46:05.123 12414 12687 I bluetooth-a2dp: [bta_av_aact.cc:2437] bta_av_str_stopped: peer xx:xx:xx:xx:1b:c3 bta_handle:0x41 audio_open_cnt:1, p_data 0xb400007b65820ce0 start:1
+08-16 02:46:05.123 12414 12687 D bt_bta_dm: [bta_dm_act.cc:1090] bta_dm_rm_cback: BTA Role management callback count:2 status:BTA_SYS_CONN_IDLE peer:xx:xx:xx:xx:1b:c3
+08-16 02:46:05.123 12414 12687 D bluetooth: [bta_dm_pm.cc:980] bta_dm_pm_ssr: Request to put link to device:xx:xx:xx:xx:1b:c3 into power_mode:sniff_capable
+08-16 02:46:05.123 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_AV app_id:0 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.123 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_AG app_id:0 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.124 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_JV app_id:1 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.124 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_AV app_id:1 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.124 12414 12687 D bluetooth: [bta_dm_pm.cc:1039] bta_dm_pm_ssr: Setting sniff subrating for device:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable max_latency(s):0.75 min_local_timeout(s):0.00 min_remote_timeout(s):0.00
+08-16 02:46:05.124 12414 12687 I bt_btm_pm: [btm_pm.cc:369] BTM_SetSsrParams: Set sniff subrating state:immediate:active[0] max_latency:0x04b0 min_remote_timeout:0x0002 min_local_timeout:0x0002
+08-16 02:46:05.124 12414 12687 D bt_shim_hci: [hci_layer.cc:235] transmit_command: Sending command SNIFF_SUBRATING(0x0811)
+08-16 02:46:05.125 12414 12687 D btm_acl : [btm_acl.cc:908]  btm_set_link_policy
+08-16 02:46:05.125 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusDisableSniff, check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.125 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusDisableSniff] check ****me Buds Air7 Pro return 0
+08-16 02:46:05.126 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusDisableSniff] check ****me Buds Air7 Pro (Ишак) return 0
+08-16 02:46:05.126 12414 12687 D bt_device_interop: [interop_oplus.cc:797] interop_oplus_match_ver: [OplusDisableSniff] check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.126 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusDisableSniff] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.126 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusDisableSniff] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.126 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusDisableSniff] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.126 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusDisableSniff] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.126 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusRoleSwitchPolicyBlacklist, check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.127 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusRoleSwitchPolicyBlacklist] check ****me Buds Air7 Pro return 0
+08-16 02:46:05.127 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusRoleSwitchPolicyBlacklist] check ****me Buds Air7 Pro (Ишак) return 0
+08-16 02:46:05.127 12414 12687 D bt_device_interop: [interop_oplus.cc:797] interop_oplus_match_ver: [OplusRoleSwitchPolicyBlacklist] check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.127 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusRoleSwitchPolicyBlacklist] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.127 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusRoleSwitchPolicyBlacklist] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.127 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusRoleSwitchPolicyBlacklist] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.127 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusRoleSwitchPolicyBlacklist] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.127 12414 12687 D bt_shim_hci: [hci_layer.cc:235] transmit_command: Sending command WRITE_LINK_POLICY_SETTINGS(0x080d)
+08-16 02:46:05.128 12414 12687 D l2c_link: [l2c_link.cc:780] l2c_link_adjust_allocation: l2c_link_adjust_allocation  num_hipri: 0  num_lowpri: 2  low_quota: 8  round_robin_quota: 0  qq: 4
+08-16 02:46:05.128 12414 12687 I l2c_link: [l2c_link.cc:824] l2c_link_adjust_allocation: LCB Hndl=0x33
+08-16 02:46:05.128 12414 12687 D l2c_link: [l2c_link.cc:825] l2c_link_adjust_allocation: l2c_link_adjust_allocation LCB 0   Priority: 0  XmitQuota: 4
+08-16 02:46:05.128 12414 12687 D l2c_link: [l2c_link.cc:829] l2c_link_adjust_allocation: SentNotAcked: 1  RRUnacked: 0
+08-16 02:46:05.128 12414 12687 I l2c_link: [l2c_link.cc:824] l2c_link_adjust_allocation: LCB Hndl=0x34
+08-16 02:46:05.128 12414 12687 D l2c_link: [l2c_link.cc:825] l2c_link_adjust_allocation: l2c_link_adjust_allocation LCB 1   Priority: 0  XmitQuota: 4
+08-16 02:46:05.128 12414 12687 D l2c_link: [l2c_link.cc:829] l2c_link_adjust_allocation: SentNotAcked: 0  RRUnacked: 0
+08-16 02:46:05.128 12414 12721 D bt_shim_hci: [hci_layer.cc:196] OnTransmitPacketCommandComplete: Received cmd complete for SNIFF_SUBRATING(0x0811)
+08-16 02:46:05.128 12414 12687 I oplus_a2dp_choppy_proc: [oplus_a2dp_choppy_proc.cc:520] oplus_proc_a2dp_play_time: enter
+08-16 02:46:05.128 12414 12687 I oplus_a2dp_choppy_proc: [oplus_a2dp_choppy_proc.cc:522] oplus_proc_a2dp_play_time: map_choppy_cnt not create
+08-16 02:46:05.128 12414 12687 W bt_l2cap: [l2c_api.cc:1231]  L2CA_SetFlushTimeout Parameter deprecated for no automatic flush; please use 0x0000
+08-16 02:46:05.129 12414 12687 I bluetooth-a2dp: [avdt_api.cc:633] AVDT_SuspendReq: num_handles=1
+08-16 02:46:05.130 12414 12687 E bt_btu_hcif: [btu_hcif.cc:1096] btu_hcif_hdl_command_complete: Command complete for opcode:0x811 should not be handled here
+08-16 02:46:05.131 12414 12721 D bt_shim_hci: [hci_layer.cc:196] OnTransmitPacketCommandComplete: Received cmd complete for WRITE_LINK_POLICY_SETTINGS(0x080d)
+08-16 02:46:05.131 12414 12687 E bt_btu_hcif: [btu_hcif.cc:1096] btu_hcif_hdl_command_complete: Command complete for opcode:0x80d should not be handled here
+08-16 02:46:05.132 12414 12884 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:630] do_stack_up_sync: stack_to_apk_type = 10
+08-16 02:46:05.132 12414 12884 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:678] operator(): up_sync done.
+08-16 02:46:05.135 12414 12721 I bluetooth: [acl.cc:651] OnFlushOccurred: UNIMPLEMENTED
+08-16 02:46:05.136  3516 17698 I romserver.UIService: UIService start getSelfProtect com.oplus.romupdate
+08-16 02:46:05.136  3516 17698 I romserver.UIService: com.oplus.rom.server
+08-16 02:46:05.137  3516 17698 I romserver.SelfProtectUtils: pkgName already in self-protect list
+08-16 02:46:05.156  1219  1374 I OriginChannel: now system_time:524946898	pwm_rgb: system_time:524946698, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1604, g:766, b:442, c:2850, algo:2, end:0, ts:524946697495020	
+08-16 02:46:05.157  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:05.158  1215  1215 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:05.176  6302  6302 I Choreographer: Skipped 30 frames!  The application may be doing too much work on its main thread.
+08-16 02:46:05.195 12414 13211 W BTAudioClientAIDL: [client_interface_aidl.cc:657] ReadAudioData: 1440/1440 no data 10 ms
+08-16 02:46:05.196 12414 13211 W bluetooth-a2dp: [btif_a2dp_source.cc:1083] btif_a2dp_source_read_callback: UNDERFLOW: ONLY READ 0 BYTES OUT OF 1440
+08-16 02:46:05.203 12414 12721 I bluetooth: [acl.cc:639] OnQosSetupComplete: UNIMPLEMENTED
+08-16 02:46:05.208  1215  1215 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:05.214  1297  1297 I BufferQueueProducer: [com.antigravity.audioplayer/com.antigravity.audioplayer.MainActivity#73997](this:0xb4000072e969eaf8,id:-1,api:0,p:-1,c:1297) queueBuffer: fps=77.56 dur=1005.69 max=350.21 min=7.22
+08-16 02:46:05.215 12414 13211 W BTAudioClientAIDL: [client_interface_aidl.cc:657] ReadAudioData: 1440/1440 no data 10 ms
+08-16 02:46:05.215 12414 13211 W bluetooth-a2dp: [btif_a2dp_source.cc:1083] btif_a2dp_source_read_callback: UNDERFLOW: ONLY READ 0 BYTES OUT OF 1440
+08-16 02:46:05.234 12414 12884 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:630] do_stack_up_sync: stack_to_apk_type = 10
+08-16 02:46:05.234 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusA2dpChoppyAbnormal, check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.235 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusA2dpChoppyAbnormal] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.235 12414 13211 W BTAudioClientAIDL: [client_interface_aidl.cc:657] ReadAudioData: 1440/1440 no data 10 ms
+08-16 02:46:05.235 12414 13211 W bluetooth-a2dp: [btif_a2dp_source.cc:1083] btif_a2dp_source_read_callback: UNDERFLOW: ONLY READ 0 BYTES OUT OF 1440
+08-16 02:46:05.235 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusA2dpChoppyAbnormal] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.235 12414 12687 D bt_bta_dm: [bta_dm_act.cc:1090] bta_dm_rm_cback: BTA Role management callback count:2 status:BTA_SYS_CONN_IDLE peer:xx:xx:xx:xx:1b:c3
+08-16 02:46:05.236 12414 12687 D bluetooth: [bta_dm_pm.cc:980] bta_dm_pm_ssr: Request to put link to device:xx:xx:xx:xx:1b:c3 into power_mode:sniff_capable
+08-16 02:46:05.236 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_AV app_id:0 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.236 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_AG app_id:0 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.236 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_JV app_id:1 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.236 12414 12687 I bluetooth: [bta_dm_pm.cc:996] bta_dm_pm_ssr: Found connected service:BTA_ID_AV app_id:1 peer:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable
+08-16 02:46:05.237 12414 12687 D bluetooth: [bta_dm_pm.cc:1039] bta_dm_pm_ssr: Setting sniff subrating for device:xx:xx:xx:xx:1b:c3 spec_name:sniff_capable max_latency(s):0.75 min_local_timeout(s):0.00 min_remote_timeout(s):0.00
+08-16 02:46:05.237 12414 12687 I bt_btm_pm: [btm_pm.cc:369] BTM_SetSsrParams: Set sniff subrating state:immediate:active[0] max_latency:0x04b0 min_remote_timeout:0x0002 min_local_timeout:0x0002
+08-16 02:46:05.237 12414 12721 I bluetooth: [acl.cc:651] OnFlushOccurred: UNIMPLEMENTED
+08-16 02:46:05.237 12414 12687 D bt_shim_hci: [hci_layer.cc:235] transmit_command: Sending command SNIFF_SUBRATING(0x0811)
+08-16 02:46:05.238 12414 12687 I bluetooth-a2dp: [btif_av.cc:4004] btif_av_handle_event: peer=00:00:00:00:00:00 handle=0x41 event=BTA_AV_SUSPEND_EVT(0xf)
+08-16 02:46:05.238 12414 12687 I bluetooth-a2dp: [btif_av.cc:3250] ProcessEvent: state=Started peer=xx:xx:xx:xx:1b:c3 event=BTA_AV_SUSPEND_EVT(0xf) flags=0x1(LOCAL_SUSPEND_PENDING) active_peer=true
+08-16 02:46:05.238 12414 12687 I bluetooth-a2dp: [btif_av.cc:3329] ProcessEvent: Peer xx:xx:xx:xx:1b:c3 : event=BTA_AV_SUSPEND_EVT(0xf) status=0 initiator=true flags=0x1(LOCAL_SUSPEND_PENDING)
+08-16 02:46:05.238 12414 12687 I bluetooth-a2dp: [btif_a2dp.cc:182] btif_a2dp_on_suspended: ## ON A2DP SUSPENDED ## p_av_suspend=0xb400007b6586a6c0
+08-16 02:46:05.238 12414 12687 I oplus_bt_hpm: [oplus_bt_hpm.cc:314] oplus_bt_enable_hpm_bylink: [in], enable = false, pre_addr = 0x7a7ca0fa60
+08-16 02:46:05.238 12414 12687 D oplus_bt_hpm: [oplus_bt_hpm.cc:396] oplus_bt_enable_hpm_bylink: already disabled HPM
+08-16 02:46:05.238 12414 12687 D oplus_bt_hpm: [oplus_bt_hpm.cc:400] oplus_bt_enable_hpm_bylink: [out], SM -> 0, pre_addr = 00:00:00:00:00:00
+08-16 02:46:05.239 12414 12687 I oplus_bt_ibf: [oplus_bt_ibf.cc:97] oplus_bt_enable_ibf: can not set ibf!
+08-16 02:46:05.239 12414 12687 I bluetooth: [btif_bqr.cc:502] EnableAntennaSwitchBqr: : is_enable: false
+08-16 02:46:05.239 12414 12687 D oplus_bt_stack_a2dp_recovery: [oplus_bt_stack_a2dp_recovery.cc:389] oplus_a2dp_started: false, recovery: false
+08-16 02:46:05.239 12414 12687 I oplus_bt_stack_a2dp_recovery: [oplus_bt_stack_a2dp_recovery.cc:115] reset_a2dp_recovery:  
+08-16 02:46:05.239 12414 12687 I bluetooth-a2dp: [btif_a2dp_source.cc:869] btif_a2dp_source_on_suspended: state=STATE_RUNNING
+08-16 02:46:05.239 12414 12687 I bluetooth-a2dp: [btif_a2dp_source.cc:749] btif_a2dp_source_stop_audio_req: state=STATE_RUNNING
+08-16 02:46:05.239 12414 13211 I bluetooth-a2dp: [btif_a2dp_source.cc:980] btif_a2dp_source_audio_tx_stop_event: streaming true state=STATE_RUNNING
+08-16 02:46:05.239 12414 12687 I bluetooth-a2dp: [btif_av.cc:3747] btif_report_audio_state: peer=xx:xx:xx:xx:1b:c3 state=1
+08-16 02:46:05.240 12414 12687 I bluetooth-a2dp: [btif_av.cc:3220] OnExit: state=Started peer=xx:xx:xx:xx:1b:c3
+08-16 02:46:05.240 12414 12687 D btif_smart_audio: [oplus_btif_smart_audio.cc:141] update_a2dp_play_state_changed: remote_addr = xx:xx:xx:xx:1b:c3, isPlay = false
+08-16 02:46:05.240 12414 12687 I oplus_a2dp_choppy_proc: [oplus_a2dp_choppy_proc.cc:520] oplus_proc_a2dp_play_time: enter
+08-16 02:46:05.240 12414 12687 I oplus_a2dp_choppy_proc: [oplus_a2dp_choppy_proc.cc:522] oplus_proc_a2dp_play_time: map_choppy_cnt not create
+08-16 02:46:05.240 12414 12687 D bt_shim_hci: [hci_layer.cc:235] transmit_command: Sending command Unknown OpCode(0xfc31)
+08-16 02:46:05.240 12414 12687 I bluetooth: [soc_btif_av.cc:269]  soc_btif_av_set_tx_per_params Set PER report = 0
+08-16 02:46:05.241 12414 12687 I bluetooth-a2dp: [btif_av.cc:2863] OnEnter: state=Opened peer=xx:xx:xx:xx:1b:c3
+08-16 02:46:05.241 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.241 12414 12884 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:678] operator(): up_sync done.
+08-16 02:46:05.241 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.241 12414 12884 I BluetoothA2dpServiceJni: [com_android_bluetooth_a2dp.cpp:104] bta2dp_audio_state_callback: xx:xx:xx:xx:1b:c3: state: BTAV_AUDIO_STATE_STOPPED(0x1)
+08-16 02:46:05.241 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusAvrcpUseA2dpOnly, check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.241 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro return 0
+08-16 02:46:05.241 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак) return 0
+08-16 02:46:05.242 12414 12687 D bt_device_interop: [interop_oplus.cc:797] interop_oplus_match_ver: [OplusAvrcpUseA2dpOnly] check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.242 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.242 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.242 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.242 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.242 12414 12721 D bt_shim_hci: [hci_layer.cc:196] OnTransmitPacketCommandComplete: Received cmd complete for SNIFF_SUBRATING(0x0811)
+08-16 02:46:05.242 12414 12687 E bt_btu_hcif: [btu_hcif.cc:1096] btu_hcif_hdl_command_complete: Command complete for opcode:0x811 should not be handled here
+08-16 02:46:05.242 12414 12884 D AvrcpTargetJni: [com_android_bluetooth_avrcp_target.cpp:653] getCurrentPlayStatus: 
+08-16 02:46:05.244 12414 12721 D bt_shim_hci: [hci_layer.cc:196] OnTransmitPacketCommandComplete: Received cmd complete for Unknown OpCode(0xfc31)
+08-16 02:46:05.244 12414 12884 D AvrcpTargetJni: [com_android_bluetooth_avrcp_target.cpp:653] getCurrentPlayStatus: 
+08-16 02:46:05.245  1987  1987 D OplusWifiBroadCastDispatcher: mHighPriorityReceiver: onReceiver  action=android.bluetooth.a2dp.profile.action.PLAYING_STATE_CHANGED
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusAvrcpUseMusicOnly, check xx:xx:xx:xx:1b:c3 return true
+08-16 02:46:05.246  1987  2525 D OplusDumpFileObserver:  a2dp playing current state:11
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:614] interop_oplus_match_addr: OplusAvrcpUseA2dpOnly, check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro return 0
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:626]  interop_oplus_match_name_impl:[OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак) return 0
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:797] interop_oplus_match_ver: [OplusAvrcpUseA2dpOnly] check xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.246 12414 12687 D bt_device_interop: [interop_oplus.cc:639] interop_oplus_match_both_name_and_addr_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3 return false
+08-16 02:46:05.247 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.247 12414 12687 D bt_device_interop: [interop_oplus.cc:664] interop_oplus_match_both_name_addr_and_ver_impl: [OplusAvrcpUseA2dpOnly] check ****me Buds Air7 Pro (Ишак)-xx:xx:xx:xx:1b:c3-0x0D:0x02B0:0x0415 return false
+08-16 02:46:05.247 12414 13037 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:151] stack_down_sync_action: type=5, len=54
+08-16 02:46:05.247 12414 12414 I OplusCustomScanStrategy: msg.what = 4
+08-16 02:46:05.251 12414 13211 W BTAudioClientAIDL: [client_interface_aidl.cc:657] ReadAudioData: 28672/28672 no data 10 ms
+08-16 02:46:05.251 12414 13211 I BTAudioA2dpAIDL: [a2dp_encoding_aidl.cc:757] ack_stream_suspended: result=SUCCESS_FINISHED
+08-16 02:46:05.251  1203  1251 I MtkBTAudioProviderStub: streamSuspended - SessionType=A2DP_SOFTWARE_ENCODING_DATAPATH, status=SUCCESS
+08-16 02:46:05.251  1203  1251 I BTAudioSessionAidl: ReportControlStatus - status=SUCCESS for SessionType=A2DP_SOFTWARE_ENCODING_DATAPATH, bluetooth_audio=0x0100 suspended
+08-16 02:46:05.251  1203  1251 I BTAudioHalDeviceProxyAIDL: control_result_cb: session_type=A2DP_SOFTWARE_ENCODING_DATAPATH, cookie=0x100, previous_state=SUSPENDING, status=SUCCESS
+08-16 02:46:05.252  1203  1929 I BTAudioHalDeviceProxyAIDL: Suspend: session_type=A2DP_SOFTWARE_ENCODING_DATAPATH, cookie=0x100, state=STANDBY done
+08-16 02:46:05.252 12414 13211 I a2dp_encoder_avbr_fuzzy_logic: [oplus_lhdc_encoder_dynamic_abr_logic.cc:444] oplus_lhdc_get_avbr_default_bitrate_inx: oplus default bitrate 256kbps
+08-16 02:46:05.255 12414 12884 I oplus_bt_dual_sync: [oplus_bt_dual_sync.cc:151] stack_down_sync_action: type=28, len=51
+08-16 02:46:05.260  1215  1215 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:05.311  1215  1215 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:05.356  1219  1374 I OriginChannel: now system_time:524947098	pwm_rgb: system_time:524946898, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1604, g:766, b:442, c:2850, algo:2, end:0, ts:524946897507117	
+08-16 02:46:05.358  1987  2345 D FusionLightNextGen: raw_lux -1.0, raw_cct -1.0, r/g/b/c: 1619.0/766.0/442.0/2866.0, R/G/B: 127.0/108.0/83.0, bri 1759.0, lux: 0.000000, cct: -1.0, ir: 0.000000, conf: 0, cnt: 0
+08-16 02:46:05.360  1631  2491 D AALLightSensor: oldLux=0 [SA:-1 LA:-1] newLux=0 (oriLux: 0)
+08-16 02:46:05.558  1219  1374 I OriginChannel: now system_time:524947300	pwm_rgb: system_time:524947098, lux:34, time_delta:100, pwm_turbo:0, bri:1759, r:1619, g:766, b:442, c:2866, algo:2, end:0, ts:524947097484569	
+08-16 02:46:05.559  1987  2345 I CwbClient: setCWBDisplayType set mFeatureID = CWB_RGB_VALUE
+08-16 02:46:05.560  1215  1215 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2
+08-16 02:46:05.623  1395  1395 I touch_boost: enable=0, boost_up=0, boost_down=1, render_deboost=1, active_time=100, duration=100, idleprefer(TA,FG)=(1,1), util(TA,FG)=(0,30), freq(c0,c1,c2)=(1300000,1200000,1200000)
+08-16 02:46:05.623  1395  1395 I touch_boost: set_top_grp_aware
+08-16 02:46:05.628  6302  6302 I DynamicFramerate [AnimationSpeedAware]: onEventHandled: info: InputEventInfo: mX = 0, mY = 0, mAction = 0, mVsyncTime = 442626858, mIsMoving = true, mUpdated = true
+08-16 02:46:05.628  6302  6302 E IJankManager: slideSceneEnd unknown scene 1000 mScene:-1
+08-16 02:46:05.628  6302  6302 V AutofillManager: requestHideFillUi(null): anchor = null
+08-16 02:46:05.628  1987  2778 I [UAH_CLIENT]: UahEventAcquire, cmdid:37, pkg:none, identity:OplusUAwareInputHelper
+08-16 02:46:05.629  1987  2167 D PowerManagerService: userActivityNoUpdateLocked: groupId=0, eventTime=442626853, event=touch, flags=0x0, uid=1000
+08-16 02:46:05.630  1987  2778 D UAH-UahAdaptHelper: adaptSetNotification identity = OplusUAwareInputHelpersrc = 1000 , type 0 ,p1 = -1 ,p2 = -1 ,p3 = -1 ,p4 =
+08-16 02:46:05.630  1987  2778 I [UAH_CLIENT]: uahRuleCtl, ruleId:1000, status:0
+08-16 02:46:05.631  1987  2540 D GestureLog_OplusMultiPointerDetector: onTouchEvent------>start, mCurNumPointers=1, mCurrStatus=0 mIsDownIntervalTimeout=true, action=0 downTime=442626853 deviceId=2
+08-16 02:46:05.632  1987  2167 D PowerManagerService: userActivityNoUpdateLocked: groupId=0, eventTime=442626853, event=touch, flags=0x0, uid=1000
+08-16 02:46:05.639  1215  1215 D CwbService: RGB value: 127, 108, 83, hist:0, 0, 0,  rgb_state: 0
+08-16 02:46:05.649  3269  5004 D CommonApp-248-10423: transport layer data is invalid
+08-16 02:46:05.651  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:05.651  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:05.651  3269  5004 D ScorePolicy: handleScoreChanged: []
+08-16 02:46:05.662 10878 10878 I adbd    : adbd service requested 'shell,v2:export ANDROID_LOG_TAGS=''; exec logcat '-d' '-t' '1000' '-v' 'threadtime''
+08-16 02:46:05.688  4267  4308 I [UAH_CLIENT]: Uah_fetch_dataset enter
+08-16 02:46:05.689  4267  4308 E [UAH_CLIENT]: failed to get resource value
+08-16 02:46:05.690  1215  1215 D CwbService: normal mode or switch to doze from power off/doze suspend mode, mPowerMode = 2

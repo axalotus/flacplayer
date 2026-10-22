@@ -1,0 +1,285 @@
+package com.antigravity.audioplayer.data.storage
+
+import android.content.Context
+import android.net.Uri
+import com.antigravity.audioplayer.data.model.AudioFileMetadata
+import com.antigravity.audioplayer.data.model.AudioFormat
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+enum class ThemeMode {
+    LIGHT, DARK, AMOLED
+}
+
+class LibraryPreferences private constructor(private val context: Context) {
+
+    private val prefs = context.getSharedPreferences("vibe_player_prefs", Context.MODE_PRIVATE)
+    private val cacheFile = File(context.filesDir, "cached_tracks.json")
+
+    private val _themeMode = MutableStateFlow(
+        try {
+            ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.DARK.name) ?: ThemeMode.DARK.name)
+        } catch (e: Exception) {
+            ThemeMode.DARK
+        }
+    )
+    val themeMode = _themeMode.asStateFlow()
+
+    fun setThemeMode(mode: ThemeMode) {
+        prefs.edit().putString("theme_mode", mode.name).apply()
+        _themeMode.value = mode
+    }
+
+    private val _isBlurBackground = MutableStateFlow(prefs.getBoolean("is_blur_background", true))
+    val isBlurBackground = _isBlurBackground.asStateFlow()
+
+    fun setBlurBackground(value: Boolean) {
+        prefs.edit().putBoolean("is_blur_background", value).apply()
+        _isBlurBackground.value = value
+    }
+
+    private val _blurRadiusPercent = MutableStateFlow(prefs.getInt("blur_radius_percent", 80))
+    val blurRadiusPercent = _blurRadiusPercent.asStateFlow()
+
+    fun setBlurRadiusPercent(value: Int) {
+        val clamped = value.coerceIn(0, 100)
+        prefs.edit().putInt("blur_radius_percent", clamped).apply()
+        _blurRadiusPercent.value = clamped
+    }
+
+    // Audio Engine Mode: 0=AAudio (default), 1=OpenSL ES, 2=Hi-Res Direct
+    private val _audioEngineMode = MutableStateFlow(prefs.getInt("audio_engine_mode", 0))
+    val audioEngineMode = _audioEngineMode.asStateFlow()
+
+    fun setAudioEngineMode(mode: Int) {
+        prefs.edit().putInt("audio_engine_mode", mode).apply()
+        _audioEngineMode.value = mode
+    }
+
+    // Embedded Covers toggle (default true)
+    private val _isEmbeddedCoversEnabled = MutableStateFlow(prefs.getBoolean("is_embedded_covers", true))
+    val isEmbeddedCoversEnabled = _isEmbeddedCoversEnabled.asStateFlow()
+
+    fun setEmbeddedCoversEnabled(value: Boolean) {
+        prefs.edit().putBoolean("is_embedded_covers", value).apply()
+        _isEmbeddedCoversEnabled.value = value
+    }
+
+    // Dedicated Lyrics Folder Uri
+    private val _lyricsFolderUri = MutableStateFlow<String?>(prefs.getString("lyrics_folder_uri", null))
+    val lyricsFolderUri = _lyricsFolderUri.asStateFlow()
+
+    fun setLyricsFolderUri(uri: Uri?) {
+        if (uri != null) {
+            prefs.edit().putString("lyrics_folder_uri", uri.toString()).apply()
+            _lyricsFolderUri.value = uri.toString()
+        } else {
+            prefs.edit().remove("lyrics_folder_uri").apply()
+            _lyricsFolderUri.value = null
+        }
+    }
+
+    fun getSavedFolderUris(): List<Uri> {
+        val stringSet = prefs.getStringSet("folder_uris", emptySet()) ?: emptySet()
+        return stringSet.mapNotNull {
+            try { Uri.parse(it) } catch (e: Exception) { null }
+        }
+    }
+
+    fun saveFolderUri(uri: Uri) {
+        val current = getSavedFolderUris().map { it.toString() }.toMutableSet()
+        current.add(uri.toString())
+        prefs.edit().putStringSet("folder_uris", current).apply()
+    }
+
+    fun removeFolderUri(uri: Uri) {
+        val current = getSavedFolderUris().map { it.toString() }.toMutableSet()
+        current.remove(uri.toString())
+        prefs.edit().putStringSet("folder_uris", current).apply()
+    }
+
+    // Recently Played Tracks History (Ordered by most recent)
+    private val _recentlyPlayedIds = MutableStateFlow<List<String>>(
+        try {
+            val raw = prefs.getString("recently_played_ids", "") ?: ""
+            if (raw.isNotBlank()) raw.split(",") else emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    )
+    val recentlyPlayedIds = _recentlyPlayedIds.asStateFlow()
+
+    fun recordTrackPlayed(trackId: String) {
+        if (trackId.isBlank()) return
+        val current = _recentlyPlayedIds.value.toMutableList()
+        current.remove(trackId)
+        current.add(0, trackId)
+        val trimmed = current.take(50)
+        prefs.edit().putString("recently_played_ids", trimmed.joinToString(",")).apply()
+        _recentlyPlayedIds.value = trimmed
+    }
+
+    // Hidden Tracks Management
+    private val _hiddenTrackIds = MutableStateFlow<Set<String>>(
+        prefs.getStringSet("hidden_track_ids", emptySet()) ?: emptySet()
+    )
+    val hiddenTrackIds = _hiddenTrackIds.asStateFlow()
+
+    fun hideTrack(trackId: String) {
+        if (trackId.isBlank()) return
+        val current = _hiddenTrackIds.value.toMutableSet()
+        current.add(trackId)
+        prefs.edit().putStringSet("hidden_track_ids", current).apply()
+        _hiddenTrackIds.value = current
+    }
+
+    fun unhideTrack(trackId: String) {
+        if (trackId.isBlank()) return
+        val current = _hiddenTrackIds.value.toMutableSet()
+        current.remove(trackId)
+        prefs.edit().putStringSet("hidden_track_ids", current).apply()
+        _hiddenTrackIds.value = current
+    }
+
+    fun unhideAllTracks() {
+        prefs.edit().putStringSet("hidden_track_ids", emptySet()).apply()
+        _hiddenTrackIds.value = emptySet()
+    }
+
+    fun isTrackHidden(trackId: String): Boolean = _hiddenTrackIds.value.contains(trackId)
+
+    // Last Played Playback State Persistence
+    fun saveLastPlaybackState(trackId: String, progressMs: Long, queueIds: List<String>) {
+        if (trackId.isBlank()) return
+        prefs.edit()
+            .putString("last_played_track_id", trackId)
+            .putLong("last_played_progress_ms", progressMs)
+            .putString("last_queue_track_ids", queueIds.joinToString(","))
+            .apply()
+    }
+
+    fun saveLastProgress(progressMs: Long) {
+        prefs.edit().putLong("last_played_progress_ms", progressMs).apply()
+    }
+
+    fun getLastPlayedTrackId(): String? = prefs.getString("last_played_track_id", null)
+
+    fun getLastPlayedProgressMs(): Long = prefs.getLong("last_played_progress_ms", 0L)
+
+    fun getLastQueueTrackIds(): List<String> {
+        val raw = prefs.getString("last_queue_track_ids", "") ?: ""
+        return if (raw.isNotBlank()) raw.split(",") else emptyList()
+    }
+
+    // Equalizer State Persistence
+    fun saveEqualizerState(isEnabled: Boolean, bassBoostStrength: Int, presetName: String, bandGains: List<Float>) {
+        prefs.edit()
+            .putBoolean("eq_enabled", isEnabled)
+            .putInt("eq_bass_boost", bassBoostStrength)
+            .putString("eq_preset_name", presetName)
+            .putString("eq_band_gains", bandGains.joinToString(","))
+            .apply()
+    }
+
+    fun getEqualizerEnabled(): Boolean = prefs.getBoolean("eq_enabled", true)
+
+    fun getEqualizerBassBoost(): Int = prefs.getInt("eq_bass_boost", 350)
+
+    fun getEqualizerPresetName(): String = prefs.getString("eq_preset_name", "Flat") ?: "Flat"
+
+    fun getEqualizerBandGains(): List<Float>? {
+        val raw = prefs.getString("eq_band_gains", null) ?: return null
+        return try {
+            raw.split(",").map { it.toFloat() }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun saveCustomEqPresets(json: String) {
+        prefs.edit().putString("custom_eq_presets_json", json).apply()
+    }
+
+    fun getCustomEqPresetsJson(): String = prefs.getString("custom_eq_presets_json", "[]") ?: "[]"
+
+    fun saveCachedTracks(tracks: List<AudioFileMetadata>) {
+        try {
+            val jsonArray = JSONArray()
+            for (track in tracks) {
+                val obj = JSONObject().apply {
+                    put("id", track.id)
+                    put("title", track.title)
+                    put("artist", track.artist)
+                    put("album", track.album)
+                    put("durationMs", track.durationMs)
+                    put("uri", track.uri.toString())
+                    put("format", track.format.name)
+                    put("sampleRateHz", track.sampleRateHz)
+                    put("bitDepth", track.bitDepth)
+                    put("bitrateKbps", track.bitrateKbps)
+                    put("channels", track.channels)
+                    put("trackNumber", track.trackNumber)
+                    put("isStream", track.isStream)
+                    put("streamServerUrl", track.streamServerUrl ?: "")
+                    put("dateAdded", track.dateAdded)
+                }
+                jsonArray.put(obj)
+            }
+            cacheFile.writeText(jsonArray.toString())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun getCachedTracks(): List<AudioFileMetadata> {
+        if (!cacheFile.exists()) return emptyList()
+        val list = mutableListOf<AudioFileMetadata>()
+        try {
+            val jsonString = cacheFile.readText()
+            val jsonArray = JSONArray(jsonString)
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                val formatStr = obj.optString("format", "MP3")
+                val formatEnum = try { AudioFormat.valueOf(formatStr) } catch (e: Exception) { AudioFormat.MP3 }
+
+                list.add(
+                    AudioFileMetadata(
+                        id = obj.getString("id"),
+                        title = obj.getString("title"),
+                        artist = obj.getString("artist"),
+                        album = obj.getString("album"),
+                        durationMs = obj.getLong("durationMs"),
+                        uri = Uri.parse(obj.getString("uri")),
+                        format = formatEnum,
+                        sampleRateHz = obj.getInt("sampleRateHz"),
+                        bitDepth = obj.getInt("bitDepth"),
+                        bitrateKbps = obj.getInt("bitrateKbps"),
+                        channels = obj.optInt("channels", 2),
+                        trackNumber = obj.optInt("trackNumber", 0),
+                        isStream = obj.optBoolean("isStream", false),
+                        streamServerUrl = obj.optString("streamServerUrl").takeIf { it.isNotBlank() },
+                        dateAdded = obj.optLong("dateAdded", 0L)
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return list
+    }
+
+    companion object {
+        @Volatile
+        private var INSTANCE: LibraryPreferences? = null
+
+        fun getInstance(context: Context): LibraryPreferences {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: LibraryPreferences(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
+}
