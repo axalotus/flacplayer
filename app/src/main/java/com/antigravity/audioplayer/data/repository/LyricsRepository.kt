@@ -66,9 +66,26 @@ object LyricsRepository {
 
     fun setManualLyrics(trackId: String, lyricsData: LyricsData) {
         memoryCache.put(trackId, lyricsData)
-        if (activeTrackId == trackId) {
+        if (activeTrackId == null || activeTrackId == trackId) {
+            activeTrackId = trackId
             _currentLyrics.value = lyricsData
             _isLoading.value = false
+        }
+    }
+
+    suspend fun fetchOnlineLyricsForced(context: Context, track: AudioFileMetadata): LyricsData? {
+        activeTrackId = track.id
+        _isLoading.value = true
+        return withContext(Dispatchers.IO) {
+            val lyrics = com.antigravity.audioplayer.data.online.LrclibLyricsProvider.fetchLyrics(context, track, forceRefresh = true)
+            if (activeTrackId == track.id) {
+                if (lyrics != null) {
+                    memoryCache.put(track.id, lyrics)
+                }
+                _currentLyrics.value = lyrics
+                _isLoading.value = false
+            }
+            lyrics
         }
     }
 
@@ -125,6 +142,20 @@ object LyricsRepository {
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error extracting with MMR fallback", e)
+        }
+
+        // 5. Automated Online LRCLIB Fetch (if enabled in settings)
+        val prefs = LibraryPreferences.getInstance(context)
+        if (prefs.isOnlineLyricsEnabled.value) {
+            try {
+                val onlineLyrics = com.antigravity.audioplayer.data.online.LrclibLyricsProvider.fetchLyrics(context, track)
+                if (onlineLyrics != null) {
+                    Log.d(TAG, "Found online lyrics for ${track.title} via LRCLIB")
+                    return onlineLyrics
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error fetching online lyrics for ${track.title}", e)
+            }
         }
 
         return null

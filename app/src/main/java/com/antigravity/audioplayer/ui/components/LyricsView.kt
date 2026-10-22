@@ -13,8 +13,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Lyrics
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,6 +36,7 @@ import com.antigravity.audioplayer.data.model.LyricsData
 import com.antigravity.audioplayer.data.model.LyricsSource
 import com.antigravity.audioplayer.data.repository.LyricsRepository
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun LyricsView(
@@ -47,6 +50,9 @@ fun LyricsView(
     val context = LocalContext.current
     val lyricsData by LyricsRepository.currentLyrics.collectAsState()
     val isLoading by LyricsRepository.isLoading.collectAsState()
+
+    val coroutineScope = rememberCoroutineScope()
+    var isOnlineSearching by remember { mutableStateOf(false) }
 
     LaunchedEffect(track?.id) {
         LyricsRepository.loadLyricsForTrack(context, track)
@@ -69,11 +75,63 @@ fun LyricsView(
                 )
             }
 
+            lyricsData?.isInstrumental == true -> {
+                // Instrumental state
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.size(54.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.MusicNote,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Инструментальный трек",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = "В этой композиции отсутствует текст песни (информация LRCLIB).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    OutlinedButton(
+                        onClick = onPickLyricsFile,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Выбрать файл вручную", fontSize = 12.sp)
+                    }
+                }
+            }
+
             lyricsData == null || (lyricsData?.lines?.isEmpty() == true && lyricsData?.plainText.isNullOrBlank()) -> {
                 // Empty state
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Surface(
@@ -99,7 +157,7 @@ fun LyricsView(
                     )
 
                     Text(
-                        text = "Поместите файл с именем трека .lrc или .txt рядом с аудиофайлом, либо выберите файл вручную.",
+                        text = "Поместите файл с именем трека .lrc или .txt рядом с файлом, либо найдите в LRCLIB.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                         textAlign = TextAlign.Center
@@ -107,16 +165,53 @@ fun LyricsView(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    OutlinedButton(
-                        onClick = onPickLyricsFile,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Выбрать файл .lrc/.txt", fontSize = 13.sp)
+                        OutlinedButton(
+                            onClick = onPickLyricsFile,
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Файл", fontSize = 12.sp)
+                        }
+
+                        if (track != null) {
+                            Button(
+                                onClick = {
+                                    if (!isOnlineSearching) {
+                                        coroutineScope.launch {
+                                            isOnlineSearching = true
+                                            try {
+                                                LyricsRepository.fetchOnlineLyricsForced(context, track)
+                                            } finally {
+                                                isOnlineSearching = false
+                                            }
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                if (isOnlineSearching) {
+                                    CircularProgressIndicator(
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(14.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(if (isOnlineSearching) "Поиск..." else "Найти в LRCLIB", fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
             }

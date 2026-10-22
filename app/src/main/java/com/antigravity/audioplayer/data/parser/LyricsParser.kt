@@ -10,8 +10,13 @@ object LyricsParser {
     private val TIME_TAG_PATTERN = Pattern.compile("\\[(\\d{1,3}):(\\d{2})(?:[.:](\\d{1,3}))?\\]")
     private val OFFSET_PATTERN = Pattern.compile("\\[offset:\\s*([+-]?\\d+)\\]", Pattern.CASE_INSENSITIVE)
     private val HEADER_TAG_PATTERN = Pattern.compile("^\\[(ar|ti|al|by|length|offset|re|ve|id|tool|sign):.*\\]$", Pattern.CASE_INSENSITIVE)
+    private val WORD_TIME_PATTERN = Pattern.compile("<\\d{1,3}:\\d{1,2}(?:[.:]\\d{1,3})?>")
 
-    fun parse(rawContent: String, source: LyricsSource = LyricsSource.SIDECAR): LyricsData {
+    fun parse(rawContent: String, source: LyricsSource = LyricsSource.SIDECAR, isInstrumental: Boolean = false): LyricsData {
+        if (isInstrumental) {
+            return LyricsData.instrumental(source)
+        }
+
         if (rawContent.isBlank()) {
             return LyricsData(
                 isSynced = false,
@@ -71,13 +76,15 @@ object LyricsParser {
             }
 
             if (timestamps.isNotEmpty()) {
-                val text = trimmed.substring(lastTagEnd).trim()
+                val rawText = trimmed.substring(lastTagEnd).trim()
+                val text = WORD_TIME_PATTERN.matcher(rawText).replaceAll("").trim()
                 for (ts in timestamps) {
                     parsedLines.add(LyricLine(timestampMs = ts, text = text))
                 }
                 plainLines.add(text)
             } else {
-                plainLines.add(trimmed)
+                val text = WORD_TIME_PATTERN.matcher(trimmed).replaceAll("").trim()
+                plainLines.add(text)
             }
         }
 

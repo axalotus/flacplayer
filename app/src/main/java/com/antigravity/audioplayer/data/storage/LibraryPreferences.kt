@@ -83,6 +83,15 @@ class LibraryPreferences private constructor(private val context: Context) {
         }
     }
 
+    // Automated LRCLIB Online Lyrics
+    private val _isOnlineLyricsEnabled = MutableStateFlow(prefs.getBoolean("is_online_lyrics_enabled", true))
+    val isOnlineLyricsEnabled = _isOnlineLyricsEnabled.asStateFlow()
+
+    fun setOnlineLyricsEnabled(value: Boolean) {
+        prefs.edit().putBoolean("is_online_lyrics_enabled", value).apply()
+        _isOnlineLyricsEnabled.value = value
+    }
+
     fun getSavedFolderUris(): List<Uri> {
         val stringSet = prefs.getStringSet("folder_uris", emptySet()) ?: emptySet()
         return stringSet.mapNotNull {

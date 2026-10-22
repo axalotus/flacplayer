@@ -68,6 +68,7 @@ fun SettingsScreen(
     var autoResumeOnConnect by remember { mutableStateOf(true) }
 
     val lyricsFolderUri by prefs.lyricsFolderUri.collectAsState()
+    val isOnlineLyricsEnabled by prefs.isOnlineLyricsEnabled.collectAsState()
     val lyricsFolderPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -733,11 +734,38 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("Где ищутся тексты песен:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
-                                Text("1. Файлы .lrc и .txt рядом с аудиофайлом в папке музыки", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
-                                Text("2. Выделенная папка с текстами песен (настроена ниже)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
-                                Text("3. Встроенные теги трека (FLAC Vorbis / ID3 USLT)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+                                Text("Порядок поиска текстов песен:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                                Text("1. Встроенные теги трека (FLAC Vorbis / ID3 USLT / M4A)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+                                Text("2. Файлы .lrc и .txt рядом с аудиофайлом в папке музыки", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+                                Text("3. Выделенная папка с текстами песен (настроена ниже)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
+                                Text("4. Автоматический онлайн-поиск через LRCLIB (если включён)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                             }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                        // LRCLIB Auto-fetch Toggle
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text("Автопоиск в LRCLIB", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(
+                                    "Автоматически искать синхронизированные (.lrc) и обычные тексты в открытой базе LRCLIB",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                                )
+                            }
+                            Switch(
+                                checked = isOnlineLyricsEnabled,
+                                onCheckedChange = { prefs.setOnlineLyricsEnabled(it) }
+                            )
                         }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
