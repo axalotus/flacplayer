@@ -2,23 +2,38 @@ package com.antigravity.audioplayer.ui.screens
 
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -131,22 +146,19 @@ fun PlayerScreen(
         }
     }
 
-    // Swipe-to-dismiss gesture
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
-    val dragThreshold = 130f
-
-    val alphaAnim by animateFloatAsState(
-        targetValue = (1f - (dragOffsetY / 500f)).coerceIn(0.2f, 1f),
-        animationSpec = spring(), label = "alpha"
+    val swipeDownModifier = Modifier.draggable(
+        orientation = Orientation.Vertical,
+        state = rememberDraggableState { delta ->
+            if (delta > 25f) {
+                onCollapsePlayer()
+            }
+        },
+        onDragStopped = { velocity ->
+            if (velocity > 250f) {
+                onCollapsePlayer()
+            }
+        }
     )
-    val scaleAnim by animateFloatAsState(
-        targetValue = (1f - dragOffsetY / 3000f).coerceIn(0.92f, 1f),
-        animationSpec = spring(), label = "scale"
-    )
-
-    val draggableState = rememberDraggableState { delta ->
-        if (delta > 0) dragOffsetY = (dragOffsetY + delta).coerceAtLeast(0f)
-    }
 
     Box(
         modifier = modifier
@@ -179,7 +191,8 @@ fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(20.dp),
+                    .padding(20.dp)
+                    .then(swipeDownModifier),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
@@ -209,52 +222,39 @@ fun PlayerScreen(
             val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
             val progressFraction = (progressMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
 
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .scale(scaleAnim)
-                    .alpha(alphaAnim)
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .draggable(
-                        orientation = Orientation.Vertical,
-                        state = draggableState,
-                        onDragStopped = { velocity ->
-                            if (dragOffsetY > dragThreshold || velocity > 900f) {
-                                dragOffsetY = 0f
-                                onCollapsePlayer()
-                            } else {
-                                dragOffsetY = 0f
-                            }
-                        }
-                    )
+                    .padding(horizontal = 22.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // ── TOP: Drag pill + header (draggable) ───────────────────────────
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 22.dp, vertical = 6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .then(swipeDownModifier),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // ── TOP: Drag pill + header ──────────────────────────────────────
-                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Drag pill
-                        Box(
-                            modifier = Modifier
-                                .width(40.dp)
-                                .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
+                    // Drag pill
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f))
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Collapse button
-                            IconButton(onClick = onCollapsePlayer) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Collapse button
+                        IconButton(onClick = onCollapsePlayer) {
                                 Icon(
                                     Icons.Default.KeyboardArrowDown,
                                     contentDescription = "Свернуть",
@@ -338,11 +338,12 @@ fun PlayerScreen(
                         }
                     }
 
-                    // ── ALBUM ART / LYRICS TOGGLE ────────────────────────────────────
+                    // ── ALBUM ART / LYRICS TOGGLE (Unified Player Composition) ──────
                     Box(
                         modifier = Modifier
-                            .size(280.dp)
-                            .clip(RoundedCornerShape(22.dp)),
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         if (showLyrics) {
@@ -359,8 +360,11 @@ fun PlayerScreen(
                         } else {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .fillMaxHeight()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(22.dp))
                                     .clickable { showLyrics = true }
+                                    .then(swipeDownModifier)
                             ) {
                                 AlbumArtView(
                                     track = currentTrack,
@@ -372,20 +376,40 @@ fun PlayerScreen(
                     }
 
                     // ── TRACK INFO + QUALITY ─────────────────────────────────────────
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Title row with favorite heart
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Title row with thumbnail (in lyrics mode) and favorite heart
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top,
+                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            if (showLyrics) {
+                                Surface(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { showLyrics = false },
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    AlbumArtView(
+                                        track = currentTrack,
+                                        modifier = Modifier.fillMaxSize(),
+                                        cornerRadius = 10
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                            }
+
                             Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                 Text(
                                     text = currentTrack.title,
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 2,
+                                    maxLines = if (showLyrics) 1 else 2,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Start
                                 )
@@ -468,10 +492,15 @@ fun PlayerScreen(
                         }
 
                         // ── SEEK SLIDER ─────────────────────────────────────────────
+                        val sliderInteractionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        val isSliderDragged by sliderInteractionSource.collectIsDraggedAsState()
+                        val isSliderPressed by sliderInteractionSource.collectIsPressedAsState()
                         var isDraggingSlider by remember { mutableStateOf(false) }
                         var dragFraction by remember { mutableFloatStateOf(0f) }
-                        val activeSliderFraction = if (isDraggingSlider) dragFraction else progressFraction
-                        val activeDisplayProgressMs = if (isDraggingSlider) (dragFraction * totalDurationMs).toLong() else progressMs
+
+                        val isActivelyScrubbing = isDraggingSlider && (isSliderDragged || isSliderPressed)
+                        val activeSliderFraction = if (isActivelyScrubbing) dragFraction else progressFraction
+                        val activeDisplayProgressMs = if (isActivelyScrubbing) (dragFraction * totalDurationMs).toLong() else progressMs
 
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Slider(
@@ -485,6 +514,7 @@ fun PlayerScreen(
                                     onSeekTo(targetMs)
                                     isDraggingSlider = false
                                 },
+                                interactionSource = sliderInteractionSource,
                                 colors = SliderDefaults.colors(
                                     thumbColor = MaterialTheme.colorScheme.primary,
                                     activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -592,7 +622,6 @@ fun PlayerScreen(
                 }
             }
         }
-    }
 
     if (showOutputBottomSheet) {
         AudioOutputBottomSheet(

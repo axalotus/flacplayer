@@ -129,7 +129,7 @@ class AudioRepositoryImpl : AudioRepository {
                         fallbackAlbum = dir.name ?: "Unknown Album",
                         fallbackDuration = 0L,
                         fallbackPath = name,
-                        dateAdded = if (lastMod > 0) lastMod else System.currentTimeMillis()
+                        dateAdded = LibraryPreferences.getInstance(context).getOrSetTrackFirstSeenTime(file.uri.toString())
                     )
                     resultList.add(metadata)
                 }

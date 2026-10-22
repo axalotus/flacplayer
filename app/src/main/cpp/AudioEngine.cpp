@@ -86,6 +86,12 @@ int64_t AudioEngine::seekTo(int64_t targetFrame) {
     std::lock_guard<std::mutex> lock(mLock);
     if (!mDecoder) return -1;
 
+    if (targetFrame < 0) targetFrame = 0;
+    int64_t totalFrames = (int64_t)mDecoder->getTotalFrames();
+    if (totalFrames > 0 && targetFrame >= totalFrames) {
+        targetFrame = totalFrames - 1;
+    }
+
     LOG_OBOE_I("seekTo: targetFrame = %lld", (long long)targetFrame);
     mIsEof = false;
     mDecoderReachedEof = false;
@@ -101,6 +107,7 @@ int64_t AudioEngine::seekTo(int64_t targetFrame) {
 
     int64_t result = mDecoder->seek(targetFrame);
     int64_t actualFrame = (result >= 0) ? result : targetFrame;
+    if (actualFrame < 0) actualFrame = 0;
     uint32_t ch = mDecoder->getChannels();
     if (ch == 0) ch = 2;
     mPlayedSampleCount.store((uint64_t)(actualFrame * ch));
@@ -130,7 +137,8 @@ int64_t AudioEngine::getCurrentFrame() const {
     if (!mDecoder) return 0;
     uint32_t ch = mDecoder->getChannels();
     if (ch == 0) ch = 1;
-    return (int64_t)(mPlayedSampleCount.load() / ch);
+    uint64_t count = mPlayedSampleCount.load();
+    return (int64_t)(count / ch);
 }
 
 int64_t AudioEngine::getTotalFrames() const {

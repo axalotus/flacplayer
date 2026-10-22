@@ -92,6 +92,42 @@ class LibraryPreferences private constructor(private val context: Context) {
         _isOnlineLyricsEnabled.value = value
     }
 
+    // OTA Update Settings
+    private val _otaGithubRepo = MutableStateFlow(prefs.getString("ota_github_repo", "debil/flacplayer") ?: "debil/flacplayer")
+    val otaGithubRepo = _otaGithubRepo.asStateFlow()
+
+    fun setOtaGithubRepo(repo: String) {
+        val trimmed = repo.trim()
+        prefs.edit().putString("ota_github_repo", trimmed).apply()
+        _otaGithubRepo.value = trimmed
+    }
+
+    private val _otaGithubToken = MutableStateFlow(prefs.getString("ota_github_token", "") ?: "")
+    val otaGithubToken = _otaGithubToken.asStateFlow()
+
+    fun setOtaGithubToken(token: String) {
+        val trimmed = token.trim()
+        prefs.edit().putString("ota_github_token", trimmed).apply()
+        _otaGithubToken.value = trimmed
+    }
+
+    private val _otaAutoCheck = MutableStateFlow(prefs.getBoolean("ota_auto_check", true))
+    val otaAutoCheck = _otaAutoCheck.asStateFlow()
+
+    fun setOtaAutoCheck(value: Boolean) {
+        prefs.edit().putBoolean("ota_auto_check", value).apply()
+        _otaAutoCheck.value = value
+    }
+
+    fun getOrSetTrackFirstSeenTime(trackId: String): Long {
+        val key = "first_seen_$trackId"
+        val existing = prefs.getLong(key, 0L)
+        if (existing > 0L) return existing
+        val now = System.currentTimeMillis()
+        prefs.edit().putLong(key, now).apply()
+        return now
+    }
+
     fun getSavedFolderUris(): List<Uri> {
         val stringSet = prefs.getStringSet("folder_uris", emptySet()) ?: emptySet()
         return stringSet.mapNotNull {

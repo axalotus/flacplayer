@@ -268,6 +268,7 @@ object AudioPlayerService {
     fun seekTo(positionMs: Long) {
         lastSeekTimestamp = System.currentTimeMillis()
         _progressMs.value = positionMs
+        eofHandled = false
         appContext?.let { com.antigravity.audioplayer.data.storage.LibraryPreferences.getInstance(it).saveLastProgress(positionMs) }
         val track = _currentTrack.value
         if (track != null) {
@@ -301,39 +302,45 @@ object AudioPlayerService {
             Log.d(TAG, "Position & EOF Tracker loop started")
             while (isActive) {
                 delay(100)
-                if (!_isPlaying.value) continue
+                try {
+                    if (!_isPlaying.value) continue
 
-                // Check seek debouncing
-                val timeSinceSeek = System.currentTimeMillis() - lastSeekTimestamp
-                if (timeSinceSeek < 1000L) continue
+                    // Check seek debouncing
+                    val timeSinceSeek = System.currentTimeMillis() - lastSeekTimestamp
+                    if (timeSinceSeek < 200L) continue
 
-                val track = _currentTrack.value ?: continue
-                val sr = track.sampleRateHz.takeIf { it > 0 } ?: 44100
-                val framePos = NativeAudioEngine.getPosition()
-                val currentMs = (framePos * 1000L) / sr
-                _progressMs.value = currentMs
+                    val track = _currentTrack.value ?: continue
+                    val sr = track.sampleRateHz.takeIf { it > 0 } ?: 44100
+                    val framePos = NativeAudioEngine.getPosition()
+                    if (framePos < 0) continue
 
-                val now = System.currentTimeMillis()
-                if (now - lastProgressSaveTimestamp > 2000L) {
-                    lastProgressSaveTimestamp = now
-                    appContext?.let { com.antigravity.audioplayer.data.storage.LibraryPreferences.getInstance(it).saveLastProgress(currentMs) }
-                }
+                    val currentMs = (framePos * 1000L) / sr
+                    _progressMs.value = currentMs
 
-                val durationFrames = NativeAudioEngine.getDuration()
-                val totalMs = if (durationFrames > 0) (durationFrames * 1000L) / sr else track.durationMs
-                if (totalMs > 0) {
-                    _durationMs.value = totalMs
-                }
-
-                val isEngineEof = NativeAudioEngine.isEof()
-                val isTimeNearEnd = totalMs > 1000L && currentMs >= (totalMs - 250L)
-
-                if (!eofHandled && (isEngineEof || isTimeNearEnd)) {
-                    Log.d(TAG, "Track end detected! isEngineEof: $isEngineEof, isTimeNearEnd: $isTimeNearEnd (cur: $currentMs ms, dur: $totalMs ms)")
-                    eofHandled = true
-                    withContext(Dispatchers.Main) {
-                        playNextInternal()
+                    val now = System.currentTimeMillis()
+                    if (now - lastProgressSaveTimestamp > 2000L) {
+                        lastProgressSaveTimestamp = now
+                        appContext?.let { com.antigravity.audioplayer.data.storage.LibraryPreferences.getInstance(it).saveLastProgress(currentMs) }
                     }
+
+                    val durationFrames = NativeAudioEngine.getDuration()
+                    val totalMs = if (durationFrames > 0) (durationFrames * 1000L) / sr else track.durationMs
+                    if (totalMs > 0) {
+                        _durationMs.value = totalMs
+                    }
+
+                    val isEngineEof = NativeAudioEngine.isEof()
+                    val isTimeNearEnd = totalMs > 1000L && currentMs >= (totalMs - 250L)
+
+                    if (!eofHandled && (isEngineEof || isTimeNearEnd)) {
+                        Log.d(TAG, "Track end detected! isEngineEof: $isEngineEof, isTimeNearEnd: $isTimeNearEnd (cur: $currentMs ms, dur: $totalMs ms)")
+                        eofHandled = true
+                        withContext(Dispatchers.Main) {
+                            playNextInternal()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in position tracker loop", e)
                 }
             }
         }

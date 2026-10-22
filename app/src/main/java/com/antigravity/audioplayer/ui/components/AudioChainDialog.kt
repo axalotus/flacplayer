@@ -31,6 +31,7 @@ fun AudioChainModalSheet(
     isEqActive: Boolean,
     eqPresetName: String,
     bassBoostVal: Int,
+    engineMode: Int = 0,
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
@@ -67,13 +68,13 @@ fun AudioChainModalSheet(
                     )
                     Column {
                         Text(
-                            text = "Audio Signal Chain",
+                            text = "Тракт аудиосигнала",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Poweramp-Style Sound Pipeline",
+                            text = "C++ NDK Engine • Oboe • Float32 Pipeline",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -92,52 +93,71 @@ fun AudioChainModalSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Stage 1: Source Audio File
+            val isSourceHiRes = metadata.bitDepth >= 24 || metadata.sampleRateHz >= 88200
             ChainStageItem(
                 stepNumber = 1,
-                title = "Source File",
-                subtitle = "${metadata.format.name} Lossless Media",
+                title = "Исходный файл",
+                subtitle = "${metadata.format.name} (${if (isSourceHiRes) "Hi-Res Audio" else "Standard Audio"})",
                 icon = Icons.Default.AudioFile,
                 accentColor = MaterialTheme.colorScheme.primary,
                 details = listOf(
-                    "Format" to metadata.format.name,
-                    "Bit Depth" to "${metadata.bitDepth}-bit",
-                    "Sample Rate" to metadata.sampleRateKHzFormatted,
-                    "Bitrate" to "${metadata.bitrateKbps} kbps"
+                    "Формат" to metadata.format.name,
+                    "Разрядность" to if (metadata.bitDepth > 0) "${metadata.bitDepth}-бит" else "Недоступно",
+                    "Частота дискретизации" to if (metadata.sampleRateHz > 0) metadata.sampleRateKHzFormatted else "Недоступно",
+                    "Битрейт" to if (metadata.bitrateKbps > 0) "${metadata.bitrateKbps} кбит/с" else "VBR / Неизвестно",
+                    "Каналы" to when (metadata.channels) {
+                        2 -> "Стерео (2.0)"
+                        1 -> "Моно (1.0)"
+                        0 -> "Неизвестно"
+                        else -> "${metadata.channels} кан."
+                    }
                 ),
-                isHiRes = metadata.bitDepth >= 24 || metadata.sampleRateHz >= 88200
+                isHiRes = isSourceHiRes
             )
 
             ConnectorLine(color = MaterialTheme.colorScheme.primary)
 
-            // Stage 2: Decoder Engine
+            // Stage 2: C++ NDK Audio Decoder
+            val decoderName = when (metadata.format) {
+                com.antigravity.audioplayer.data.model.AudioFormat.FLAC -> "dr_flac v0.12 (David Reid)"
+                com.antigravity.audioplayer.data.model.AudioFormat.WAV -> "dr_wav v0.13 (David Reid)"
+                com.antigravity.audioplayer.data.model.AudioFormat.MP3 -> "minimp3_ex (Lieff)"
+                else -> "Android NDK Decoder Engine"
+            }
             ChainStageItem(
                 stepNumber = 2,
-                title = "Audio Decoder",
-                subtitle = if (metadata.format == com.antigravity.audioplayer.data.model.AudioFormat.FLAC) "Media3 Native FLAC Decoder" else "Android MediaCodec Engine",
+                title = "C++ Аудиодекодер",
+                subtitle = decoderName,
                 icon = Icons.Default.Memory,
                 accentColor = MaterialTheme.colorScheme.secondary,
                 details = listOf(
-                    "Decoder Engine" to "Media3 High-Fidelity",
-                    "Output Format" to "PCM Uncompressed",
-                    "Channels" to if (metadata.channels == 2) "Stereo 2.0" else "Mono 1.0"
+                    "Движок декодирования" to decoderName,
+                    "Выходной формат" to "IEEE 754 32-bit Float PCM",
+                    "Каналы декодера" to when (metadata.channels) {
+                        2 -> "Стерео (2.0)"
+                        1 -> "Моно (1.0)"
+                        else -> "${metadata.channels} кан."
+                    },
+                    "Частота дискретизации" to if (metadata.sampleRateHz > 0) metadata.sampleRateKHzFormatted else "Исходная"
                 )
             )
 
             ConnectorLine(color = MaterialTheme.colorScheme.secondary)
 
-            // Stage 3: Resampler / DSP Processing
+            // Stage 3: Ring Buffer & Precision
             ChainStageItem(
                 stepNumber = 3,
-                title = "DSP & Resampler",
-                subtitle = "32-Bit Float High-Precision Pipeline",
+                title = "Кольцевой буфер и точность",
+                subtitle = "Lock-Free 384k Buffer • 32-Bit Float",
                 icon = Icons.Default.Tune,
                 accentColor = MaterialTheme.colorScheme.tertiary,
                 details = listOf(
-                    "Internal Precision" to "32-bit Floating Point",
-                    "Processing Rate" to metadata.sampleRateKHzFormatted,
-                    "Resampler Mode" to "Bit-Perfect Passthrough"
+                    "Внутренняя точность" to "32-bit Floating Point (IEEE 754)",
+                    "Кольцевой буфер" to "384 000 сэмплов (Lock-Free)",
+                    "Ресемплинг" to if (engineMode == 2) "Отключён (Native Direct)" else "Системный (при необходимости)",
+                    "Потери разрядности" to "Отсутствуют (32-bit Float)"
                 ),
-                isHiRes = true
+                isHiRes = isSourceHiRes
             )
 
             ConnectorLine(color = MaterialTheme.colorScheme.tertiary)
@@ -145,46 +165,57 @@ fun AudioChainModalSheet(
             // Stage 4: Equalizer & Effects
             ChainStageItem(
                 stepNumber = 4,
-                title = "10-Band EQ & FX Engine",
-                subtitle = if (isEqActive) "Active Preset: $eqPresetName" else "Bypassed / Linear",
+                title = "10-полосный эквалайзер и DSP",
+                subtitle = if (isEqActive) "Активен пресет: $eqPresetName" else "Отключён (Bypass / Линейный)",
                 icon = Icons.Default.Equalizer,
                 accentColor = if (isEqActive) MaterialTheme.colorScheme.primary else Color.Gray,
                 details = listOf(
-                    "Equalizer State" to if (isEqActive) "ENABLED ($eqPresetName)" else "DISABLED",
-                    "Bass Boost" to if (bassBoostVal > 0) "+${bassBoostVal / 10}% Gain" else "Off",
-                    "DSP Bands" to "10 Bands (31Hz - 16kHz)"
+                    "Статус EQ" to if (isEqActive) "ВКЛЮЧЁН ($eqPresetName)" else "ОТКЛЮЧЁН (Bypass)",
+                    "Усиление баса" to if (bassBoostVal > 0) "+${bassBoostVal / 10}% усиление" else "Выключено",
+                    "Фильтры" to "10 полос Biquad IIR (31 Гц – 16 кГц)",
+                    "DSP движок" to "In-place Float32 DSP в C++"
                 )
             )
 
             ConnectorLine(color = MaterialTheme.colorScheme.primary)
 
-            // Stage 5: Audio Output Driver
+            // Stage 5: Audio Output Driver (Oboe C++)
+            val driverTitle = when (engineMode) {
+                1 -> "OpenSL ES Engine"
+                2 -> "AAudio Direct Hi-Res (No SRC)"
+                else -> "AAudio Low-Latency Engine"
+            }
             ChainStageItem(
                 stepNumber = 5,
-                title = "Output Driver",
-                subtitle = "AAudio Low-Latency Engine",
+                title = "Драйвер вывода звука",
+                subtitle = driverTitle,
                 icon = Icons.Default.Speed,
                 accentColor = MaterialTheme.colorScheme.secondary,
                 details = listOf(
-                    "Audio API" to "AAudio / AudioTrack Direct",
-                    "Performance Mode" to "Low Latency High-Res",
-                    "Buffer Size" to "192 frames (Optimal)"
+                    "Аудио API" to when (engineMode) {
+                        1 -> "OpenSL ES (Oboe NDK)"
+                        2 -> "AAudio Hi-Res (Oboe NDK)"
+                        else -> "AAudio Low-Latency (Oboe NDK)"
+                    },
+                    "Режим производительности" to if (engineMode == 1) "Standard" else "Low Latency",
+                    "Режим разделения" to "Shared (AudioFlinger)",
+                    "SRC (ресемплинг)" to if (engineMode == 2) "None (Exact Sample Rate)" else "Optimal"
                 )
             )
 
             ConnectorLine(color = MaterialTheme.colorScheme.secondary)
 
-            // Stage 6: Destination DAC & Headphones (Fixed Text Layout)
+            // Stage 6: Destination DAC & Headphones
             ChainStageItem(
                 stepNumber = 6,
-                title = "Output Device / ЦАП",
-                subtitle = dacInfo.deviceName,
-                icon = if (dacInfo.isExternalDac) Icons.Default.Usb else if (dacInfo.deviceType.contains("Bluetooth")) Icons.Default.Bluetooth else Icons.Default.Headphones,
+                title = "Устройство вывода / ЦАП",
+                subtitle = dacInfo.deviceName.ifBlank { "Системный вывод" },
+                icon = if (dacInfo.isExternalDac) Icons.Default.Usb else if (dacInfo.deviceType.contains("Bluetooth", ignoreCase = true)) Icons.Default.Bluetooth else Icons.Default.Headphones,
                 accentColor = if (dacInfo.isHiResSupported) Color(0xFFFFB703) else MaterialTheme.colorScheme.primary,
                 details = listOf(
-                    "Hardware Target" to dacInfo.deviceName,
-                    "Interface Type" to dacInfo.connectionType,
-                    "DAC Support" to if (dacInfo.isExternalDac) "External Hi-Res DAC Detected" else "Standard Audio Sink"
+                    "Целевое устройство" to dacInfo.deviceName.ifBlank { "Системный аудиовыход" },
+                    "Интерфейс" to dacInfo.connectionType.ifBlank { "Неизвестно" },
+                    "Поддержка ЦАП" to if (dacInfo.isExternalDac) "Внешний Hi-Res USB ЦАП" else if (dacInfo.isHiResSupported) "Поддерживает Hi-Res" else "Стандартный аудиовыход"
                 ),
                 isHiRes = dacInfo.isHiResSupported
             )

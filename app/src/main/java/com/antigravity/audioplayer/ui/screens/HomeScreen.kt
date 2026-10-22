@@ -1,5 +1,6 @@
 package com.antigravity.audioplayer.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,12 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.antigravity.audioplayer.R
 import com.antigravity.audioplayer.data.model.AudioFileMetadata
 import com.antigravity.audioplayer.data.model.AudioFormat
 import com.antigravity.audioplayer.ui.components.AlbumArtView
@@ -35,7 +39,7 @@ fun HomeScreen(
     onTrackSelect: (AudioFileMetadata, List<AudioFileMetadata>?) -> Unit,
     onAlbumSelect: (String, List<AudioFileMetadata>) -> Unit,
     onArtistSelect: (String, List<AudioFileMetadata>) -> Unit,
-    onNavigateToLibrary: (LibrarySubTab) -> Unit,
+    onNavigateToCategory: (LibraryCategoryType) -> Unit,
     onOpenSearch: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -52,6 +56,21 @@ fun HomeScreen(
     }
     val rediscoverTracks = remember(tracks) { tracks.shuffled().take(12) }
     val randomArtists = remember(artists) { artists.shuffled().take(10) }
+
+    val appIconBitmap = remember(context) {
+        try {
+            val drawable = context.packageManager.getApplicationIcon(context.packageName)
+            val w = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 96
+            val h = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 96
+            val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bmp)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            bmp.asImageBitmap()
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -70,17 +89,27 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CircleShape,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
+                    if (appIconBitmap != null) {
+                        Image(
+                            bitmap = appIconBitmap,
+                            contentDescription = "Логотип FlacPlayer",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.GraphicEq,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(22.dp)
+                                contentDescription = "Логотип FlacPlayer",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
@@ -92,7 +121,7 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = "Hi-Res Audio Engine • v1.16",
+                            text = "v1.17",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -219,7 +248,7 @@ fun HomeScreen(
                     DashboardSection(
                         title = "История прослушивания",
                         countText = "${recentlyPlayedTracks.size}",
-                        onClickHeader = { onNavigateToLibrary(LibrarySubTab.TRACKS) }
+                        onClickHeader = { onNavigateToCategory(LibraryCategoryType.HISTORY) }
                     ) {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -243,7 +272,7 @@ fun HomeScreen(
                 DashboardSection(
                     title = "Недавно добавленные",
                     countText = "${recentAddedTracks.size}",
-                    onClickHeader = { onNavigateToLibrary(LibrarySubTab.TRACKS) }
+                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.RECENTLY_ADDED) }
                 ) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -266,7 +295,7 @@ fun HomeScreen(
                 DashboardSection(
                     title = "Откройте заново",
                     countText = "Микс",
-                    onClickHeader = { onNavigateToLibrary(LibrarySubTab.TRACKS) }
+                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.ALL_TRACKS) }
                 ) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -289,7 +318,7 @@ fun HomeScreen(
                 DashboardSection(
                     title = "Исполнители",
                     countText = "${artists.size}",
-                    onClickHeader = { onNavigateToLibrary(LibrarySubTab.ARTISTS) }
+                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.ARTISTS) }
                 ) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -312,7 +341,7 @@ fun HomeScreen(
                 DashboardSection(
                     title = "Альбомы",
                     countText = "${albums.size}",
-                    onClickHeader = { onNavigateToLibrary(LibrarySubTab.ALBUMS) }
+                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.ALBUMS) }
                 ) {
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),

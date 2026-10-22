@@ -7,6 +7,7 @@ import com.antigravity.audioplayer.data.model.LyricsData
 import com.antigravity.audioplayer.data.model.LyricsSource
 import com.antigravity.audioplayer.data.parser.LyricsParser
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -103,15 +104,27 @@ object LrclibLyricsProvider {
         return negativeCache.contains(query.key)
     }
 
+    fun markKnownMissing(query: Query) {
+        negativeCache.add(query.key)
+    }
+
     fun clearNegativeCache() {
         negativeCache.clear()
     }
 
-    suspend fun fetchLyrics(
+    class HttpErrorException(val statusCode: Int, message: String) : java.io.IOException(message)
+
+    sealed class LrclibResult {
+        data class Success(val lyrics: LyricsData) : LrclibResult()
+        object NotFound : LrclibResult()
+        data class NetworkError(val message: String, val statusCode: Int? = null) : LrclibResult()
+    }
+
+    suspend fun fetchLyricsWithResult(
         context: Context,
         track: AudioFileMetadata,
         forceRefresh: Boolean = false
-    ): LyricsData? = withContext(Dispatchers.IO) {
+    ): LrclibResult = withContext(Dispatchers.IO) {
         val query = Query.create(
             artist = track.artist,
             title = track.title,
@@ -121,7 +134,7 @@ object LrclibLyricsProvider {
 
         if (!query.isValid()) {
             Log.d(TAG, "Query invalid for track '${track.title}'")
-            return@withContext null
+            return@withContext LrclibResult.NotFound
         }
 
         val key = query.key
@@ -129,7 +142,7 @@ object LrclibLyricsProvider {
         // 1. Check negative cache
         if (!forceRefresh && negativeCache.contains(key)) {
             Log.d(TAG, "Skipping fetch for '${query.title}' (known missing in negative cache)")
-            return@withContext null
+            return@withContext LrclibResult.NotFound
         }
 
         // 2. Check disk cache
@@ -137,38 +150,80 @@ object LrclibLyricsProvider {
             val cachedDisk = readDisk(context, key)
             if (cachedDisk != null) {
                 Log.d(TAG, "Found disk-cached LRCLIB lyrics for '${query.title}'")
-                return@withContext cachedDisk
+                return@withContext LrclibResult.Success(cachedDisk)
             }
         }
 
-        // 3. Network fetch
-        var networkFailed = false
-        var result: LyricsData? = null
+        // 3. Retry loop (max 3 attempts: 1 initial + 2 retries)
+        val maxAttempts = 3
+        var lastError: Exception? = null
 
-        try {
-            // First attempt: exact match via /api/get
-            result = requestLrclibGet(query)
-
-            // Second attempt: search match via /api/search
-            if (result == null) {
-                result = requestLrclibSearch(query)
+        for (attempt in 1..maxAttempts) {
+            if (!isActive) {
+                return@withContext LrclibResult.NetworkError("Запрос отменен")
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Network error fetching lyrics from LRCLIB for '${query.title}': ${e.message}")
-            networkFailed = true
+
+            try {
+                // First: exact match via /api/get
+                var result = requestLrclibGet(query)
+
+                // Second: search match via /api/search
+                if (result == null) {
+                    result = requestLrclibSearch(query)
+                }
+
+                if (result != null) {
+                    negativeCache.remove(key)
+                    writeDisk(context, key, result)
+                    Log.d(TAG, "Successfully fetched LRCLIB lyrics for '${query.title}' (synced=${result.isSynced}, instrumental=${result.isInstrumental})")
+                    return@withContext LrclibResult.Success(result)
+                } else {
+                    // Clean 404 or empty search results: definite Not Found
+                    negativeCache.add(key)
+                    Log.d(TAG, "Lyrics not found on LRCLIB for '${query.title}' -> added to negative cache")
+                    return@withContext LrclibResult.NotFound
+                }
+            } catch (e: Exception) {
+                lastError = e
+                Log.w(TAG, "Attempt $attempt/$maxAttempts failed for '${query.title}': ${e.message}")
+
+                val isRetryable = when (e) {
+                    is java.net.SocketTimeoutException,
+                    is java.net.ConnectException,
+                    is java.net.UnknownHostException -> true
+                    is HttpErrorException -> e.statusCode == 429 || e.statusCode in 500..599
+                    else -> false
+                }
+
+                if (!isRetryable || attempt == maxAttempts) {
+                    break
+                }
+
+                val backoffMs = if (attempt == 1) 500L else 1000L
+                kotlinx.coroutines.delay(backoffMs)
+            }
         }
 
-        if (result != null) {
-            negativeCache.remove(key)
-            writeDisk(context, key, result)
-            Log.d(TAG, "Successfully fetched LRCLIB lyrics for '${query.title}' (synced=${result.isSynced}, instrumental=${result.isInstrumental})")
-        } else if (!networkFailed) {
-            // Definite 404 / no results from server -> add to negative cache
-            negativeCache.add(key)
-            Log.d(TAG, "Lyrics not found on LRCLIB for '${query.title}' -> added to negative cache")
+        // Network error after retries: DO NOT add to negativeCache
+        val statusCode = (lastError as? HttpErrorException)?.statusCode
+        val errMsg = when (lastError) {
+            is java.net.SocketTimeoutException -> "Превышено время ожидания ответа сервера"
+            is java.net.UnknownHostException, is java.net.ConnectException -> "Нет соединения с сервером LRCLIB"
+            is HttpErrorException -> "Ошибка сервера LRCLIB (${lastError.statusCode})"
+            else -> lastError?.message ?: "Сетевая ошибка при загрузке текста"
         }
+        LrclibResult.NetworkError(errMsg, statusCode)
+    }
 
-        result
+    suspend fun fetchLyrics(
+        context: Context,
+        track: AudioFileMetadata,
+        forceRefresh: Boolean = false
+    ): LyricsData? {
+        return when (val res = fetchLyricsWithResult(context, track, forceRefresh)) {
+            is LrclibResult.Success -> res.lyrics
+            else -> null
+        }
     }
 
     private fun requestLrclibGet(q: Query): LyricsData? {
@@ -263,10 +318,10 @@ object LrclibLyricsProvider {
     private fun executeHttpGet(urlString: String): String? {
         val connection = URL(urlString).openConnection() as HttpURLConnection
         return try {
-            connection.connectTimeout = 10_000
-            connection.readTimeout = 15_000
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 6_000
             connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "FlacPlayer/1.16 (Android; +https://github.com/exteraless/exteraless)")
+            connection.setRequestProperty("User-Agent", "FlacPlayer/1.17 (Android; +https://github.com/exteraless/exteraless)")
             connection.setRequestProperty("Accept", "application/json")
 
             val code = connection.responseCode
@@ -274,7 +329,7 @@ object LrclibLyricsProvider {
                 return null
             }
             if (code !in 200..299) {
-                throw IllegalStateException("HTTP error $code from $urlString")
+                throw HttpErrorException(code, "HTTP error $code from $urlString")
             }
 
             connection.inputStream.use { readStreamToString(it) }

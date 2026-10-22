@@ -20,6 +20,14 @@ import java.io.File
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
+sealed class LyricsLoadState {
+    object Idle : LyricsLoadState()
+    object Loading : LyricsLoadState()
+    data class Success(val lyrics: LyricsData) : LyricsLoadState()
+    data class NotFound(val message: String = "Текст не найден") : LyricsLoadState()
+    data class NetworkError(val message: String) : LyricsLoadState()
+}
+
 object LyricsRepository {
 
     private const val TAG = "LyricsRepository"
@@ -27,6 +35,9 @@ object LyricsRepository {
 
     private val _currentLyrics = MutableStateFlow<LyricsData?>(null)
     val currentLyrics = _currentLyrics.asStateFlow()
+
+    private val _loadState = MutableStateFlow<LyricsLoadState>(LyricsLoadState.Idle)
+    val loadState = _loadState.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -36,6 +47,7 @@ object LyricsRepository {
     suspend fun loadLyricsForTrack(context: Context, track: AudioFileMetadata?) {
         if (track == null) {
             _currentLyrics.value = null
+            _loadState.value = LyricsLoadState.Idle
             _isLoading.value = false
             activeTrackId = null
             return
@@ -47,19 +59,28 @@ object LyricsRepository {
         val cached = memoryCache.get(track.id)
         if (cached != null) {
             _currentLyrics.value = cached
+            _loadState.value = LyricsLoadState.Success(cached)
             _isLoading.value = false
             return
         }
 
         _isLoading.value = true
+        _loadState.value = LyricsLoadState.Loading
+
         withContext(Dispatchers.IO) {
-            val lyrics = fetchLyrics(context, track)
+            val state = fetchLyricsState(context, track)
             if (activeTrackId == track.id) {
-                if (lyrics != null) {
-                    memoryCache.put(track.id, lyrics)
-                }
-                _currentLyrics.value = lyrics
+                _loadState.value = state
                 _isLoading.value = false
+                when (state) {
+                    is LyricsLoadState.Success -> {
+                        memoryCache.put(track.id, state.lyrics)
+                        _currentLyrics.value = state.lyrics
+                    }
+                    else -> {
+                        _currentLyrics.value = null
+                    }
+                }
             }
         }
     }
@@ -69,6 +90,7 @@ object LyricsRepository {
         if (activeTrackId == null || activeTrackId == trackId) {
             activeTrackId = trackId
             _currentLyrics.value = lyricsData
+            _loadState.value = LyricsLoadState.Success(lyricsData)
             _isLoading.value = false
         }
     }
@@ -76,20 +98,64 @@ object LyricsRepository {
     suspend fun fetchOnlineLyricsForced(context: Context, track: AudioFileMetadata): LyricsData? {
         activeTrackId = track.id
         _isLoading.value = true
+        _loadState.value = LyricsLoadState.Loading
         return withContext(Dispatchers.IO) {
-            val lyrics = com.antigravity.audioplayer.data.online.LrclibLyricsProvider.fetchLyrics(context, track, forceRefresh = true)
-            if (activeTrackId == track.id) {
-                if (lyrics != null) {
-                    memoryCache.put(track.id, lyrics)
+            val result = com.antigravity.audioplayer.data.online.LrclibLyricsProvider.fetchLyricsWithResult(context, track, forceRefresh = true)
+            val state = when (result) {
+                is com.antigravity.audioplayer.data.online.LrclibLyricsProvider.LrclibResult.Success -> {
+                    memoryCache.put(track.id, result.lyrics)
+                    LyricsLoadState.Success(result.lyrics)
                 }
-                _currentLyrics.value = lyrics
-                _isLoading.value = false
+                is com.antigravity.audioplayer.data.online.LrclibLyricsProvider.LrclibResult.NotFound -> {
+                    LyricsLoadState.NotFound("LRCLIB не содержит подходящего текста для этой композиции")
+                }
+                is com.antigravity.audioplayer.data.online.LrclibLyricsProvider.LrclibResult.NetworkError -> {
+                    LyricsLoadState.NetworkError(result.message)
+                }
             }
-            lyrics
+
+            if (activeTrackId == track.id) {
+                _loadState.value = state
+                _isLoading.value = false
+                _currentLyrics.value = (state as? LyricsLoadState.Success)?.lyrics
+            }
+            (state as? LyricsLoadState.Success)?.lyrics
         }
     }
 
-    private suspend fun fetchLyrics(context: Context, track: AudioFileMetadata): LyricsData? {
+    private suspend fun fetchLyricsState(context: Context, track: AudioFileMetadata): LyricsLoadState {
+        // 1. Local sources (Strict Priority: Embedded -> Sidecar -> Folder -> MMR)
+        val local = fetchLocalLyrics(context, track)
+        if (local != null) {
+            return LyricsLoadState.Success(local)
+        }
+
+        // 2. Automated Online LRCLIB Fetch (if enabled in settings)
+        val prefs = LibraryPreferences.getInstance(context)
+        if (prefs.isOnlineLyricsEnabled.value) {
+            try {
+                return when (val onlineResult = com.antigravity.audioplayer.data.online.LrclibLyricsProvider.fetchLyricsWithResult(context, track)) {
+                    is com.antigravity.audioplayer.data.online.LrclibLyricsProvider.LrclibResult.Success -> {
+                        Log.d(TAG, "Found online lyrics for ${track.title} via LRCLIB")
+                        LyricsLoadState.Success(onlineResult.lyrics)
+                    }
+                    is com.antigravity.audioplayer.data.online.LrclibLyricsProvider.LrclibResult.NotFound -> {
+                        LyricsLoadState.NotFound("LRCLIB не содержит подходящего текста для этой композиции")
+                    }
+                    is com.antigravity.audioplayer.data.online.LrclibLyricsProvider.LrclibResult.NetworkError -> {
+                        LyricsLoadState.NetworkError(onlineResult.message)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error fetching online lyrics for ${track.title}", e)
+                return LyricsLoadState.NetworkError(e.message ?: "Ошибка соединения")
+            }
+        }
+
+        return LyricsLoadState.NotFound("Локальный текст не найден")
+    }
+
+    private fun fetchLocalLyrics(context: Context, track: AudioFileMetadata): LyricsData? {
         // 1. Embedded Metadata (FLAC Vorbis comments / ID3 USLT / SYLT / M4A)
         try {
             val embeddedLyrics = EmbeddedLyricsExtractor.extract(context, track)
@@ -142,20 +208,6 @@ object LyricsRepository {
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error extracting with MMR fallback", e)
-        }
-
-        // 5. Automated Online LRCLIB Fetch (if enabled in settings)
-        val prefs = LibraryPreferences.getInstance(context)
-        if (prefs.isOnlineLyricsEnabled.value) {
-            try {
-                val onlineLyrics = com.antigravity.audioplayer.data.online.LrclibLyricsProvider.fetchLyrics(context, track)
-                if (onlineLyrics != null) {
-                    Log.d(TAG, "Found online lyrics for ${track.title} via LRCLIB")
-                    return onlineLyrics
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error fetching online lyrics for ${track.title}", e)
-            }
         }
 
         return null

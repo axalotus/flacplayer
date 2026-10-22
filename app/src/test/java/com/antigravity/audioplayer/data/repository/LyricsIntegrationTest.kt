@@ -41,9 +41,67 @@ class LyricsIntegrationTest {
         assertFalse(LrclibLyricsProvider.isKnownMissing(q))
 
         // Emulate registering as missing (e.g. after receiving 404 from LRCLIB)
+        LrclibLyricsProvider.markKnownMissing(q)
+        assertTrue(LrclibLyricsProvider.isKnownMissing(q))
+
         // Check key uniqueness
         val key = q.key
         assertEquals("obscure artist\u0001unknown song\u0001120", key)
+
+        // Clear negative cache
+        LrclibLyricsProvider.clearNegativeCache()
+        assertFalse(LrclibLyricsProvider.isKnownMissing(q))
+    }
+
+    @Test
+    fun lrclibResult_sealedSubclasses_representStateCorrectly() {
+        val dummyData = LyricsData(
+            isSynced = true,
+            lines = listOf(LyricLine(5000L, "Sample")),
+            plainText = "Sample",
+            source = LyricsSource.LRCLIB
+        )
+        val success = LrclibLyricsProvider.LrclibResult.Success(dummyData)
+        val notFound = LrclibLyricsProvider.LrclibResult.NotFound
+        val netError = LrclibLyricsProvider.LrclibResult.NetworkError("Connect timed out", 408)
+
+        assertEquals(dummyData, success.lyrics)
+        assertTrue(notFound is LrclibLyricsProvider.LrclibResult.NotFound)
+        assertEquals("Connect timed out", netError.message)
+        assertEquals(408, netError.statusCode)
+    }
+
+    @Test
+    fun lyricsLoadState_sealedSubclasses_representUiStateCorrectly() {
+        val dummyData = LyricsData(
+            isSynced = false,
+            lines = emptyList(),
+            plainText = "Instrumental",
+            isInstrumental = true,
+            source = LyricsSource.LRCLIB
+        )
+
+        val idle: LyricsLoadState = LyricsLoadState.Idle
+        val loading: LyricsLoadState = LyricsLoadState.Loading
+        val success: LyricsLoadState = LyricsLoadState.Success(dummyData)
+        val notFound: LyricsLoadState = LyricsLoadState.NotFound("Текст не найден")
+        val error: LyricsLoadState = LyricsLoadState.NetworkError("Host unreachable")
+
+        assertTrue(idle is LyricsLoadState.Idle)
+        assertTrue(loading is LyricsLoadState.Loading)
+        assertEquals(dummyData, (success as LyricsLoadState.Success).lyrics)
+        assertTrue(notFound is LyricsLoadState.NotFound)
+        assertEquals("Host unreachable", (error as LyricsLoadState.NetworkError).message)
+    }
+
+    @Test
+    fun libraryCategoryTypes_containHistoryAndRecentlyAdded() {
+        val categories = com.antigravity.audioplayer.ui.screens.LibraryCategoryType.values().map { it.name }
+        assertTrue("Categories must include HISTORY", categories.contains("HISTORY"))
+        assertTrue("Categories must include RECENTLY_ADDED", categories.contains("RECENTLY_ADDED"))
+        assertTrue("Categories must include ALL_TRACKS", categories.contains("ALL_TRACKS"))
+        assertTrue("Categories must include ALBUMS", categories.contains("ALBUMS"))
+        assertTrue("Categories must include ARTISTS", categories.contains("ARTISTS"))
     }
 
     @Test

@@ -57,9 +57,11 @@ enum class LibraryCategoryType(
     val accentColor: Color
 ) {
     ALL_TRACKS("Все треки", "Полная медиатека аудиофайлов", Icons.Default.MusicNote, Color(0xFF3A86FF)),
-    FOLDERS("Папки", "Файловая структура и директории", Icons.Default.Folder, Color(0xFFFFB703)),
+    HISTORY("История", "История прослушивания", Icons.Default.History, Color(0xFF4CC9F0)),
+    RECENTLY_ADDED("Недавно добавленные", "Новые композиции по дате обнаружения", Icons.Default.AccessTime, Color(0xFF06D6A0)),
     ALBUMS("Альбомы", "Сетка альбомов и релизов", Icons.Default.Album, Color(0xFF8338EC)),
     ARTISTS("Исполнители", "Исполнители и группы", Icons.Default.Person, Color(0xFFFF006E)),
+    FOLDERS("Папки", "Файловая структура и директории", Icons.Default.Folder, Color(0xFFFFB703)),
     PLAYLISTS("Плейлисты", "Избранное и списки воспроизведения", Icons.AutoMirrored.Filled.QueueMusic, Color(0xFFFB5607)),
     HIDDEN_TRACKS("Скрытые треки", "Скрытые из медиатеки аудиофайлы", Icons.Default.VisibilityOff, Color(0xFFE63946))
 }
@@ -80,6 +82,8 @@ fun LibraryScreen(
     isLoading: Boolean,
     selectedSubTab: LibrarySubTab = LibrarySubTab.TRACKS,
     onSubTabChange: (LibrarySubTab) -> Unit = {},
+    initialCategory: LibraryCategoryType? = null,
+    onCategoryChange: (LibraryCategoryType?) -> Unit = {},
     onTrackSelect: (AudioFileMetadata, List<AudioFileMetadata>?) -> Unit,
     onAlbumSelect: (String, List<AudioFileMetadata>) -> Unit,
     onArtistSelect: (String, List<AudioFileMetadata>) -> Unit,
@@ -100,7 +104,13 @@ fun LibraryScreen(
     val hiddenTracks = remember(allTracks, hiddenTrackIds) { allTracks.filter { it.id in hiddenTrackIds } }
     val visibleTracks = remember(allTracks, hiddenTrackIds) { allTracks.filter { it.id !in hiddenTrackIds } }
 
-    var activeCategory by remember { mutableStateOf<LibraryCategoryType?>(null) }
+    var activeCategory by remember(initialCategory) { mutableStateOf(initialCategory) }
+    LaunchedEffect(initialCategory) {
+        if (initialCategory != null) {
+            activeCategory = initialCategory
+        }
+    }
+
     var selectedFolderDrilldown by remember { mutableStateOf<String?>(null) }
     var selectedPlaylistDrilldown by remember { mutableStateOf<Playlist?>(null) }
     var showFavoritesDrilldown by remember { mutableStateOf(false) }
@@ -115,6 +125,7 @@ fun LibraryScreen(
             showFavoritesDrilldown = false
         } else {
             activeCategory = null
+            onCategoryChange(null)
         }
     }
 
@@ -198,6 +209,8 @@ fun LibraryScreen(
                     items(LibraryCategoryType.values()) { category ->
                         val countLabel = when (category) {
                             LibraryCategoryType.ALL_TRACKS -> "${visibleTracks.size}"
+                            LibraryCategoryType.HISTORY -> "${prefs.recentlyPlayedIds.value.size}"
+                            LibraryCategoryType.RECENTLY_ADDED -> "${visibleTracks.size}"
                             LibraryCategoryType.FOLDERS -> "$uniqueFoldersCount"
                             LibraryCategoryType.ALBUMS -> "$uniqueAlbumsCount"
                             LibraryCategoryType.ARTISTS -> "$uniqueArtistsCount"
@@ -208,7 +221,10 @@ fun LibraryScreen(
                         ModularCategoryRow(
                             category = category,
                             countText = countLabel,
-                            onClick = { activeCategory = category }
+                            onClick = {
+                                activeCategory = category
+                                onCategoryChange(category)
+                            }
                         )
                     }
 
@@ -228,7 +244,7 @@ fun LibraryScreen(
                         currentTrack = currentTrack,
                         favoriteIds = favoriteIds,
                         playlists = playlists,
-                        onBack = { activeCategory = null },
+                        onBack = { activeCategory = null; onCategoryChange(null) },
                         onTrackSelect = onTrackSelect,
                         onFavoriteToggle = { pm.toggleFavorite(it) },
                         onAddToPlaylist = { pId, tId -> pm.addTrackToPlaylist(pId, tId) },
@@ -237,6 +253,53 @@ fun LibraryScreen(
                             android.widget.Toast.makeText(context, "Трек скрыт из медиатеки", android.widget.Toast.LENGTH_SHORT).show()
                         },
                         onOpenSearch = onOpenSearch
+                    )
+                }
+
+                // ── HISTORY ─────────────────────────────────────────────────
+                LibraryCategoryType.HISTORY -> {
+                    val historyIds by prefs.recentlyPlayedIds.collectAsState()
+                    val historyTracks = remember(visibleTracks, historyIds) {
+                        historyIds.mapNotNull { id -> visibleTracks.find { it.id == id } }
+                    }
+                    TrackListDrilldownSubScreen(
+                        title = "История прослушивания",
+                        subtitle = "${historyTracks.size} недавно прослушанных треков",
+                        tracks = historyTracks,
+                        currentTrack = currentTrack,
+                        favoriteIds = favoriteIds,
+                        playlists = playlists,
+                        onBack = { activeCategory = null; onCategoryChange(null) },
+                        onTrackSelect = { tr, q -> onTrackSelect(tr, q ?: historyTracks) },
+                        onFavoriteToggle = { pm.toggleFavorite(it) },
+                        onAddToPlaylist = { pId, tId -> pm.addTrackToPlaylist(pId, tId) },
+                        onHideTrack = { trackId ->
+                            prefs.hideTrack(trackId)
+                            android.widget.Toast.makeText(context, "Трек скрыт из медиатеки", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+
+                // ── RECENTLY ADDED ──────────────────────────────────────────
+                LibraryCategoryType.RECENTLY_ADDED -> {
+                    val recentTracks = remember(visibleTracks) {
+                        visibleTracks.sortedByDescending { it.dateAdded }
+                    }
+                    TrackListDrilldownSubScreen(
+                        title = "Недавно добавленные",
+                        subtitle = "${recentTracks.size} композиций по дате обнаружения",
+                        tracks = recentTracks,
+                        currentTrack = currentTrack,
+                        favoriteIds = favoriteIds,
+                        playlists = playlists,
+                        onBack = { activeCategory = null; onCategoryChange(null) },
+                        onTrackSelect = { tr, q -> onTrackSelect(tr, q ?: recentTracks) },
+                        onFavoriteToggle = { pm.toggleFavorite(it) },
+                        onAddToPlaylist = { pId, tId -> pm.addTrackToPlaylist(pId, tId) },
+                        onHideTrack = { trackId ->
+                            prefs.hideTrack(trackId)
+                            android.widget.Toast.makeText(context, "Трек скрыт из медиатеки", android.widget.Toast.LENGTH_SHORT).show()
+                        }
                     )
                 }
 

@@ -77,7 +77,7 @@ fun MainScreen(
     var selectedArtistName by remember { mutableStateOf<String?>(null) }
     var selectedArtistTracks by remember { mutableStateOf<List<AudioFileMetadata>>(emptyList()) }
 
-    var librarySubTab by remember { mutableStateOf(LibrarySubTab.TRACKS) }
+    var selectedLibraryCategory by remember { mutableStateOf<LibraryCategoryType?>(null) }
 
     val isEqActive by eqController.isEnabled.collectAsState()
     val eqPresetName by eqController.selectedPresetName.collectAsState()
@@ -86,6 +86,7 @@ fun MainScreen(
     val context = LocalContext.current
     val prefs = remember { LibraryPreferences.getInstance(context) }
     val themeMode by prefs.themeMode.collectAsState()
+    val audioEngineMode by prefs.audioEngineMode.collectAsState()
 
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -96,7 +97,7 @@ fun MainScreen(
         else if (showAudioChainModal) showAudioChainModal = false
         else if (showQueueModal) showQueueModal = false
         else if (isPlayerExpanded) isPlayerExpanded = false
-        else if (selectedTab != MainTab.HOME) selectedTab = MainTab.HOME
+        else if (selectedLibraryCategory != null) selectedLibraryCategory = null
         else showExitDialog = true
     }
 
@@ -141,7 +142,7 @@ fun MainScreen(
                         containerColor = if (themeMode == ThemeMode.AMOLED) Color.Black else MaterialTheme.colorScheme.surface
                     ) {
                         NavigationBarItem(
-                            selected = selectedTab == MainTab.HOME && !isAnyOverlayOpen,
+                            selected = selectedTab == MainTab.HOME,
                             alwaysShowLabel = false,
                             onClick = {
                                 selectedTab = MainTab.HOME
@@ -155,10 +156,11 @@ fun MainScreen(
                         )
 
                         NavigationBarItem(
-                            selected = selectedTab == MainTab.LIBRARY && !isAnyOverlayOpen,
+                            selected = selectedTab == MainTab.LIBRARY,
                             alwaysShowLabel = false,
                             onClick = {
                                 selectedTab = MainTab.LIBRARY
+                                selectedLibraryCategory = null
                                 isPlayerExpanded = false
                                 showEqualizer = false
                                 selectedAlbumName = null
@@ -169,7 +171,7 @@ fun MainScreen(
                         )
 
                         NavigationBarItem(
-                            selected = selectedTab == MainTab.PLAYLISTS && !isAnyOverlayOpen,
+                            selected = selectedTab == MainTab.PLAYLISTS,
                             alwaysShowLabel = false,
                             onClick = {
                                 selectedTab = MainTab.PLAYLISTS
@@ -183,7 +185,7 @@ fun MainScreen(
                         )
 
                         NavigationBarItem(
-                            selected = selectedTab == MainTab.SEARCH && !isAnyOverlayOpen,
+                            selected = selectedTab == MainTab.SEARCH,
                             alwaysShowLabel = false,
                             onClick = {
                                 selectedTab = MainTab.SEARCH
@@ -197,7 +199,7 @@ fun MainScreen(
                         )
 
                         NavigationBarItem(
-                            selected = (selectedTab == MainTab.SETTINGS || showEqualizer) && !isPlayerExpanded && selectedAlbumName == null && selectedArtistName == null,
+                            selected = selectedTab == MainTab.SETTINGS || showEqualizer,
                             alwaysShowLabel = false,
                             onClick = {
                                 selectedTab = MainTab.SETTINGS
@@ -227,8 +229,8 @@ fun MainScreen(
                             selectedArtistName = artistName
                             selectedArtistTracks = artistTracks
                         },
-                        onNavigateToLibrary = { tab ->
-                            librarySubTab = tab
+                        onNavigateToCategory = { category ->
+                            selectedLibraryCategory = category
                             selectedTab = MainTab.LIBRARY
                         },
                         onOpenSearch = { selectedTab = MainTab.SEARCH }
@@ -239,8 +241,8 @@ fun MainScreen(
                         allTracks = allTracks,
                         currentTrack = currentTrack,
                         isLoading = isLoading,
-                        selectedSubTab = librarySubTab,
-                        onSubTabChange = { librarySubTab = it },
+                        initialCategory = selectedLibraryCategory,
+                        onCategoryChange = { selectedLibraryCategory = it },
                         onTrackSelect = onTrackSelect,
                         onAlbumSelect = { albumName, albumTracks ->
                             selectedAlbumName = albumName
@@ -267,11 +269,11 @@ fun MainScreen(
                         tracks = tracks,
                         currentTrack = currentTrack,
                         onTrackSelect = onTrackSelect,
-                        onBack = { selectedTab = MainTab.HOME }
+                        onBack = { showExitDialog = true }
                     )
 
                     MainTab.SETTINGS -> SettingsScreen(
-                        onBack = { selectedTab = MainTab.HOME },
+                        onBack = { showExitDialog = true },
                         onPickFolder = onPickFolder,
                         onOpenAudioChain = { showAudioChainModal = true },
                         onOpenEqualizer = { showEqualizer = true },
@@ -349,46 +351,53 @@ fun MainScreen(
         // ── Full-Screen Player ──────────────────────────────────────────────
         AnimatedVisibility(
             visible = isPlayerExpanded,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = androidx.compose.animation.core.tween(
+                    durationMillis = 280,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                )
+            ),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = androidx.compose.animation.core.tween(
+                    durationMillis = 240,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                )
+            ),
             modifier = Modifier.fillMaxSize()
         ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                PlayerScreen(
-                    currentTrack = currentTrack,
-                    isPlaying = isPlaying,
-                    progressMs = progressMs,
-                    dacInfo = dacInfo,
-                    showVisualizer = showVisualizer,
-                    isShuffleOn = isShuffleOn,
-                    repeatMode = repeatMode,
-                    queueTracks = queueTracks,
-                    onToggleShuffle = onToggleShuffle,
-                    onToggleRepeat = onToggleRepeat,
-                    onToggleVisualizer = onToggleVisualizer,
-                    onPlayPauseToggle = onPlayPauseToggle,
-                    onNextTrack = onNextTrack,
-                    onPreviousTrack = onPreviousTrack,
-                    onSeekTo = onSeekTo,
-                    onTrackSelect = { tr -> onTrackSelect(tr, queueTracks) },
-                    onOpenAudioChain = { showAudioChainModal = true },
-                    onOpenEqualizer = {
-                        isPlayerExpanded = false
-                        selectedTab = MainTab.SETTINGS
-                        showEqualizer = true
-                    },
-                    onOpenQueue = { showQueueModal = true },
-                    onOpenArtist = { artistName ->
-                        isPlayerExpanded = false
-                        selectedArtistName = artistName
-                        selectedArtistTracks = tracks.filter { it.artist.equals(artistName, ignoreCase = true) }
-                    },
-                    onCollapsePlayer = { isPlayerExpanded = false }
-                )
-            }
+            PlayerScreen(
+                currentTrack = currentTrack,
+                isPlaying = isPlaying,
+                progressMs = progressMs,
+                dacInfo = dacInfo,
+                showVisualizer = showVisualizer,
+                isShuffleOn = isShuffleOn,
+                repeatMode = repeatMode,
+                queueTracks = queueTracks,
+                onToggleShuffle = onToggleShuffle,
+                onToggleRepeat = onToggleRepeat,
+                onToggleVisualizer = onToggleVisualizer,
+                onPlayPauseToggle = onPlayPauseToggle,
+                onNextTrack = onNextTrack,
+                onPreviousTrack = onPreviousTrack,
+                onSeekTo = onSeekTo,
+                onTrackSelect = { tr -> onTrackSelect(tr, queueTracks) },
+                onOpenAudioChain = { showAudioChainModal = true },
+                onOpenEqualizer = {
+                    isPlayerExpanded = false
+                    selectedTab = MainTab.SETTINGS
+                    showEqualizer = true
+                },
+                onOpenQueue = { showQueueModal = true },
+                onOpenArtist = { artistName ->
+                    isPlayerExpanded = false
+                    selectedArtistName = artistName
+                    selectedArtistTracks = tracks.filter { it.artist.equals(artistName, ignoreCase = true) }
+                },
+                onCollapsePlayer = { isPlayerExpanded = false }
+            )
         }
 
         // ── Equalizer Overlay (from Settings) ──────────────────────────────
@@ -431,6 +440,7 @@ fun MainScreen(
                 isEqActive = isEqActive,
                 eqPresetName = eqPresetName,
                 bassBoostVal = bassBoostVal,
+                engineMode = audioEngineMode,
                 onDismiss = { showAudioChainModal = false }
             )
         }

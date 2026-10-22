@@ -27,10 +27,14 @@ import androidx.compose.ui.unit.sp
 import com.antigravity.audioplayer.audio.NativeAudioEngine
 import com.antigravity.audioplayer.audio.SleepTimerController
 import com.antigravity.audioplayer.data.storage.LibraryPreferences
+import com.antigravity.audioplayer.BuildConfig
+import com.antigravity.audioplayer.data.ota.OtaUpdateManager
+import com.antigravity.audioplayer.data.ota.OtaStatus
 import com.antigravity.audioplayer.ui.components.clearArtworkCache
+import kotlinx.coroutines.launch
 
 enum class SettingsSection {
-    NONE, INTERFACE, SOUND, SLEEP_TIMER, VISUALIZATION, BACKGROUND, COVERS, LYRICS, LIBRARY, BLUETOOTH
+    NONE, INTERFACE, SOUND, SLEEP_TIMER, VISUALIZATION, BACKGROUND, COVERS, LYRICS, LIBRARY, BLUETOOTH, UPDATES
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,7 +113,7 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "FlacPlayer Hi-Res Player • v1.16",
+                        text = "FlacPlayer Hi-Res Player • v${BuildConfig.VERSION_NAME}",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -223,6 +227,21 @@ fun SettingsScreen(
                     onClick = { activeSection = SettingsSection.BLUETOOTH }
                 )
 
+                // 9. Обновления (OTA)
+                val otaStatus by OtaUpdateManager.status.collectAsState()
+                SettingsCategoryCard(
+                    icon = Icons.Default.SystemUpdate,
+                    title = "Обновления (OTA)",
+                    subtitle = when (otaStatus) {
+                        is OtaStatus.UpdateAvailable -> "Доступна версия ${(otaStatus as OtaStatus.UpdateAvailable).release.versionName} • Нажмите для загрузки"
+                        is OtaStatus.Downloading -> "Загрузка обновления (${(otaStatus as OtaStatus.Downloading).progressPercent}%)"
+                        is OtaStatus.ReadyToInstall -> "Обновление готово к установке!"
+                        else -> "GitHub Releases • Текущая версия: v${BuildConfig.VERSION_NAME}"
+                    },
+                    accentColor = Color(0xFF4CAF50),
+                    onClick = { activeSection = SettingsSection.UPDATES }
+                )
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // NDK Engine Badge
@@ -236,7 +255,7 @@ fun SettingsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "FlacPlayer v1.16 (Build 17)",
+                            text = "FlacPlayer v${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -807,6 +826,341 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(if (lyricsFolderUri != null) "Изменить папку текстов" else "Выбрать папку с текстами (.lrc / .txt)")
                         }
+                    }
+
+                    // ── OTA UPDATES ──────────────────────────────────────────
+                    SettingsSection.UPDATES -> {
+                        val coroutineScope = rememberCoroutineScope()
+                        val currentOtaStatus by OtaUpdateManager.status.collectAsState()
+                        val repoName by prefs.otaGithubRepo.collectAsState()
+                        val token by prefs.otaGithubToken.collectAsState()
+                        val autoCheck by prefs.otaAutoCheck.collectAsState()
+
+                        var repoInput by remember(repoName) { mutableStateOf(repoName) }
+                        var tokenInput by remember(token) { mutableStateOf(token) }
+                        var showTokenField by remember { mutableStateOf(token.isNotBlank()) }
+
+                        LaunchedEffect(Unit) {
+                            if (autoCheck && currentOtaStatus is OtaStatus.Idle) {
+                                OtaUpdateManager.checkForUpdates(context)
+                            }
+                        }
+
+                        Text("Обновления (OTA)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+                        // Current version info card
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text("Текущая версия приложения", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                    Text("v${BuildConfig.VERSION_NAME} (код ${BuildConfig.VERSION_CODE})", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                }
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Android,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(8.dp).size(22.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Status & Action Area
+                        when (val st = currentOtaStatus) {
+                            is OtaStatus.Idle -> {
+                                Button(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            OtaUpdateManager.checkForUpdates(context)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Проверить обновления на GitHub")
+                                }
+                            }
+
+                            is OtaStatus.Checking -> {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp)
+                                        Text("Проверка релизов на GitHub...", fontSize = 13.sp)
+                                    }
+                                }
+                            }
+
+                            is OtaStatus.UpToDate -> {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.12f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("У вас установлена последняя версия", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            Text("Обновлений не требуется", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                        }
+                                        IconButton(onClick = {
+                                            coroutineScope.launch {
+                                                OtaUpdateManager.checkForUpdates(context)
+                                            }
+                                        }) {
+                                            Icon(Icons.Default.Refresh, contentDescription = "Проверить снова", tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                    }
+                                }
+                            }
+
+                            is OtaStatus.UpdateAvailable -> {
+                                val rel = st.release
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text("Доступна новая версия!", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
+                                                Text("v${rel.versionName} • ${rel.title}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                            }
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Text(
+                                                    "NEW",
+                                                    color = MaterialTheme.colorScheme.onPrimary,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                )
+                                            }
+                                        }
+
+                                        if (rel.fileSize > 0) {
+                                            val mb = rel.fileSize / (1024 * 1024)
+                                            val kb = (rel.fileSize % (1024 * 1024)) / 100000
+                                            Text(
+                                                "Размер файла: $mb.$kb МБ",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                                            )
+                                        }
+
+                                        if (rel.description.isNotBlank()) {
+                                            Text(
+                                                rel.description,
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                                maxLines = 6
+                                            )
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    val res = OtaUpdateManager.downloadUpdate(context, rel)
+                                                    res.onSuccess { apkFile ->
+                                                        OtaUpdateManager.installApk(context, apkFile)
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Скачать и установить APK")
+                                        }
+                                    }
+                                }
+                            }
+
+                            is OtaStatus.Downloading -> {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Text("Скачивание обновления APK...", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        LinearProgressIndicator(
+                                            progress = { st.progressPercent / 100f },
+                                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
+                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text("${st.progressPercent}%", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            val mbDownloaded = st.downloadedBytes / (1024 * 1024)
+                                            val mbTotal = st.totalBytes / (1024 * 1024)
+                                            Text("$mbDownloaded МБ / $mbTotal МБ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                        }
+                                    }
+                                }
+                            }
+
+                            is OtaStatus.ReadyToInstall -> {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(24.dp))
+                                            Text("APK успешно скачан!", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        }
+                                        Text("Нажмите кнопку ниже, чтобы открыть установщик Android.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                                        Button(
+                                            onClick = {
+                                                OtaUpdateManager.installApk(context, st.apkFile)
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.Default.InstallMobile, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Установить сейчас")
+                                        }
+                                    }
+                                }
+                            }
+
+                            is OtaStatus.Error -> {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                            Text("Ошибка проверки", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+                                        }
+                                        Text(st.message, fontSize = 11.sp, color = MaterialTheme.colorScheme.onErrorContainer)
+                                        Button(
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    OtaUpdateManager.checkForUpdates(context)
+                                                }
+                                            },
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            Text("Повторить попытку", fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                        // GitHub Configuration section
+                        Text("Настройки репозитория GitHub:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+
+                        OutlinedTextField(
+                            value = repoInput,
+                            onValueChange = {
+                                repoInput = it
+                                prefs.setOtaGithubRepo(it)
+                            },
+                            label = { Text("GitHub Репозиторий (owner/repo)") },
+                            placeholder = { Text("debil/flacplayer") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Приватный репозиторий (Personal Token)", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            TextButton(onClick = { showTokenField = !showTokenField }) {
+                                Text(if (showTokenField) "Скрыть токен" else "Указать токен", fontSize = 12.sp)
+                            }
+                        }
+
+                        if (showTokenField) {
+                            OutlinedTextField(
+                                value = tokenInput,
+                                onValueChange = {
+                                    tokenInput = it
+                                    prefs.setOtaGithubToken(it)
+                                },
+                                label = { Text("GitHub Token (PAT)") },
+                                placeholder = { Text("ghp_xxxxxxxxxxxxxxxxxxxx") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            Text(
+                                "Необходим для скачивания релизов из приватного репозитория. Создаётся на GitHub: Settings -> Developer Settings -> Personal access tokens с правом 'repo'.",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                            )
+                        }
+
+                        SettingsToggleRow(
+                            title = "Автопроверка при открытии",
+                            subtitle = "Искать обновления при открытии экрана настроек",
+                            checked = autoCheck,
+                            onCheckedChange = { prefs.setOtaAutoCheck(it) }
+                        )
                     }
 
                     else -> Unit
