@@ -8,10 +8,13 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+@Immutable
 data class DacOutputInfo(
     val deviceId: Int = 0,
     val deviceName: String,
@@ -23,6 +26,7 @@ data class DacOutputInfo(
     val channelCounts: List<Int>
 )
 
+@Stable
 class DacDetector(private val context: Context) {
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager

@@ -53,7 +53,6 @@ import kotlin.math.roundToInt
 @Composable
 fun LyricsView(
     track: AudioFileMetadata?,
-    progressMs: Long,
     isPlaying: Boolean,
     onSeekTo: (Long) -> Unit,
     onPickLyricsFile: () -> Unit,
@@ -367,18 +366,22 @@ fun LyricsView(
                 }
 
                 val isAutoScrollActive = !userInteracting
+                val progressState = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.collectAsState()
 
-                // Compute active index strictly from current playback position
-                val activeIndex = remember(progressMs, lines) {
-                    var found = -1
-                    for (i in lines.indices) {
-                        if (progressMs >= lines[i].timestampMs) {
-                            found = i
-                        } else {
-                            break
+                // Compute active index strictly from current playback position using derivedStateOf
+                val activeIndex by remember(lines) {
+                    derivedStateOf {
+                        val pos = progressState.value
+                        var found = -1
+                        for (i in lines.indices) {
+                            if (pos >= lines[i].timestampMs) {
+                                found = i
+                            } else {
+                                break
+                            }
                         }
+                        found
                     }
-                    found
                 }
 
                 val density = LocalDensity.current
@@ -511,7 +514,7 @@ fun LyricsView(
                                     animationSpec = tween(durationMillis = 240),
                                     label = "lyricColor"
                                 )
-                                val scaleAnim by animateFloatAsState(
+                                val scaleAnimState = animateFloatAsState(
                                     targetValue = targetScale,
                                     animationSpec = spring(
                                         dampingRatio = Spring.DampingRatioLowBouncy,
@@ -519,7 +522,7 @@ fun LyricsView(
                                     ),
                                     label = "lyricScale"
                                 )
-                                val alphaAnim by animateFloatAsState(
+                                val alphaAnimState = animateFloatAsState(
                                     targetValue = targetAlpha,
                                     animationSpec = spring(
                                         dampingRatio = Spring.DampingRatioNoBouncy,
@@ -532,9 +535,10 @@ fun LyricsView(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .graphicsLayer {
-                                            scaleX = scaleAnim
-                                            scaleY = scaleAnim
-                                            alpha = alphaAnim
+                                            val s = scaleAnimState.value
+                                            scaleX = s
+                                            scaleY = s
+                                            alpha = alphaAnimState.value
                                             transformOrigin = TransformOrigin(0f, 0.5f)
                                         }
                                         .clickable {

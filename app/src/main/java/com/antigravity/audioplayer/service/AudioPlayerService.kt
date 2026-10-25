@@ -324,7 +324,7 @@ object AudioPlayerService {
         trackerJob = serviceScope.launch(Dispatchers.Default) {
             Log.d(TAG, "Position & EOF Tracker loop started")
             while (isActive) {
-                delay(100)
+                delay(200)
                 try {
                     if (!_isPlaying.value) continue
 

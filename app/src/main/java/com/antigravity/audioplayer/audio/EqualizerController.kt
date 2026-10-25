@@ -6,9 +6,12 @@ import com.antigravity.audioplayer.data.storage.LibraryPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import org.json.JSONArray
 import org.json.JSONObject
 
+@Immutable
 data class EqBand(
     val id: Int,
     val centerFreqHz: Int,
@@ -20,6 +23,7 @@ data class EqBand(
         get() = if (centerFreqHz >= 1000) "${centerFreqHz / 1000}k" else "${centerFreqHz}Hz"
 }
 
+@Immutable
 data class EqPreset(
     val name: String,
     val bandGainsDb: List<Float>,
@@ -27,6 +31,7 @@ data class EqPreset(
     val isCustom: Boolean = false
 )
 
+@Stable
 class EqualizerController {
 
     private val tag = "EqualizerController"

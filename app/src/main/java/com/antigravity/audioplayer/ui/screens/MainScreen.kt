@@ -50,7 +50,6 @@ fun MainScreen(
     currentTrack: AudioFileMetadata?,
     currentTrackIndex: Int,
     isPlaying: Boolean,
-    progressMs: Long,
     dacInfo: DacOutputInfo,
     showVisualizer: Boolean,
     isShuffleOn: Boolean,
@@ -132,19 +131,18 @@ fun MainScreen(
         )
     }
 
-    val isAnyOverlayOpen = isPlayerExpanded || showEqualizer || selectedAlbumName != null || selectedArtistName != null
+    val isAnyOverlayOpen = showEqualizer || selectedAlbumName != null || selectedArtistName != null
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = if (themeMode == ThemeMode.AMOLED) Color.Black else MaterialTheme.colorScheme.background,
             bottomBar = {
                 Column {
-                    // Mini-Player (only when collapsed and track exists)
+                    // Mini-Player (kept mounted under PlayerScreen overlay so Scaffold never resizes)
                     if (!isAnyOverlayOpen && currentTrack != null) {
                         MiniPlayerBar(
                             currentTrack = currentTrack,
                             isPlaying = isPlaying,
-                            progressMs = progressMs,
                             onPlayPauseToggle = onPlayPauseToggle,
                             onNextTrack = onNextTrack,
                             onClickExpand = { isPlayerExpanded = true }
@@ -425,58 +423,52 @@ fun MainScreen(
             }
         }
 
-        // ── Full-Screen Player ──────────────────────────────────────────────
+        // ── Full-Screen Player (Overlay directly over Library/Home) ─────────
         AnimatedVisibility(
             visible = isPlayerExpanded,
             enter = slideInVertically(
                 initialOffsetY = { it },
-                animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(180)),
+                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+            ),
             exit = slideOutVertically(
                 targetOffsetY = { it },
-                animationSpec = tween(durationMillis = 240, easing = FastOutLinearInEasing)
-            ) + fadeOut(animationSpec = tween(160)),
+                animationSpec = tween(durationMillis = 220, easing = FastOutLinearInEasing)
+            ),
             modifier = Modifier.fillMaxSize()
         ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                PlayerScreen(
-                    currentTrack = currentTrack,
-                    isPlaying = isPlaying,
-                    progressMs = progressMs,
-                    dacInfo = dacInfo,
-                    showVisualizer = showVisualizer,
-                    isShuffleOn = isShuffleOn,
-                    repeatMode = repeatMode,
-                    queueTracks = queueTracks,
-                    onToggleShuffle = onToggleShuffle,
-                    onToggleRepeat = onToggleRepeat,
-                    onToggleVisualizer = onToggleVisualizer,
-                    onPlayPauseToggle = onPlayPauseToggle,
-                    onNextTrack = onNextTrack,
-                    onPreviousTrack = onPreviousTrack,
-                    onSeekTo = onSeekTo,
-                    onTrackSelect = { tr -> onTrackSelect(tr, queueTracks) },
-                    onOpenAudioChain = { showAudioChainModal = true },
-                    onOpenEqualizer = {
-                        isPlayerExpanded = false
-                        selectedTab = MainTab.SETTINGS
-                        showEqualizer = true
-                    },
-                    onOpenQueue = { showQueueModal = true },
-                    onOpenArtist = { artistName ->
-                        isPlayerExpanded = false
-                        selectedArtistName = artistName
-                        selectedArtistTracks = tracks.filter { it.artist.equals(artistName, ignoreCase = true) }
-                    },
-                    onCollapsePlayer = {
-                        isPlayerExpanded = false
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+            PlayerScreen(
+                currentTrack = currentTrack,
+                isPlaying = isPlaying,
+                dacInfo = dacInfo,
+                showVisualizer = showVisualizer,
+                isShuffleOn = isShuffleOn,
+                repeatMode = repeatMode,
+                queueTracks = queueTracks,
+                onToggleShuffle = onToggleShuffle,
+                onToggleRepeat = onToggleRepeat,
+                onToggleVisualizer = onToggleVisualizer,
+                onPlayPauseToggle = onPlayPauseToggle,
+                onNextTrack = onNextTrack,
+                onPreviousTrack = onPreviousTrack,
+                onSeekTo = onSeekTo,
+                onTrackSelect = { tr -> onTrackSelect(tr, queueTracks) },
+                onOpenAudioChain = { showAudioChainModal = true },
+                onOpenEqualizer = {
+                    isPlayerExpanded = false
+                    selectedTab = MainTab.SETTINGS
+                    showEqualizer = true
+                },
+                onOpenQueue = { showQueueModal = true },
+                onOpenArtist = { artistName ->
+                    isPlayerExpanded = false
+                    selectedArtistName = artistName
+                    selectedArtistTracks = tracks.filter { it.artist.equals(artistName, ignoreCase = true) }
+                },
+                onCollapsePlayer = {
+                    isPlayerExpanded = false
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
 
         // ── Equalizer Overlay (from Settings) ──────────────────────────────

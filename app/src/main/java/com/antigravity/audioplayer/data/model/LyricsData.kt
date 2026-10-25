@@ -1,5 +1,8 @@
 package com.antigravity.audioplayer.data.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class LyricLine(
     val timestampMs: Long,
     val text: String
@@ -14,6 +17,7 @@ enum class LyricsSource(val label: String) {
     NONE("Не найден")
 }
 
+@Immutable
 data class LyricsData(
     val isSynced: Boolean,
     val lines: List<LyricLine>,

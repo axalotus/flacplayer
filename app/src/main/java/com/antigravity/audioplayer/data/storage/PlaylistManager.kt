@@ -4,9 +4,12 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import org.json.JSONArray
 import org.json.JSONObject
 
+@Immutable
 data class Playlist(
     val id: String,
     val name: String,
@@ -14,6 +17,7 @@ data class Playlist(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+@Stable
 class PlaylistManager private constructor(context: Context) {
 
     private val prefs = context.getSharedPreferences("playlists_prefs_v2", Context.MODE_PRIVATE)

@@ -148,7 +148,6 @@ class MainActivity : ComponentActivity() {
                 val activeQueue by AudioPlayerService.activeQueue.collectAsState()
                 val currentTrackIndex by AudioPlayerService.currentTrackIndex.collectAsState()
                 val isPlaying by AudioPlayerService.isPlaying.collectAsState()
-                val progressMs by AudioPlayerService.progressMs.collectAsState()
                 val isShuffleOn by AudioPlayerService.isShuffleOn.collectAsState()
                 val repeatMode by AudioPlayerService.repeatMode.collectAsState()
                 val dacInfo by dacDetector.activeDeviceFlow.collectAsState()
@@ -169,7 +168,6 @@ class MainActivity : ComponentActivity() {
                     currentTrack = currentTrack,
                     currentTrackIndex = currentTrackIndex,
                     isPlaying = isPlaying,
-                    progressMs = progressMs,
                     dacInfo = dacInfo,
                     showVisualizer = showVisualizer,
                     isShuffleOn = isShuffleOn,

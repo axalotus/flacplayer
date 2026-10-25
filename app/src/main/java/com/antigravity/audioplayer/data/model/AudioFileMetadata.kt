@@ -1,6 +1,7 @@
 package com.antigravity.audioplayer.data.model
 
 import android.net.Uri
+import androidx.compose.runtime.Immutable
 
 enum class AudioFormat {
     FLAC, MP3, WAV, AAC, OGG
@@ -13,6 +14,7 @@ enum class AudioQualityType(val label: String, val badgeColorHex: Long) {
     STANDARD("STANDARD", 0xFF8D99AE)
 }
 
+@Immutable
 data class AudioFileMetadata(
     val id: String,
     val title: String,

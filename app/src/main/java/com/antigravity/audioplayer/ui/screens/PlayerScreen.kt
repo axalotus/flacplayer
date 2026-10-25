@@ -86,7 +86,6 @@ private fun formatMs(ms: Long): String {
 fun PlayerScreen(
     currentTrack: AudioFileMetadata?,
     isPlaying: Boolean,
-    progressMs: Long,
     dacInfo: DacOutputInfo,
     showVisualizer: Boolean,
     isShuffleOn: Boolean,
@@ -123,6 +122,8 @@ fun PlayerScreen(
         }
     }
 
+    val coverImageBitmap = remember(coverBitmap) { coverBitmap?.asImageBitmap() }
+
     val pm = remember { PlaylistManager.getInstance(context) }
     val favoriteIds by pm.favoriteIds.collectAsState()
     val isFavorite = currentTrack?.id?.let { favoriteIds.contains(it) } ?: false
@@ -143,7 +144,7 @@ fun PlayerScreen(
     val density = LocalDensity.current
     val dismissThresholdPx = with(density) { 130.dp.toPx() }
 
-    val albumArtScale by animateFloatAsState(
+    val albumArtScaleState = animateFloatAsState(
         targetValue = if (isPlaying) 1.0f else 0.85f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -154,11 +155,7 @@ fun PlayerScreen(
 
     fun handleDragDismiss(curOffset: Float, velocityY: Float) {
         if (curOffset > dismissThresholdPx || velocityY > 1000f) {
-            coroutineScope.launch {
-                dismissOffsetY.animateTo(curOffset + 900f, tween(160, easing = FastOutLinearInEasing))
-                onCollapsePlayer()
-                dismissOffsetY.snapTo(0f)
-            }
+            onCollapsePlayer()
         } else {
             coroutineScope.launch {
                 dismissOffsetY.animateTo(
@@ -245,14 +242,21 @@ fun PlayerScreen(
             }
     ) {
         // Layer 1: Blurred Cover Artwork (configurable blur percentage)
-        if (coverBitmap != null && isBlurBackground && blurRadiusDp > 0.dp) {
-            Image(
-                bitmap = coverBitmap!!.asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier
+        if (coverImageBitmap != null && isBlurBackground && blurRadiusDp > 0.dp) {
+            val bgModifier = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                Modifier
                     .fillMaxSize()
                     .blur(blurRadiusDp)
-                    .alpha(0.5f),
+                    .alpha(0.5f)
+            } else {
+                Modifier
+                    .fillMaxSize()
+                    .alpha(0.32f)
+            }
+            Image(
+                bitmap = coverImageBitmap,
+                contentDescription = null,
+                modifier = bgModifier,
                 contentScale = ContentScale.Crop
             )
         }
@@ -269,6 +273,7 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .statusBarsPadding()
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
@@ -306,11 +311,11 @@ fun PlayerScreen(
             }
         } else {
             val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
-            val progressFraction = (progressMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .statusBarsPadding()
                     .padding(
                         start = if (isSmallScreen) 16.dp else 22.dp,
                         end = if (isSmallScreen) 16.dp else 22.dp,
@@ -500,7 +505,6 @@ fun PlayerScreen(
                         if (showLyrics) {
                             LyricsView(
                                 track = currentTrack,
-                                progressMs = progressMs,
                                 isPlaying = isPlaying,
                                 onSeekTo = onSeekTo,
                                 onPickLyricsFile = {
@@ -514,8 +518,9 @@ fun PlayerScreen(
                                     .fillMaxHeight()
                                     .aspectRatio(1f)
                                     .graphicsLayer {
-                                        scaleX = albumArtScale
-                                        scaleY = albumArtScale
+                                        val s = albumArtScaleState.value
+                                        scaleX = s
+                                        scaleY = s
                                     }
                                     .clip(RoundedCornerShape(22.dp))
                                     .clickable { showLyrics = true }
@@ -661,41 +666,11 @@ fun PlayerScreen(
                             }
                         }
 
-                        // ── SEEK SLIDER ─────────────────────────────────────────────
-                        val sliderInteractionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                        val isSliderDragged by sliderInteractionSource.collectIsDraggedAsState()
-                        val isSliderPressed by sliderInteractionSource.collectIsPressedAsState()
-                        var isDraggingSlider by remember { mutableStateOf(false) }
-                        var dragFraction by remember { mutableFloatStateOf(0f) }
-
-                        val isActivelyScrubbing = isDraggingSlider && (isSliderDragged || isSliderPressed)
-                        val activeSliderFraction = if (isActivelyScrubbing) dragFraction else progressFraction
-                        val activeDisplayProgressMs = if (isActivelyScrubbing) (dragFraction * totalDurationMs).toLong() else progressMs
-
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Slider(
-                                value = activeSliderFraction.coerceIn(0f, 1f),
-                                onValueChange = { fraction ->
-                                    isDraggingSlider = true
-                                    dragFraction = fraction
-                                },
-                                onValueChangeFinished = {
-                                    val targetMs = (dragFraction * totalDurationMs).toLong().coerceIn(0L, totalDurationMs)
-                                    onSeekTo(targetMs)
-                                    isDraggingSlider = false
-                                },
-                                interactionSource = sliderInteractionSource,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = MaterialTheme.colorScheme.primary,
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                    inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
-                                )
-                            )
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(formatMs(activeDisplayProgressMs), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
-                                Text(formatMs(totalDurationMs), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
-                            }
-                        }
+                        // ── SEEK SLIDER (isolated progress recomposition) ───────────
+                        PlayerSeekSection(
+                            totalDurationMs = totalDurationMs,
+                            onSeekTo = onSeekTo
+                        )
 
                         // ── MAIN PLAYBACK CONTROLS ──────────────────────────────────
                         Row(
@@ -755,7 +730,10 @@ fun PlayerScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Rewind 10s
-                                IconButton(onClick = { onSeekTo((progressMs - 10000L).coerceAtLeast(0L)) }) {
+                                IconButton(onClick = {
+                                    val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
+                                    onSeekTo((cur - 10000L).coerceAtLeast(0L))
+                                }) {
                                     Icon(Icons.Default.Replay10, contentDescription = "−10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
                                 }
 
@@ -785,7 +763,10 @@ fun PlayerScreen(
                                 }
 
                                 // Forward 10s
-                                IconButton(onClick = { onSeekTo((progressMs + 10000L).coerceAtMost(totalDurationMs)) }) {
+                                IconButton(onClick = {
+                                    val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
+                                    onSeekTo((cur + 10000L).coerceAtMost(totalDurationMs))
+                                }) {
                                     Icon(Icons.Default.Forward10, contentDescription = "+10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
                                 }
                             }
@@ -814,6 +795,55 @@ fun PlayerScreen(
             track = currentTrack,
             onDismissRequest = { showAddToPlaylist = false }
         )
+    }
+}
+
+@Composable
+private fun PlayerSeekSection(
+    totalDurationMs: Long,
+    onSeekTo: (Long) -> Unit
+) {
+    val progressMs by com.antigravity.audioplayer.service.AudioPlayerService.progressMs.collectAsState()
+    val sliderInteractionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isSliderDragged by sliderInteractionSource.collectIsDraggedAsState()
+    val isSliderPressed by sliderInteractionSource.collectIsPressedAsState()
+    var isDraggingSlider by remember { mutableStateOf(false) }
+    var dragFraction by remember { mutableFloatStateOf(0f) }
+
+    val isActivelyScrubbing = isDraggingSlider && (isSliderDragged || isSliderPressed)
+    val progressFraction = (progressMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
+    val activeSliderFraction = if (isActivelyScrubbing) dragFraction else progressFraction
+
+    val displaySeconds by remember(totalDurationMs) {
+        derivedStateOf {
+            val ms = if (isActivelyScrubbing) (dragFraction * totalDurationMs).toLong() else progressMs
+            ms / 1000L
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Slider(
+            value = activeSliderFraction.coerceIn(0f, 1f),
+            onValueChange = { fraction ->
+                isDraggingSlider = true
+                dragFraction = fraction
+            },
+            onValueChangeFinished = {
+                val targetMs = (dragFraction * totalDurationMs).toLong().coerceIn(0L, totalDurationMs)
+                onSeekTo(targetMs)
+                isDraggingSlider = false
+            },
+            interactionSource = sliderInteractionSource,
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
+            )
+        )
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(formatMs(displaySeconds * 1000L), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
+            Text(formatMs(totalDurationMs), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
+        }
     }
 }
 

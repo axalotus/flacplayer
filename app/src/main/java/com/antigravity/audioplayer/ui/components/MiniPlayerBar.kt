@@ -12,18 +12,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.antigravity.audioplayer.data.model.AudioFileMetadata
+import com.antigravity.audioplayer.service.AudioPlayerService
 
 @Composable
 fun MiniPlayerBar(
     currentTrack: AudioFileMetadata?,
     isPlaying: Boolean,
-    progressMs: Long,
     onPlayPauseToggle: () -> Unit,
     onNextTrack: () -> Unit,
     onClickExpand: () -> Unit,
@@ -32,7 +33,7 @@ fun MiniPlayerBar(
     if (currentTrack == null) return
 
     val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
-    val progressFraction = (progressMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
+    val progressState = AudioPlayerService.progressMs.collectAsState()
 
     Surface(
         onClick = onClickExpand,
@@ -108,7 +109,7 @@ fun MiniPlayerBar(
 
             // Slim Bottom Progress Bar
             LinearProgressIndicator(
-                progress = { progressFraction },
+                progress = { (progressState.value.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.5.dp),
