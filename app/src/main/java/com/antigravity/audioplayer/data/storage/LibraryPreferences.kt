@@ -89,6 +89,16 @@ class LibraryPreferences private constructor(private val context: Context) {
         _isHideNavigationBar.value = value
     }
 
+    // Manual bottom offset for Player controls (0dp to 80dp, default 0 = original layout)
+    private val _playerControlsBottomOffsetDp = MutableStateFlow(prefs.getInt("player_controls_bottom_offset_dp", 0))
+    val playerControlsBottomOffsetDp = _playerControlsBottomOffsetDp.asStateFlow()
+
+    fun setPlayerControlsBottomOffsetDp(offsetDp: Int) {
+        val clamped = offsetDp.coerceIn(0, 80)
+        prefs.edit().putInt("player_controls_bottom_offset_dp", clamped).apply()
+        _playerControlsBottomOffsetDp.value = clamped
+    }
+
     // Dedicated Lyrics Folder Uri
     private val _lyricsFolderUri = MutableStateFlow<String?>(prefs.getString("lyrics_folder_uri", null))
     val lyricsFolderUri = _lyricsFolderUri.asStateFlow()

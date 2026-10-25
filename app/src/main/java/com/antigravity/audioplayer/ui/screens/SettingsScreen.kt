@@ -63,6 +63,7 @@ fun SettingsScreen(
     // Interface Settings State
     val themeMode by prefs.themeMode.collectAsState()
     val isHideNavigationBar by prefs.isHideNavigationBar.collectAsState()
+    val playerControlsBottomOffsetDp by prefs.playerControlsBottomOffsetDp.collectAsState()
     var showTrackNumbers by remember { mutableStateOf(false) }
     var compactMode by remember { mutableStateOf(false) }
 
@@ -176,6 +177,58 @@ fun SettingsScreen(
                     }
                 }
 
+                // Quick Slider: Manual Bottom Controls Offset
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text(
+                                    text = "Отступ кнопок плеера снизу",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (playerControlsBottomOffsetDp == 0) "По умолчанию (0 dp — как было)" else "Поднято вручную на +${playerControlsBottomOffsetDp} dp",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (playerControlsBottomOffsetDp > 0) {
+                                TextButton(onClick = { prefs.setPlayerControlsBottomOffsetDp(0) }) {
+                                    Text("Сброс (0 dp)", fontSize = 11.sp)
+                                }
+                            } else {
+                                Text(
+                                    text = "${playerControlsBottomOffsetDp} dp",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Slider(
+                            value = playerControlsBottomOffsetDp.toFloat(),
+                            onValueChange = { prefs.setPlayerControlsBottomOffsetDp(it.toInt()) },
+                            valueRange = 0f..80f
+                        )
+                    }
+                }
+
                 // 1. Интерфейс
                 SettingsCategoryCard(
                     title = "Интерфейс",
@@ -185,7 +238,7 @@ fun SettingsScreen(
                             com.antigravity.audioplayer.data.storage.ThemeMode.LIGHT -> "Светлая"
                             else -> "Тёмная"
                         }
-                    } • Навбар: ${if (isHideNavigationBar) "Скрыт" else "Виден"}",
+                    } • Отступ снизу: ${playerControlsBottomOffsetDp}dp",
                     icon = Icons.Default.Palette,
                     accentColor = Color(0xFF8E9AAF),
                     onClick = { activeSection = SettingsSection.INTERFACE }
@@ -720,6 +773,35 @@ fun SettingsScreen(
                                 (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
                             }
                         )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text("Отступ нижнего блока плеера", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = if (playerControlsBottomOffsetDp == 0) "По умолчанию (0 dp — как было)" else "Поднято на +${playerControlsBottomOffsetDp} dp",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (playerControlsBottomOffsetDp > 0) {
+                                TextButton(onClick = { prefs.setPlayerControlsBottomOffsetDp(0) }) {
+                                    Text("Сброс (0 dp)", fontSize = 11.sp)
+                                }
+                            } else {
+                                Text("${playerControlsBottomOffsetDp} dp", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Slider(
+                            value = playerControlsBottomOffsetDp.toFloat(),
+                            onValueChange = { prefs.setPlayerControlsBottomOffsetDp(it.toInt()) },
+                            valueRange = 0f..80f
+                        )
+
                         SettingsToggleRow(
                             title = "Показывать номера треков",
                             subtitle = "Отображать номер трека в альбоме",

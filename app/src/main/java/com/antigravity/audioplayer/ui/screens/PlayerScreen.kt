@@ -326,6 +326,7 @@ fun PlayerScreen(
             }
         } else {
             val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
+            val playerControlsBottomOffsetDp by prefs.playerControlsBottomOffsetDp.collectAsState()
 
             Column(
                 modifier = Modifier
@@ -336,9 +337,10 @@ fun PlayerScreen(
                         start = if (isSmallScreen) 16.dp else 22.dp,
                         end = if (isSmallScreen) 16.dp else 22.dp,
                         top = if (isSmallScreen) 4.dp else 8.dp,
-                        bottom = if (isSmallScreen) 12.dp else 16.dp
+                        bottom = if (isSmallScreen) 14.dp else 20.dp
                     ),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // ── 1. TOP: Drag Pill + Strictly Centered Header Bar ──────────────
                 Column(
@@ -348,7 +350,7 @@ fun PlayerScreen(
                     Box(
                         modifier = Modifier
                             .then(topBarDragModifier)
-                            .padding(top = if (isSmallScreen) 2.dp else 4.dp, bottom = if (isSmallScreen) 2.dp else 4.dp)
+                            .padding(top = if (isSmallScreen) 2.dp else 4.dp, bottom = if (isSmallScreen) 4.dp else 6.dp)
                             .size(width = 38.dp, height = 4.5.dp)
                             .clip(RoundedCornerShape(2.5.dp))
                             .background(Color.White.copy(alpha = 0.38f))
@@ -412,7 +414,7 @@ fun PlayerScreen(
                             } else {
                                 Text(
                                     text = "СЕЙЧАС ИГРАЕТ",
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
                                     letterSpacing = 1.2.sp,
@@ -457,16 +459,11 @@ fun PlayerScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(0.5f))
-
                 // ── 2. ALBUM ART / LYRICS (Strictly 1:1 Square Container) ─────────
                 Box(
                     modifier = Modifier
-                        .weight(3.2f, fill = false)
-                        .padding(
-                            horizontal = if (isSmallScreen) 22.dp else 14.dp,
-                            vertical = if (isSmallScreen) 2.dp else 6.dp
-                        )
+                        .weight(1f, fill = false)
+                        .padding(vertical = if (isSmallScreen) 4.dp else 8.dp)
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(22.dp)),
                     contentAlignment = Alignment.Center
@@ -501,8 +498,6 @@ fun PlayerScreen(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.weight(0.6f))
 
                 // ── 3. TRACK INFO + QUALITY & OUTPUT BADGE ────────────────────────
                 Column(
@@ -637,15 +632,11 @@ fun PlayerScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 10.dp))
-
                 // ── 4. SEEK SLIDER (isolated progress recomposition) ──────────────
                 PlayerSeekSection(
                     totalDurationMs = totalDurationMs,
                     onSeekTo = onSeekTo
                 )
-
-                Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
                 // ── 5. MAIN PLAYBACK CONTROLS ─────────────────────────────────────
                 Row(
@@ -699,7 +690,6 @@ fun PlayerScreen(
 
                 // ── 6. SECONDARY CONTROLS ROW (Only on larger screens) ────────────
                 if (!isSmallScreen) {
-                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -748,9 +738,8 @@ fun PlayerScreen(
                     }
                 }
 
-                // Lift the entire bottom controls block 2-3x higher from the bottom edge
-                Spacer(modifier = Modifier.weight(1.2f))
-                Spacer(modifier = Modifier.height(if (isSmallScreen) 48.dp else 56.dp))
+                // Default is 0dp (original layout), manually adjustable in Settings (0..80dp)
+                Spacer(modifier = Modifier.height((2 + playerControlsBottomOffsetDp).dp))
             }
         }
     }
