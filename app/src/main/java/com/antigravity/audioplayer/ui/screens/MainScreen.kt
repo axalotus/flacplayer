@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -91,6 +93,13 @@ fun MainScreen(
     val prefs = remember { LibraryPreferences.getInstance(context) }
     val themeMode by prefs.themeMode.collectAsState()
     val audioEngineMode by prefs.audioEngineMode.collectAsState()
+
+    val visitedTabs = remember { mutableStateListOf(selectedTab) }
+    LaunchedEffect(selectedTab) {
+        if (!visitedTabs.contains(selectedTab)) {
+            visitedTabs.add(selectedTab)
+        }
+    }
 
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -220,69 +229,132 @@ fun MainScreen(
             }
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                when (selectedTab) {
-                    MainTab.HOME -> HomeScreen(
-                        tracks = tracks,
-                        currentTrack = currentTrack,
-                        onTrackSelect = onTrackSelect,
-                        onAlbumSelect = { albumName, albumTracks ->
-                            selectedAlbumName = albumName
-                            selectedAlbumTracks = albumTracks
-                        },
-                        onArtistSelect = { artistName, artistTracks ->
-                            selectedArtistName = artistName
-                            selectedArtistTracks = artistTracks
-                        },
-                        onNavigateToCategory = { category ->
-                            selectedLibraryCategory = category
-                            selectedTab = MainTab.LIBRARY
-                        },
-                        onOpenSearch = { selectedTab = MainTab.SEARCH }
-                    )
+                if (visitedTabs.contains(MainTab.HOME)) {
+                    val isVisible = selectedTab == MainTab.HOME
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(if (isVisible) 1f else 0f)
+                            .then(
+                                if (isVisible) Modifier
+                                else Modifier.layout { _, _ -> layout(0, 0) {} }
+                            )
+                    ) {
+                        HomeScreen(
+                            tracks = tracks,
+                            currentTrack = currentTrack,
+                            onTrackSelect = onTrackSelect,
+                            onAlbumSelect = { albumName, albumTracks ->
+                                selectedAlbumName = albumName
+                                selectedAlbumTracks = albumTracks
+                            },
+                            onArtistSelect = { artistName, artistTracks ->
+                                selectedArtistName = artistName
+                                selectedArtistTracks = artistTracks
+                            },
+                            onNavigateToCategory = { category ->
+                                selectedLibraryCategory = category
+                                selectedTab = MainTab.LIBRARY
+                            },
+                            onOpenSearch = { selectedTab = MainTab.SEARCH }
+                        )
+                    }
+                }
 
-                    MainTab.LIBRARY -> LibraryScreen(
-                        tracks = tracks,
-                        allTracks = allTracks,
-                        currentTrack = currentTrack,
-                        isLoading = isLoading,
-                        initialCategory = selectedLibraryCategory,
-                        onCategoryChange = { selectedLibraryCategory = it },
-                        onTrackSelect = onTrackSelect,
-                        onAlbumSelect = { albumName, albumTracks ->
-                            selectedAlbumName = albumName
-                            selectedAlbumTracks = albumTracks
-                        },
-                        onArtistSelect = { artistName, artistTracks ->
-                            selectedArtistName = artistName
-                            selectedArtistTracks = artistTracks
-                        },
-                        onPickFolder = onPickFolder,
-                        onRescanLibrary = onRescanLibrary,
-                        onAddNavidromeServer = onAddNavidromeServer,
-                        onOpenPowerampMenu = { selectedTab = MainTab.SETTINGS },
-                        onOpenSearch = { selectedTab = MainTab.SEARCH }
-                    )
+                if (visitedTabs.contains(MainTab.LIBRARY)) {
+                    val isVisible = selectedTab == MainTab.LIBRARY
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(if (isVisible) 1f else 0f)
+                            .then(
+                                if (isVisible) Modifier
+                                else Modifier.layout { _, _ -> layout(0, 0) {} }
+                            )
+                    ) {
+                        LibraryScreen(
+                            tracks = tracks,
+                            allTracks = allTracks,
+                            currentTrack = currentTrack,
+                            isLoading = isLoading,
+                            initialCategory = selectedLibraryCategory,
+                            onCategoryChange = { selectedLibraryCategory = it },
+                            onTrackSelect = onTrackSelect,
+                            onAlbumSelect = { albumName, albumTracks ->
+                                selectedAlbumName = albumName
+                                selectedAlbumTracks = albumTracks
+                            },
+                            onArtistSelect = { artistName, artistTracks ->
+                                selectedArtistName = artistName
+                                selectedArtistTracks = artistTracks
+                            },
+                            onPickFolder = onPickFolder,
+                            onRescanLibrary = onRescanLibrary,
+                            onAddNavidromeServer = onAddNavidromeServer,
+                            onOpenPowerampMenu = { selectedTab = MainTab.SETTINGS },
+                            onOpenSearch = { selectedTab = MainTab.SEARCH }
+                        )
+                    }
+                }
 
-                    MainTab.PLAYLISTS -> PlaylistsScreen(
-                        allTracks = tracks,
-                        currentTrack = currentTrack,
-                        onTrackSelect = onTrackSelect
-                    )
+                if (visitedTabs.contains(MainTab.PLAYLISTS)) {
+                    val isVisible = selectedTab == MainTab.PLAYLISTS
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(if (isVisible) 1f else 0f)
+                            .then(
+                                if (isVisible) Modifier
+                                else Modifier.layout { _, _ -> layout(0, 0) {} }
+                            )
+                    ) {
+                        PlaylistsScreen(
+                            allTracks = tracks,
+                            currentTrack = currentTrack,
+                            onTrackSelect = onTrackSelect
+                        )
+                    }
+                }
 
-                    MainTab.SEARCH -> SearchScreen(
-                        tracks = tracks,
-                        currentTrack = currentTrack,
-                        onTrackSelect = onTrackSelect,
-                        onBack = { showExitDialog = true }
-                    )
+                if (visitedTabs.contains(MainTab.SEARCH)) {
+                    val isVisible = selectedTab == MainTab.SEARCH
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(if (isVisible) 1f else 0f)
+                            .then(
+                                if (isVisible) Modifier
+                                else Modifier.layout { _, _ -> layout(0, 0) {} }
+                            )
+                    ) {
+                        SearchScreen(
+                            tracks = tracks,
+                            currentTrack = currentTrack,
+                            onTrackSelect = onTrackSelect,
+                            onBack = { showExitDialog = true }
+                        )
+                    }
+                }
 
-                    MainTab.SETTINGS -> SettingsScreen(
-                        onBack = { showExitDialog = true },
-                        onPickFolder = onPickFolder,
-                        onOpenAudioChain = { showAudioChainModal = true },
-                        onOpenEqualizer = { showEqualizer = true },
-                        onRescanLibrary = onRescanLibrary
-                    )
+                if (visitedTabs.contains(MainTab.SETTINGS)) {
+                    val isVisible = selectedTab == MainTab.SETTINGS
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(if (isVisible) 1f else 0f)
+                            .then(
+                                if (isVisible) Modifier
+                                else Modifier.layout { _, _ -> layout(0, 0) {} }
+                            )
+                    ) {
+                        SettingsScreen(
+                            onBack = { showExitDialog = true },
+                            onPickFolder = onPickFolder,
+                            onOpenAudioChain = { showAudioChainModal = true },
+                            onOpenEqualizer = { showEqualizer = true },
+                            onRescanLibrary = onRescanLibrary
+                        )
+                    }
                 }
             }
         }

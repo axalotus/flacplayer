@@ -129,9 +129,8 @@ object AudioPlayerService {
 
         serviceScope.launch {
             try {
-                val path = resolveFilePath(initialTrack.uri)
-                Log.d(TAG, "setInitialTracks: Pre-loading last played track '${initialTrack.title}' at '$path' (saved pos: $lastProgressMs ms)")
-                val openSuccess = NativeAudioEngine.openFile(path)
+                Log.d(TAG, "setInitialTracks: Pre-loading last played track '${initialTrack.title}' (saved pos: $lastProgressMs ms)")
+                val openSuccess = openTrack(initialTrack)
                 if (openSuccess) {
                     val durationFrames = NativeAudioEngine.getDuration()
                     val sr = initialTrack.sampleRateHz.takeIf { it > 0 } ?: 44100
@@ -178,9 +177,8 @@ object AudioPlayerService {
 
         serviceScope.launch {
             try {
-                val path = resolveFilePath(track.uri)
-                Log.d(TAG, "playTrackAtIndex: Opening '${track.title}' at '$path'")
-                val openSuccess = NativeAudioEngine.openFile(path)
+                Log.d(TAG, "playTrackAtIndex: Opening '${track.title}'")
+                val openSuccess = openTrack(track)
                 if (openSuccess) {
                     val durationFrames = NativeAudioEngine.getDuration()
                     val sr = track.sampleRateHz.takeIf { it > 0 } ?: 44100
@@ -427,6 +425,33 @@ object AudioPlayerService {
     }
 
     private var activePfd: android.os.ParcelFileDescriptor? = null
+
+    private suspend fun openTrack(track: AudioFileMetadata): Boolean = withContext(Dispatchers.IO) {
+        val uri = track.uri
+        if (uri.scheme == "content") {
+            val ctx = appContext ?: return@withContext false
+            try {
+                activePfd?.close()
+                activePfd = null
+                val pfd = ctx.contentResolver.openFileDescriptor(uri, "r")
+                if (pfd != null) {
+                    activePfd = pfd
+                    val fd = pfd.fd
+                    Log.d(TAG, "openTrack: Opening via direct kernel FD $fd for '${track.title}'")
+                    val success = NativeAudioEngine.openFd(fd)
+                    if (success) {
+                        return@withContext true
+                    }
+                    Log.w(TAG, "openTrack: openFd returned false for FD $fd, falling back to resolveFilePath")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "openTrack: Failed opening ParcelFileDescriptor for $uri", e)
+            }
+        }
+        val path = resolveFilePath(track.uri)
+        Log.d(TAG, "openTrack: Opening via file path '$path' for '${track.title}'")
+        return@withContext NativeAudioEngine.openFile(path)
+    }
 
     private suspend fun resolveFilePath(uri: Uri): String = withContext(Dispatchers.IO) {
         if (uri.scheme == "file") {

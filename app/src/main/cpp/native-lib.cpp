@@ -24,6 +24,14 @@ Java_com_antigravity_audioplayer_audio_NativeAudioEngine_openFile(JNIEnv *env, j
 }
 
 extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_antigravity_audioplayer_audio_NativeAudioEngine_openFd(JNIEnv *env, jobject thiz, jint fd) {
+    if (!gAudioEngine) return JNI_FALSE;
+    bool success = gAudioEngine->loadFd(fd);
+    return success ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_antigravity_audioplayer_audio_NativeAudioEngine_seekTo(JNIEnv *env, jobject thiz, jlong target_frame) {
     if (!gAudioEngine) return -1;

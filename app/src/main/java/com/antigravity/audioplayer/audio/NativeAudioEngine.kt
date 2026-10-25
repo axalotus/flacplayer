@@ -15,6 +15,13 @@ object NativeAudioEngine {
     external fun initEngine()
 
     /**
+     * Opens an audio file by direct file descriptor.
+     * @param fd Raw open Linux file descriptor.
+     * @return true if opened successfully.
+     */
+    external fun openFd(fd: Int): Boolean
+
+    /**
      * Opens a FLAC file and prepares the decoder and ring buffer.
      * @param filePath Absolute path to the FLAC file.
      * @return true if opened successfully.

@@ -23,20 +23,54 @@ AudioEngine::~AudioEngine() {
     LOG_OBOE_I("AudioEngine destroyed");
 }
 
-bool AudioEngine::loadFile(const std::string& filePath) {
+bool AudioEngine::initStreamAfterLoad() {
+    int sampleRate = mDecoder->getSampleRate();
+    int channels = mDecoder->getChannels();
+    LOG_OBOE_I("initStreamAfterLoad: Successfully opened. SampleRate: %d, Channels: %d, TotalFrames: %lld",
+               sampleRate, channels, (long long)mDecoder->getTotalFrames());
+
+    // Pre-decode initial frames into RingBuffer so buffer is never dry on startup
+    const int32_t PREBUFFER_SIZE = 16384;
+    std::vector<float> preBuffer(PREBUFFER_SIZE);
+    uint32_t ch = (channels > 0) ? (uint32_t)channels : 2u;
+    uint64_t framesToRead = PREBUFFER_SIZE / ch;
+    uint64_t framesDecoded = mDecoder->decodeFrames(preBuffer.data(), framesToRead);
+    if (framesDecoded > 0) {
+        mRingBuffer->write(preBuffer.data(), framesDecoded * ch);
+        LOG_OBOE_D("initStreamAfterLoad: Pre-buffered %lld frames into RingBuffer", (long long)framesDecoded);
+    }
+
+    // Check if existing Oboe stream can be reused
+    bool needNewStream = (!mStream ||
+                          mStream->getState() == oboe::StreamState::Closed ||
+                          mStream->getState() == oboe::StreamState::Disconnected ||
+                          mStream->getSampleRate() != sampleRate ||
+                          mStream->getChannelCount() != channels);
+
+    if (needNewStream) {
+        LOG_OBOE_I("initStreamAfterLoad: Stream params changed or stream closed -> creating new Oboe stream (SR: %d, Ch: %d)", sampleRate, channels);
+        closeStream();
+        if (!openStream(channels, sampleRate)) {
+            LOG_OBOE_E("initStreamAfterLoad: openStream failed!");
+            return false;
+        }
+    } else {
+        LOG_OBOE_I("initStreamAfterLoad: Reusing existing Oboe stream (Current State: %s)", oboe::convertToText(mStream->getState()));
+    }
+
+    return true;
+}
+
+bool AudioEngine::loadFd(int fd) {
     std::lock_guard<std::mutex> lock(mLock);
-    LOG_OBOE_I("loadFile: requesting to open '%s'", filePath.c_str());
+    LOG_OBOE_I("loadFd: requesting to open fd %d", fd);
 
-    // 1. Mark not playing so audio callback immediately outputs silence without racing
     mIsPlaying = false;
-
-    // 2. Stop decode thread safely before touching decoder
     mDecodeThreadRunning = false;
     if (mDecodeThread.joinable()) {
         mDecodeThread.join();
     }
 
-    // 2. Reset flags & counters
     mIsEof = false;
     mDecoderReachedEof = false;
     mPlayedSampleCount.store(0);
@@ -45,47 +79,46 @@ bool AudioEngine::loadFile(const std::string& filePath) {
         mEqualizer->reset();
     }
 
-    // 3. Open file in decoder
+    if (!mDecoder->openFd(fd)) {
+        LOG_OBOE_E("loadFd: Failed to open fd %d in AudioDecoder", fd);
+        return false;
+    }
+
+    return initStreamAfterLoad();
+}
+
+bool AudioEngine::loadFile(const std::string& filePath) {
+    if (filePath.rfind("/proc/self/fd/", 0) == 0) {
+        int fd = -1;
+        if (sscanf(filePath.c_str(), "/proc/self/fd/%d", &fd) == 1 && fd >= 0) {
+            LOG_OBOE_I("loadFile: path '%s' is proc fd -> delegating to loadFd(%d)", filePath.c_str(), fd);
+            return loadFd(fd);
+        }
+    }
+
+    std::lock_guard<std::mutex> lock(mLock);
+    LOG_OBOE_I("loadFile: requesting to open '%s'", filePath.c_str());
+
+    mIsPlaying = false;
+    mDecodeThreadRunning = false;
+    if (mDecodeThread.joinable()) {
+        mDecodeThread.join();
+    }
+
+    mIsEof = false;
+    mDecoderReachedEof = false;
+    mPlayedSampleCount.store(0);
+    mRingBuffer->clear();
+    if (mEqualizer) {
+        mEqualizer->reset();
+    }
+
     if (!mDecoder->openFile(filePath)) {
         LOG_OBOE_E("loadFile: Failed to open '%s' in AudioDecoder", filePath.c_str());
         return false;
     }
 
-    int sampleRate = mDecoder->getSampleRate();
-    int channels = mDecoder->getChannels();
-    LOG_OBOE_I("loadFile: Successfully opened file. SampleRate: %d, Channels: %d, TotalFrames: %lld",
-               sampleRate, channels, (long long)mDecoder->getTotalFrames());
-
-    // 4. Pre-decode initial frames into RingBuffer so buffer is never dry on startup
-    const int32_t PREBUFFER_SIZE = 16384;
-    std::vector<float> preBuffer(PREBUFFER_SIZE);
-    uint32_t ch = (channels > 0) ? (uint32_t)channels : 2u;
-    uint64_t framesToRead = PREBUFFER_SIZE / ch;
-    uint64_t framesDecoded = mDecoder->decodeFrames(preBuffer.data(), framesToRead);
-    if (framesDecoded > 0) {
-        mRingBuffer->write(preBuffer.data(), framesDecoded * ch);
-        LOG_OBOE_D("loadFile: Pre-buffered %lld frames into RingBuffer", (long long)framesDecoded);
-    }
-
-    // 5. Check if existing Oboe stream can be reused
-    bool needNewStream = (!mStream ||
-                          mStream->getState() == oboe::StreamState::Closed ||
-                          mStream->getState() == oboe::StreamState::Disconnected ||
-                          mStream->getSampleRate() != sampleRate ||
-                          mStream->getChannelCount() != channels);
-
-    if (needNewStream) {
-        LOG_OBOE_I("loadFile: Stream params changed or stream closed -> creating new Oboe stream (SR: %d, Ch: %d)", sampleRate, channels);
-        closeStream();
-        if (!openStream(channels, sampleRate)) {
-            LOG_OBOE_E("loadFile: openStream failed!");
-            return false;
-        }
-    } else {
-        LOG_OBOE_I("loadFile: Reusing existing Oboe stream (Current State: %s)", oboe::convertToText(mStream->getState()));
-    }
-
-    return true;
+    return initStreamAfterLoad();
 }
 
 int64_t AudioEngine::seekTo(int64_t targetFrame) {

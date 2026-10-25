@@ -25,6 +25,7 @@ public:
     void stop();
 
     bool loadFile(const std::string& filePath);
+    bool loadFd(int fd);
     int64_t seekTo(int64_t targetFrame);
     int64_t getCurrentFrame() const;
     int64_t getTotalFrames() const;
@@ -68,6 +69,7 @@ private:
     bool openStream(int channelCount, int sampleRate);
     void closeStream();
     void decodeLoop();
+    bool initStreamAfterLoad();
 };
 
 #endif //AUDIOPLAYER_AUDIOENGINE_H

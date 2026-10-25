@@ -21,6 +21,7 @@ public:
     ~AudioDecoder();
 
     bool openFile(const std::string& filePath);
+    bool openFd(int fd);
     void close();
 
     int64_t seek(int64_t targetFrame);
