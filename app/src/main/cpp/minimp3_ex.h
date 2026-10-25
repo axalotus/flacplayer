@@ -177,13 +177,25 @@ static void mp3dec_skip_id3(const uint8_t **pbuf, size_t *pbuf_size)
 {
     uint8_t *buf = (uint8_t *)(*pbuf);
     size_t buf_size = *pbuf_size;
-    size_t id3v2size = mp3dec_skip_id3v2(buf, buf_size);
-    if (id3v2size)
+    while (buf_size >= MINIMP3_ID3_DETECT_SIZE)
     {
-        if (id3v2size >= buf_size)
-            id3v2size = buf_size;
-        buf      += id3v2size;
-        buf_size -= id3v2size;
+        size_t id3v2size = mp3dec_skip_id3v2(buf, buf_size);
+        if (id3v2size)
+        {
+            if (id3v2size >= buf_size)
+                id3v2size = buf_size;
+            buf      += id3v2size;
+            buf_size -= id3v2size;
+            /* Skip any zero padding between consecutive ID3v2 tags */
+            while (buf_size > 0 && *buf == 0)
+            {
+                buf++;
+                buf_size--;
+            }
+        } else
+        {
+            break;
+        }
     }
     mp3dec_skip_id3v1(buf, &buf_size);
     *pbuf = (const uint8_t *)buf;
@@ -654,7 +666,16 @@ static int mp3dec_load_index(void *user_data, const uint8_t *frame, int frame_si
         {
             int ret = mp3dec_check_vbrtag(frame, frame_size, &frames, &delay, &padding);
             if (ret)
+            {
                 dec->start_offset = dec->offset = offset + frame_size;
+                if ((size_t)frame_size + HDR_SIZE <= buf_size && hdr_valid(frame + frame_size))
+                {
+                    const uint8_t *next_hdr = frame + frame_size;
+                    info->channels = HDR_IS_MONO(next_hdr) ? 1 : 2;
+                    info->hz = hdr_sample_rate_hz(next_hdr);
+                    dec->info = *info;
+                }
+            }
             if (ret > 0)
             {
                 padding *= info->channels;
@@ -943,9 +964,18 @@ size_t mp3dec_ex_read_frame(mp3dec_ex_t *dec, mp3d_sample_t **buf, mp3dec_frame_
             dec->buffer_samples = mp3dec_decode_frame(&dec->mp3d, dec_buf, MINIMP3_MIN(buf_size, (uint64_t)INT_MAX), dec->buffer, frame_info);
         }
         dec->buffer_consumed = 0;
+        if (!frame_info->frame_bytes)
+        {
+            return 0;
+        }
         if (dec->info.hz != frame_info->hz || dec->info.layer != frame_info->layer)
         {
-return_e_decode:
+            if (!dec->io && frame_info->frame_bytes > 0)
+            {
+                dec->offset += frame_info->frame_bytes;
+                dec->buffer_samples = 0;
+                continue;
+            }
             dec->last_error = MP3D_E_DECODE;
             return 0;
         }
@@ -957,14 +987,6 @@ return_e_decode:
                 size_t skip = MINIMP3_MIN(dec->buffer_samples, dec->to_skip);
                 dec->buffer_consumed += skip;
                 dec->to_skip -= skip;
-            }
-            if (
-#ifdef MINIMP3_ALLOW_MONO_STEREO_TRANSITION
-                !(dec->flags & MP3D_ALLOW_MONO_STEREO_TRANSITION) &&
-#endif
-                dec->buffer_consumed != dec->buffer_samples && dec->info.channels != frame_info->channels)
-            {
-                goto return_e_decode;
             }
         } else if (dec->to_skip > 0)
         {   /* In mp3 decoding not always can start decode from any frame because of bit reservoir,

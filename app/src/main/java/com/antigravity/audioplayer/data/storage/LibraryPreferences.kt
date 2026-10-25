@@ -80,6 +80,15 @@ class LibraryPreferences private constructor(private val context: Context) {
         _isEmbeddedCoversEnabled.value = value
     }
 
+    // Hide System Navigation Bar (Immersive Mode) toggle
+    private val _isHideNavigationBar = MutableStateFlow(prefs.getBoolean("hide_navigation_bar", true))
+    val isHideNavigationBar = _isHideNavigationBar.asStateFlow()
+
+    fun setHideNavigationBar(value: Boolean) {
+        prefs.edit().putBoolean("hide_navigation_bar", value).apply()
+        _isHideNavigationBar.value = value
+    }
+
     // Dedicated Lyrics Folder Uri
     private val _lyricsFolderUri = MutableStateFlow<String?>(prefs.getString("lyrics_folder_uri", null))
     val lyricsFolderUri = _lyricsFolderUri.asStateFlow()

@@ -289,16 +289,29 @@ fun PlayerScreen(
                         .background(Color.White.copy(alpha = 0.38f))
                         .clickable { onCollapsePlayer() }
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth().then(topBarDragModifier),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(topBarDragModifier)
                 ) {
-                    IconButton(onClick = onCollapsePlayer) {
+                    IconButton(
+                        onClick = onCollapsePlayer,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
                         Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Свернуть", modifier = Modifier.size(34.dp))
                     }
-                    Text("СЕЙЧАС ИГРАЕТ", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, letterSpacing = 1.sp)
-                    Spacer(modifier = Modifier.size(48.dp))
+                    Text(
+                        text = "СЕЙЧАС ИГРАЕТ",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 1.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.Center)
+                            .padding(horizontal = 56.dp)
+                    )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Icon(Icons.Default.MusicNote, contentDescription = null, tint = MaterialTheme.colorScheme.primary.copy(0.4f), modifier = Modifier.size(80.dp))
@@ -309,7 +322,7 @@ fun PlayerScreen(
                         Text("К библиотеке")
                     }
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(48.dp))
             }
         } else {
             val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
@@ -323,12 +336,11 @@ fun PlayerScreen(
                         start = if (isSmallScreen) 16.dp else 22.dp,
                         end = if (isSmallScreen) 16.dp else 22.dp,
                         top = if (isSmallScreen) 4.dp else 8.dp,
-                        bottom = if (isSmallScreen) 14.dp else 20.dp
+                        bottom = if (isSmallScreen) 12.dp else 16.dp
                     ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // ── 1. TOP: Drag Pill + Header Row ────────────────────────────────
+                // ── 1. TOP: Drag Pill + Strictly Centered Header Bar ──────────────
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -336,22 +348,23 @@ fun PlayerScreen(
                     Box(
                         modifier = Modifier
                             .then(topBarDragModifier)
-                            .padding(top = if (isSmallScreen) 2.dp else 4.dp, bottom = if (isSmallScreen) 4.dp else 6.dp)
+                            .padding(top = if (isSmallScreen) 2.dp else 4.dp, bottom = if (isSmallScreen) 2.dp else 4.dp)
                             .size(width = 38.dp, height = 4.5.dp)
                             .clip(RoundedCornerShape(2.5.dp))
                             .background(Color.White.copy(alpha = 0.38f))
                             .clickable { onCollapsePlayer() }
                     )
 
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then(topBarDragModifier),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .then(topBarDragModifier)
                     ) {
-                        // Collapse button
-                        IconButton(onClick = onCollapsePlayer) {
+                        // Left: Collapse button
+                        IconButton(
+                            onClick = onCollapsePlayer,
+                            modifier = Modifier.align(Alignment.CenterStart)
+                        ) {
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Свернуть",
@@ -360,12 +373,13 @@ fun PlayerScreen(
                             )
                         }
 
-                        // Center info / Sleep Timer Active Indicator
+                        // Strictly Centered Title / Sleep Timer Indicator
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 8.dp)
+                                .fillMaxWidth()
+                                .align(Alignment.Center)
+                                .padding(horizontal = 88.dp)
                         ) {
                             if (isSleepTimerActive) {
                                 Surface(
@@ -390,30 +404,38 @@ fun PlayerScreen(
                                             text = "Zzz ${SleepTimerController.formatRemainingTime(sleepTimerRemainingSec)}",
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = MaterialTheme.colorScheme.primary,
+                                            textAlign = TextAlign.Center
                                         )
                                     }
                                 }
                             } else {
                                 Text(
-                                    "СЕЙЧАС ИГРАЕТ",
-                                    fontSize = 9.sp,
+                                    text = "СЕЙЧАС ИГРАЕТ",
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
-                                    letterSpacing = 1.2.sp
+                                    letterSpacing = 1.2.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                             Text(
-                                currentTrack.album,
+                                text = currentTrack.album,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
 
-                        // Actions: Queue + 3-dots BottomSheet Menu
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Right Actions: Queue + 3-dots BottomSheet Menu
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.align(Alignment.CenterEnd)
+                        ) {
                             IconButton(onClick = onOpenQueue) {
                                 Icon(
                                     Icons.AutoMirrored.Filled.QueueMusic,
@@ -435,11 +457,16 @@ fun PlayerScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.weight(0.5f))
+
                 // ── 2. ALBUM ART / LYRICS (Strictly 1:1 Square Container) ─────────
                 Box(
                     modifier = Modifier
-                        .weight(1f, fill = false)
-                        .padding(vertical = if (isSmallScreen) 4.dp else 8.dp)
+                        .weight(3.2f, fill = false)
+                        .padding(
+                            horizontal = if (isSmallScreen) 22.dp else 14.dp,
+                            vertical = if (isSmallScreen) 2.dp else 6.dp
+                        )
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(22.dp)),
                     contentAlignment = Alignment.Center
@@ -474,6 +501,8 @@ fun PlayerScreen(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.weight(0.6f))
 
                 // ── 3. TRACK INFO + QUALITY & OUTPUT BADGE ────────────────────────
                 Column(
@@ -608,11 +637,15 @@ fun PlayerScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 6.dp else 10.dp))
+
                 // ── 4. SEEK SLIDER (isolated progress recomposition) ──────────────
                 PlayerSeekSection(
                     totalDurationMs = totalDurationMs,
                     onSeekTo = onSeekTo
                 )
+
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
                 // ── 5. MAIN PLAYBACK CONTROLS ─────────────────────────────────────
                 Row(
@@ -666,6 +699,7 @@ fun PlayerScreen(
 
                 // ── 6. SECONDARY CONTROLS ROW (Only on larger screens) ────────────
                 if (!isSmallScreen) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -714,8 +748,9 @@ fun PlayerScreen(
                     }
                 }
 
-                // Bottom anchor so Arrangement.SpaceBetween distributes breathing room below controls on tall screens
-                Spacer(modifier = Modifier.height(2.dp))
+                // Lift the entire bottom controls block 2-3x higher from the bottom edge
+                Spacer(modifier = Modifier.weight(1.2f))
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 48.dp else 56.dp))
             }
         }
     }

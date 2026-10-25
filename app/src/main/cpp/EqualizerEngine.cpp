@@ -6,7 +6,7 @@ EqualizerEngine::EqualizerEngine() {
     mSampleRate = 44100.0f;
     mChannels = 2;
     mEnabled = true;
-    mBassBoostStrength = 0.35f;
+    mBassBoostStrength = 0.0f;
 
     for (int i = 0; i < NUM_BANDS; ++i) {
         mBandGains[i] = 0.0f;
@@ -64,8 +64,8 @@ void EqualizerEngine::updateFilters() {
         if (mFilters[ch].size() < static_cast<size_t>(NUM_BANDS)) continue;
 
         // Bass boost filter (Low Shelf at 80Hz)
-        // Gain from 0 to +15dB depending on strength (0.0 to 1.0)
-        float bassGainDb = mBassBoostStrength * 15.0f;
+        // Gain from 0 to +12dB depending on strength (0.0 to 1.0)
+        float bassGainDb = mBassBoostStrength * 12.0f;
         mBassFilters[ch].setParameters(FilterType::LOW_SHELF, mSampleRate, 80.0f, 0.707f, bassGainDb);
         
         // 10-band EQ
@@ -73,8 +73,6 @@ void EqualizerEngine::updateFilters() {
             float freq = BAND_FREQUENCIES[b];
             float gain = mBandGains[b];
             
-            // For the lowest band, we could use LowShelf, and for the highest HighShelf.
-            // But Peaking EQ works well for standard graphic equalizers.
             FilterType type = FilterType::PEAKING_EQ;
             if (b == 0) type = FilterType::LOW_SHELF;
             else if (b == NUM_BANDS - 1) type = FilterType::HIGH_SHELF;
@@ -88,11 +86,22 @@ void EqualizerEngine::processBuffer(float* buffer, int32_t numSamples) {
     if (!mEnabled || buffer == nullptr || numSamples <= 0 || mChannels <= 0) return;
     if (mFilters.size() < static_cast<size_t>(mChannels) || mBassFilters.size() < static_cast<size_t>(mChannels)) return;
     
-    // We expect numSamples to be total floats (frames * channels)
-    // The lock prevents parameters changing mid-buffer, but we use try_lock
-    // to avoid blocking the audio thread if the UI is currently updating filters.
     if (!mLock.try_lock()) {
         return; 
+    }
+
+    bool hasActiveFilter = (mBassBoostStrength > 0.01f);
+    if (!hasActiveFilter) {
+        for (int b = 0; b < NUM_BANDS; ++b) {
+            if (std::abs(mBandGains[b]) > 0.01f && BAND_FREQUENCIES[b] < mSampleRate * 0.45f) {
+                hasActiveFilter = true;
+                break;
+            }
+        }
+    }
+    if (!hasActiveFilter) {
+        mLock.unlock();
+        return;
     }
     
     int frames = numSamples / mChannels;
@@ -107,10 +116,9 @@ void EqualizerEngine::processBuffer(float* buffer, int32_t numSamples) {
                 sample = mBassFilters[ch].process(sample);
             }
             
-            // Apply 10-band EQ
+            // Apply 10-band EQ (only bands strictly below Nyquist)
             for (int b = 0; b < NUM_BANDS; ++b) {
-                // Optimization: skip if gain is exactly 0
-                if (std::abs(mBandGains[b]) > 0.01f) {
+                if (std::abs(mBandGains[b]) > 0.01f && BAND_FREQUENCIES[b] < mSampleRate * 0.45f) {
                     sample = mFilters[ch][b].process(sample);
                 }
             }

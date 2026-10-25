@@ -318,6 +318,8 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
     builder.setDirection(oboe::Direction::Output)
            ->setSharingMode(oboe::SharingMode::Shared)
            ->setFormat(oboe::AudioFormat::Float)
+           ->setFormatConversionAllowed(true)
+           ->setChannelConversionAllowed(true)
            ->setUsage(oboe::Usage::Media)
            ->setContentType(oboe::ContentType::Music)
            ->setChannelCount(channelCount)
@@ -340,10 +342,13 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
 
     if (!wantsAAudio || mAudioMode == 1) {
         builder.setAudioApi(oboe::AudioApi::OpenSLES);
+        builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
     } else {
         builder.setAudioApi(oboe::AudioApi::AAudio);
         if (mAudioMode == 2) {
             builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::None);
+        } else {
+            builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
         }
     }
     builder.setSampleRate(sampleRate);
@@ -357,6 +362,7 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
     if (result != oboe::Result::OK && wantsAAudio) {
         LOG_OBOE_W("openStream: AAudio openStream failed (%s), retrying with OpenSL ES...", oboe::convertToText(result));
         builder.setAudioApi(oboe::AudioApi::OpenSLES);
+        builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
         result = builder.openStream(mStream);
     }
 
@@ -380,7 +386,9 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
         mStream->setBufferSizeInFrames(targetBuffer);
     }
 
-    mEqualizer->init((float)sampleRate, channelCount);
+    int32_t actualSr = mStream->getSampleRate() > 0 ? mStream->getSampleRate() : sampleRate;
+    int32_t actualCh = mStream->getChannelCount() > 0 ? mStream->getChannelCount() : channelCount;
+    mEqualizer->init((float)actualSr, actualCh);
 
     LOG_OBOE_I("openStream: Stream opened successfully: Mode=%d, API=%s, SampleRate=%d, Channels=%d, BufferFrames=%d",
                mAudioMode, oboe::convertToText(mStream->getAudioApi()), mStream->getSampleRate(), mStream->getChannelCount(),
@@ -433,10 +441,15 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream
         mEqualizer->processBuffer(floatData, samplesRead);
     }
 
-    // Safety guard: ensure no NaN/Inf ever reaches audio hardware
+    // Safety guard: ensure no NaN/Inf or >0dBFS overflow ever reaches OpenSL ES / AAudio hardware
     for (int32_t i = 0; i < totalSamples; ++i) {
-        if (std::isnan(floatData[i]) || std::isinf(floatData[i])) {
+        float s = floatData[i];
+        if (std::isnan(s) || std::isinf(s)) {
             floatData[i] = 0.0f;
+        } else if (s > 1.0f) {
+            floatData[i] = 1.0f;
+        } else if (s < -1.0f) {
+            floatData[i] = -1.0f;
         }
     }
 
