@@ -91,9 +91,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        dacDetector = DacDetector(this)
+        dacDetector = DacDetector(applicationContext)
 
-        val prefs = LibraryPreferences.getInstance(this)
+        val prefs = LibraryPreferences.getInstance(applicationContext)
         hideSystemNavigationBar()
 
         @Suppress("DEPRECATION")
@@ -105,13 +105,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        NativeAudioEngine.initEngine()
-        NativeAudioEngine.setSafeBufferMode(prefs.isSafeBufferMode.value)
-        NativeAudioEngine.recreateStream(prefs.audioEngineMode.value)
-
-        equalizerController.init(this)
-        AudioPlayerService.init(this)
-        AudioPlayerService.cleanLegacyAudioCache(this)
+        AudioPlayerService.init(applicationContext)
+        equalizerController.init(applicationContext)
 
         val filter = IntentFilter().apply {
             addAction(MediaNotificationManager.ACTION_PLAY)
@@ -305,9 +300,7 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             // Ignored if not registered
         }
-        AudioPlayerService.release()
         dacDetector.release()
-        equalizerController.release()
         super.onDestroy()
     }
 }

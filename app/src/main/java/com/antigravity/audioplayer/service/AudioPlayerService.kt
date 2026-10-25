@@ -71,9 +71,17 @@ object AudioPlayerService {
     }
 
     fun init(context: Context) {
-        if (appContext != null) return
+        if (appContext != null) {
+            startPositionTracker()
+            return
+        }
         appContext = context.applicationContext
         audioManager = appContext?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+
+        val prefs = LibraryPreferences.getInstance(context.applicationContext)
+        NativeAudioEngine.initEngine()
+        NativeAudioEngine.setSafeBufferMode(prefs.isSafeBufferMode.value)
+        NativeAudioEngine.recreateStream(prefs.audioEngineMode.value)
 
         mediaNotificationManager = MediaNotificationManager(
             context = context.applicationContext,
@@ -84,12 +92,9 @@ object AudioPlayerService {
             onSeekAction = { pos -> seekTo(pos) }
         )
 
-        val prefs = LibraryPreferences.getInstance(context)
-        NativeAudioEngine.setSafeBufferMode(prefs.isSafeBufferMode.value)
-
         startPositionTracker()
-        cleanLegacyAudioCache(context)
-        Log.d(TAG, "AudioPlayerService initialized (safeBuffer=${prefs.isSafeBufferMode.value})")
+        cleanLegacyAudioCache(context.applicationContext)
+        Log.d(TAG, "AudioPlayerService initialized (safeBuffer=${prefs.isSafeBufferMode.value}, mode=${prefs.audioEngineMode.value})")
     }
 
     private var lastProgressSaveTimestamp = 0L

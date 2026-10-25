@@ -63,6 +63,7 @@ class MusicPlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "onCreate: Initializing MusicPlaybackService")
+        AudioPlayerService.init(applicationContext)
         val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
         wakeLock = powerManager?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FlacPlayer:PlaybackWakeLock")?.apply {
             setReferenceCounted(false)
@@ -96,8 +97,14 @@ class MusicPlaybackService : Service() {
                 AudioPlayerService.skipToPrevious()
             }
             MediaNotificationManager.ACTION_STOP -> {
+                AudioPlayerService.pause()
                 releaseWakeLock()
-                stopForeground(STOP_FOREGROUND_REMOVE)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    @Suppress("DEPRECATION")
+                    stopForeground(true)
+                }
                 stopSelf()
                 return START_NOT_STICKY
             }

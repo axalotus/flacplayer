@@ -37,8 +37,17 @@ import java.io.File
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 
-// Thread-safe cache for artwork bitmaps - max 120 entries (~60MB max)
-val artworkCache = LruCache<String, Bitmap>(120)
+// Thread-safe byte-sized cache for artwork bitmaps (1/8th of max heap, clamped between 8 MB and 20 MB)
+private val maxArtworkCacheBytes: Int =
+    (Runtime.getRuntime().maxMemory() / 8L)
+        .coerceIn(8L * 1024L * 1024L, 20L * 1024L * 1024L)
+        .toInt()
+
+val artworkCache = object : LruCache<String, Bitmap>(maxArtworkCacheBytes) {
+    override fun sizeOf(key: String, bitmap: Bitmap): Int {
+        return bitmap.byteCount
+    }
+}
 private val noArtworkSet: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
 fun clearArtworkCache(context: Context) {
