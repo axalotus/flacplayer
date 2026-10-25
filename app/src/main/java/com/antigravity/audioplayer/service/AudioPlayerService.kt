@@ -84,9 +84,12 @@ object AudioPlayerService {
             onSeekAction = { pos -> seekTo(pos) }
         )
 
+        val prefs = LibraryPreferences.getInstance(context)
+        NativeAudioEngine.setSafeBufferMode(prefs.isSafeBufferMode.value)
+
         startPositionTracker()
         cleanLegacyAudioCache(context)
-        Log.d(TAG, "AudioPlayerService initialized")
+        Log.d(TAG, "AudioPlayerService initialized (safeBuffer=${prefs.isSafeBufferMode.value})")
     }
 
     private var lastProgressSaveTimestamp = 0L
@@ -379,6 +382,8 @@ object AudioPlayerService {
         }
     }
 
+    private var legacyAudioFocusListener: AudioManager.OnAudioFocusChangeListener? = null
+
     private fun requestAudioFocus() {
         val am = audioManager ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -400,14 +405,18 @@ object AudioPlayerService {
             }
             audioFocusRequest?.let { am.requestAudioFocus(it) }
         } else {
-            @Suppress("DEPRECATION")
-            am.requestAudioFocus(
-                { focusChange ->
+            if (legacyAudioFocusListener == null) {
+                legacyAudioFocusListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+                    Log.d(TAG, "Legacy onAudioFocusChange: $focusChange")
                     when (focusChange) {
                         AudioManager.AUDIOFOCUS_LOSS,
                         AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> pause()
                     }
-                },
+                }
+            }
+            @Suppress("DEPRECATION")
+            am.requestAudioFocus(
+                legacyAudioFocusListener,
                 AudioManager.STREAM_MUSIC,
                 AudioManager.AUDIOFOCUS_GAIN
             )
@@ -419,8 +428,10 @@ object AudioPlayerService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
         } else {
-            @Suppress("DEPRECATION")
-            am.abandonAudioFocus(null)
+            legacyAudioFocusListener?.let { listener ->
+                @Suppress("DEPRECATION")
+                am.abandonAudioFocus(listener)
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 #include "AudioEngine.h"
 #include <cmath>
 #include <android/log.h>
+#include <sys/resource.h>
 
 #define OBOE_TAG "OboeAudioEngine"
 #define LOG_OBOE_D(...) __android_log_print(ANDROID_LOG_DEBUG, OBOE_TAG, __VA_ARGS__)
@@ -280,6 +281,7 @@ void AudioEngine::stop() {
 
 void AudioEngine::decodeLoop() {
     LOG_OBOE_D("Decode thread started");
+    setpriority(PRIO_PROCESS, 0, -8); // Boost decode thread priority to prevent underruns
     const int32_t BUFFER_SIZE = 8192;
     std::vector<float> tempBuffer(BUFFER_SIZE);
 
@@ -310,15 +312,24 @@ void AudioEngine::decodeLoop() {
 }
 
 bool AudioEngine::openStream(int channelCount, int sampleRate) {
+    bool isSafe = mSafeBufferMode.load();
+
     oboe::AudioStreamBuilder builder;
     builder.setDirection(oboe::Direction::Output)
-           ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
            ->setSharingMode(oboe::SharingMode::Shared)
            ->setFormat(oboe::AudioFormat::Float)
            ->setUsage(oboe::Usage::Media)
            ->setContentType(oboe::ContentType::Music)
            ->setChannelCount(channelCount)
            ->setCallback(this);
+
+    if (isSafe) {
+        LOG_OBOE_I("openStream: Configuring Safe Audio Buffer mode (PerformanceMode::None, capacity=8192)");
+        builder.setPerformanceMode(oboe::PerformanceMode::None);
+        builder.setBufferCapacityInFrames(8192);
+    } else {
+        builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
+    }
 
     // Apply audio mode with automatic fallback for Android < 8.0 (API < 26)
     bool wantsAAudio = (mAudioMode == 0 || mAudioMode == 2);
@@ -354,10 +365,26 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
         return false;
     }
 
+    // Configure hardware buffer size for glitch-free playback
+    int32_t burst = mStream->getFramesPerBurst();
+    int32_t capacity = mStream->getBufferCapacityInFrames();
+    if (isSafe) {
+        int32_t targetBuffer = (burst > 0) ? (burst * 8) : 4096;
+        if (targetBuffer < 2048) targetBuffer = 2048;
+        if (capacity > 0 && targetBuffer > capacity) targetBuffer = capacity;
+        mStream->setBufferSizeInFrames(targetBuffer);
+        LOG_OBOE_I("openStream: Safe Buffer configured: target=%d frames, actual=%d, burst=%d, capacity=%d",
+                   targetBuffer, mStream->getBufferSizeInFrames(), burst, capacity);
+    } else {
+        int32_t targetBuffer = (burst > 0) ? (burst * 2) : 1024;
+        mStream->setBufferSizeInFrames(targetBuffer);
+    }
+
     mEqualizer->init((float)sampleRate, channelCount);
 
-    LOG_OBOE_I("openStream: Stream opened successfully: Mode=%d, API=%s, SampleRate=%d, Channels=%d",
-               mAudioMode, oboe::convertToText(mStream->getAudioApi()), mStream->getSampleRate(), mStream->getChannelCount());
+    LOG_OBOE_I("openStream: Stream opened successfully: Mode=%d, API=%s, SampleRate=%d, Channels=%d, BufferFrames=%d",
+               mAudioMode, oboe::convertToText(mStream->getAudioApi()), mStream->getSampleRate(), mStream->getChannelCount(),
+               mStream->getBufferSizeInFrames());
     return true;
 }
 
@@ -524,6 +551,12 @@ bool AudioEngine::recreateStream(int mode) {
 bool AudioEngine::setAudioDeviceId(int deviceId) {
     LOG_OBOE_I("setAudioDeviceId: changing device ID to %d", deviceId);
     mDeviceId = deviceId;
+    return reopenStream(mIsPlaying);
+}
+
+bool AudioEngine::setSafeBufferMode(bool enabled) {
+    LOG_OBOE_I("setSafeBufferMode: changing to %d (was %d)", (int)enabled, (int)mSafeBufferMode.load());
+    mSafeBufferMode.store(enabled);
     return reopenStream(mIsPlaying);
 }
 

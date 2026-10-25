@@ -58,6 +58,7 @@ fun SettingsScreen(
     var replayGain by remember { mutableStateOf(false) }
     var gapless by remember { mutableStateOf(true) }
     val audioEngineMode by prefs.audioEngineMode.collectAsState()
+    val isSafeBufferMode by prefs.isSafeBufferMode.collectAsState()
 
     // Interface Settings State
     val themeMode by prefs.themeMode.collectAsState()
@@ -350,6 +351,18 @@ fun SettingsScreen(
                                 }
                             }
                         }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                        SettingsToggleRow(
+                            title = "Режим стабильного буфера",
+                            subtitle = "Увеличивает аудиобуфер (50–100 мс) для устранения треска и заиканий на слабых процессорах и старых версиях Android",
+                            checked = isSafeBufferMode,
+                            onCheckedChange = { enabled ->
+                                prefs.setSafeBufferMode(enabled)
+                                NativeAudioEngine.setSafeBufferMode(enabled)
+                            }
+                        )
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 

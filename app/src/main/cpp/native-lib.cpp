@@ -119,6 +119,13 @@ Java_com_antigravity_audioplayer_audio_NativeAudioEngine_recreateStream(JNIEnv *
 
 extern "C"
 JNIEXPORT jboolean JNICALL
+Java_com_antigravity_audioplayer_audio_NativeAudioEngine_setSafeBufferMode(JNIEnv *env, jobject thiz, jboolean enabled) {
+    if (!gAudioEngine) return JNI_FALSE;
+    return gAudioEngine->setSafeBufferMode(enabled == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
 Java_com_antigravity_audioplayer_audio_NativeAudioEngine_reopenStream(JNIEnv *env, jobject thiz, jboolean restart_if_playing) {
     if (!gAudioEngine) return JNI_FALSE;
     return gAudioEngine->reopenStream(restart_if_playing == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;

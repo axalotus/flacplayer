@@ -40,6 +40,10 @@ public:
     // Set output audio device ID (oboe::kUnspecified = default)
     bool setAudioDeviceId(int deviceId);
     
+    // Configure safe/deep buffer mode to prevent underruns on slow CPUs and Android < 8.0
+    bool setSafeBufferMode(bool enabled);
+    bool getSafeBufferMode() const { return mSafeBufferMode.load(); }
+
     bool isEof() const;
 
     EqualizerEngine* getEqualizer() const { return mEqualizer.get(); }
@@ -65,6 +69,7 @@ private:
     std::atomic<bool> mDecoderReachedEof{false};
     int mAudioMode = 0; // 0=AAudio, 1=OpenSL ES, 2=Hi-Res
     int mDeviceId = oboe::kUnspecified;
+    std::atomic<bool> mSafeBufferMode{false};
 
     bool openStream(int channelCount, int sampleRate);
     void closeStream();

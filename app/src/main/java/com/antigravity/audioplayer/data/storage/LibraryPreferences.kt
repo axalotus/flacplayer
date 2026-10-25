@@ -61,6 +61,16 @@ class LibraryPreferences private constructor(private val context: Context) {
         _audioEngineMode.value = mode
     }
 
+    // Safe Audio Buffer Mode (auto-adapted for Android < 8.0 or weak CPUs, with manual toggle in settings)
+    private val defaultSafeBufferMode = android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O
+    private val _isSafeBufferMode = MutableStateFlow(prefs.getBoolean("is_safe_buffer_mode", defaultSafeBufferMode))
+    val isSafeBufferMode = _isSafeBufferMode.asStateFlow()
+
+    fun setSafeBufferMode(value: Boolean) {
+        prefs.edit().putBoolean("is_safe_buffer_mode", value).apply()
+        _isSafeBufferMode.value = value
+    }
+
     // Embedded Covers toggle (default true)
     private val _isEmbeddedCoversEnabled = MutableStateFlow(prefs.getBoolean("is_embedded_covers", true))
     val isEmbeddedCoversEnabled = _isEmbeddedCoversEnabled.asStateFlow()

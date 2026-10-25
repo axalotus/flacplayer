@@ -90,8 +90,9 @@ class MainActivity : ComponentActivity() {
         dacDetector = DacDetector(this)
 
         NativeAudioEngine.initEngine()
-        val savedEngineMode = LibraryPreferences.getInstance(this).audioEngineMode.value
-        NativeAudioEngine.recreateStream(savedEngineMode)
+        val prefs = LibraryPreferences.getInstance(this)
+        NativeAudioEngine.setSafeBufferMode(prefs.isSafeBufferMode.value)
+        NativeAudioEngine.recreateStream(prefs.audioEngineMode.value)
 
         equalizerController.init(this)
         AudioPlayerService.init(this)

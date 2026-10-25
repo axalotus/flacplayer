@@ -98,6 +98,12 @@ object NativeAudioEngine {
     external fun recreateStream(mode: Int): Boolean
 
     /**
+     * Sets safe/deep buffer mode to eliminate underruns and crackling on slow CPUs or Android < 8.0.
+     * @param enabled True for deep buffer (PerformanceMode::None, 50-100ms buffer), false for LowLatency.
+     */
+    external fun setSafeBufferMode(enabled: Boolean): Boolean
+
+    /**
      * Reopens stream after routing change / disconnect, preserving current frame position.
      * @param restartIfPlaying If true, restarts playback if engine was playing.
      */
