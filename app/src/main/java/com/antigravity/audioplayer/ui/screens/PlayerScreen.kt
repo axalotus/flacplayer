@@ -138,7 +138,6 @@ fun PlayerScreen(
 
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenHeightDp < 700 || configuration.screenWidthDp < 380
-    var showOverflowMenu by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val dismissOffsetY = remember { Animatable(0f) }
@@ -381,7 +380,7 @@ fun PlayerScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .align(Alignment.Center)
-                                .padding(horizontal = 88.dp)
+                                .padding(horizontal = 56.dp)
                         ) {
                             if (isSleepTimerActive) {
                                 Surface(
@@ -433,28 +432,17 @@ fun PlayerScreen(
                             )
                         }
 
-                        // Right Actions: Queue + 3-dots BottomSheet Menu
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        // Right Action: Queue button
+                        IconButton(
+                            onClick = onOpenQueue,
                             modifier = Modifier.align(Alignment.CenterEnd)
                         ) {
-                            IconButton(onClick = onOpenQueue) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.QueueMusic,
-                                    contentDescription = "Очередь",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
-                                )
-                            }
-
-                            IconButton(onClick = { showOverflowMenu = true }) {
-                                Icon(
-                                    Icons.Default.MoreVert,
-                                    contentDescription = "Меню",
-                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                                    modifier = Modifier.size(if (isSmallScreen) 22.dp else 24.dp)
-                                )
-                            }
+                            Icon(
+                                Icons.AutoMirrored.Filled.QueueMusic,
+                                contentDescription = "Очередь",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(if (isSmallScreen) 22.dp else 24.dp)
+                            )
                         }
                     }
                 }
@@ -551,20 +539,18 @@ fun PlayerScreen(
                                     .padding(vertical = 1.dp, horizontal = 2.dp)
                             )
                         }
-                        // Action buttons: Add to playlist (on large screens) + Favorite heart
+                        // Action buttons: Add to playlist + Favorite heart
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (!isSmallScreen) {
-                                IconButton(
-                                    onClick = { showAddToPlaylist = true },
-                                    modifier = Modifier.size(42.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-                                        contentDescription = "Добавить в плейлист",
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
+                            IconButton(
+                                onClick = { showAddToPlaylist = true },
+                                modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                                    contentDescription = "Добавить в плейлист",
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                                    modifier = Modifier.size(if (isSmallScreen) 22.dp else 24.dp)
+                                )
                             }
 
                             IconButton(
@@ -688,53 +674,94 @@ fun PlayerScreen(
                     }
                 }
 
-                // ── 6. SECONDARY CONTROLS ROW (Only on larger screens) ────────────
-                if (!isSmallScreen) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Rewind 10s
-                        IconButton(onClick = {
+                // ── 6. BOTTOM ACTION BUTTONS ROW (Always visible, spread across bottom) ──
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Rewind 10s
+                    IconButton(
+                        onClick = {
                             val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
                             onSeekTo((cur - 10000L).coerceAtLeast(0L))
-                        }) {
-                            Icon(Icons.Default.Replay10, contentDescription = "−10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
-                        }
+                        },
+                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Replay10,
+                            contentDescription = "−10с",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                        )
+                    }
 
-                        // EQ shortcut button
-                        IconButton(onClick = onOpenEqualizer) {
-                            Icon(
-                                Icons.Default.Equalizer,
-                                contentDescription = "Эквалайзер",
-                                tint = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                    // EQ shortcut button
+                    IconButton(
+                        onClick = onOpenEqualizer,
+                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Equalizer,
+                            contentDescription = "Эквалайзер",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                        )
+                    }
 
-                        // Lyrics button
-                        IconButton(onClick = { showLyrics = !showLyrics }) {
-                            Icon(
-                                Icons.Default.Lyrics,
-                                contentDescription = "Текст песни",
-                                tint = if (showLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                    // Lyrics button
+                    IconButton(
+                        onClick = { showLyrics = !showLyrics },
+                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Lyrics,
+                            contentDescription = "Текст песни",
+                            tint = if (showLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                        )
+                    }
 
-                        // Audio Chain info — subtle, minimal
-                        IconButton(onClick = onOpenAudioChain) {
-                            Icon(Icons.Default.Info, contentDescription = "Аудио тракт", tint = MaterialTheme.colorScheme.onSurface.copy(0.28f), modifier = Modifier.size(18.dp))
-                        }
+                    // Sleep Timer button
+                    IconButton(
+                        onClick = { showSleepTimerModal = true },
+                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Bedtime,
+                            contentDescription = "Таймер сна",
+                            tint = if (isSleepTimerActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                        )
+                    }
 
-                        // Forward 10s
-                        IconButton(onClick = {
+                    // Audio Chain info button
+                    IconButton(
+                        onClick = onOpenAudioChain,
+                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = "Аудио тракт",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(0.55f),
+                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                        )
+                    }
+
+                    // Forward 10s
+                    IconButton(
+                        onClick = {
                             val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
                             onSeekTo((cur + 10000L).coerceAtMost(totalDurationMs))
-                        }) {
-                            Icon(Icons.Default.Forward10, contentDescription = "+10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
-                        }
+                        },
+                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Forward10,
+                            contentDescription = "+10с",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                        )
                     }
                 }
 
@@ -742,50 +769,6 @@ fun PlayerScreen(
                 Spacer(modifier = Modifier.height((2 + playerControlsBottomOffsetDp).dp))
             }
         }
-    }
-
-    if (showOverflowMenu && currentTrack != null) {
-        PlayerOptionsBottomSheet(
-            currentTrack = currentTrack,
-            showLyrics = showLyrics,
-            isSleepTimerActive = isSleepTimerActive,
-            sleepTimerRemainingSec = sleepTimerRemainingSec,
-            dacInfo = dacInfo,
-            onToggleLyrics = {
-                showLyrics = !showLyrics
-                showOverflowMenu = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-            },
-            onOpenEqualizer = {
-                showOverflowMenu = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                onOpenEqualizer()
-            },
-            onOpenAudioChain = {
-                showOverflowMenu = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                onOpenAudioChain()
-            },
-            onOpenSleepTimer = {
-                showOverflowMenu = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                showSleepTimerModal = true
-            },
-            onAddToPlaylist = {
-                showOverflowMenu = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                showAddToPlaylist = true
-            },
-            onOpenAudioOutput = {
-                showOverflowMenu = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                showOutputBottomSheet = true
-            },
-            onDismissRequest = {
-                showOverflowMenu = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-            }
-        )
     }
 
     if (showOutputBottomSheet) {
@@ -816,186 +799,6 @@ fun PlayerScreen(
                 (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
             }
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PlayerOptionsBottomSheet(
-    currentTrack: AudioFileMetadata,
-    showLyrics: Boolean,
-    isSleepTimerActive: Boolean,
-    sleepTimerRemainingSec: Long,
-    dacInfo: DacOutputInfo,
-    onToggleLyrics: () -> Unit,
-    onOpenEqualizer: () -> Unit,
-    onOpenAudioChain: () -> Unit,
-    onOpenSleepTimer: () -> Unit,
-    onAddToPlaylist: () -> Unit,
-    onOpenAudioOutput: () -> Unit,
-    onDismissRequest: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            // Track summary header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                AlbumArtView(
-                    track = currentTrack,
-                    modifier = Modifier.size(44.dp),
-                    cornerRadius = 10
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = currentTrack.title,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${currentTrack.artist} • ${currentTrack.album}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 4.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-            )
-
-            PlayerOptionSheetRow(
-                icon = Icons.Default.Lyrics,
-                title = if (showLyrics) "Показать обложку альбома" else "Текст песни (LRC)",
-                subtitle = if (showLyrics) "Вернуться к обложке" else "Синхронизированный текст",
-                isHighlighted = showLyrics,
-                onClick = onToggleLyrics
-            )
-
-            PlayerOptionSheetRow(
-                icon = Icons.Default.Equalizer,
-                title = "Эквалайзер и эффекты",
-                subtitle = "Настройка частот и усиления баса",
-                onClick = onOpenEqualizer
-            )
-
-            PlayerOptionSheetRow(
-                icon = Icons.Default.Info,
-                title = "Аудио тракт и сигнал",
-                subtitle = "${currentTrack.format.name} • ${currentTrack.sampleRateKHzFormatted} / ${currentTrack.bitDepth}-бит",
-                onClick = onOpenAudioChain
-            )
-
-            PlayerOptionSheetRow(
-                icon = Icons.Default.Bedtime,
-                title = "Таймер сна",
-                subtitle = if (isSleepTimerActive) "Активен: Zzz ${SleepTimerController.formatRemainingTime(sleepTimerRemainingSec)}" else "Автоматическая остановка музыки",
-                isHighlighted = isSleepTimerActive,
-                onClick = onOpenSleepTimer
-            )
-
-            PlayerOptionSheetRow(
-                icon = Icons.AutoMirrored.Filled.PlaylistAdd,
-                title = "Добавить в плейлист",
-                subtitle = "Сохранить трек в пользовательский список",
-                onClick = onAddToPlaylist
-            )
-
-            PlayerOptionSheetRow(
-                icon = Icons.Default.Headphones,
-                title = "Аудиовыход / ЦАП",
-                subtitle = dacInfo.deviceName,
-                onClick = onOpenAudioOutput
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-    }
-}
-
-@Composable
-private fun PlayerOptionSheetRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    isHighlighted: Boolean = false,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-        color = if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else Color.Transparent,
-        shape = RoundedCornerShape(14.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(38.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                modifier = Modifier.size(18.dp)
-            )
-        }
     }
 }
 
