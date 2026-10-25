@@ -2,6 +2,7 @@ package com.antigravity.audioplayer.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -424,17 +425,22 @@ fun MainScreen(
             }
         }
 
-        // ── Full-Screen Player (ModalBottomSheet) ───────────────────────────
-        if (isPlayerExpanded) {
-            val playerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-            ModalBottomSheet(
-                onDismissRequest = { isPlayerExpanded = false },
-                sheetState = playerSheetState,
-                containerColor = MaterialTheme.colorScheme.background,
-                scrimColor = Color.Black.copy(alpha = 0.65f),
-                dragHandle = null,
-                modifier = Modifier.fillMaxSize()
+        // ── Full-Screen Player ──────────────────────────────────────────────
+        AnimatedVisibility(
+            visible = isPlayerExpanded,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(180)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(durationMillis = 240, easing = FastOutLinearInEasing)
+            ) + fadeOut(animationSpec = tween(160)),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
             ) {
                 PlayerScreen(
                     currentTrack = currentTrack,
@@ -455,34 +461,20 @@ fun MainScreen(
                     onTrackSelect = { tr -> onTrackSelect(tr, queueTracks) },
                     onOpenAudioChain = { showAudioChainModal = true },
                     onOpenEqualizer = {
-                        coroutineScope.launch {
-                            playerSheetState.hide()
-                        }.invokeOnCompletion {
-                            isPlayerExpanded = false
-                            selectedTab = MainTab.SETTINGS
-                            showEqualizer = true
-                        }
+                        isPlayerExpanded = false
+                        selectedTab = MainTab.SETTINGS
+                        showEqualizer = true
                     },
                     onOpenQueue = { showQueueModal = true },
                     onOpenArtist = { artistName ->
-                        coroutineScope.launch {
-                            playerSheetState.hide()
-                        }.invokeOnCompletion {
-                            isPlayerExpanded = false
-                            selectedArtistName = artistName
-                            selectedArtistTracks = tracks.filter { it.artist.equals(artistName, ignoreCase = true) }
-                        }
+                        isPlayerExpanded = false
+                        selectedArtistName = artistName
+                        selectedArtistTracks = tracks.filter { it.artist.equals(artistName, ignoreCase = true) }
                     },
                     onCollapsePlayer = {
-                        coroutineScope.launch {
-                            playerSheetState.hide()
-                        }.invokeOnCompletion {
-                            isPlayerExpanded = false
-                        }
+                        isPlayerExpanded = false
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }

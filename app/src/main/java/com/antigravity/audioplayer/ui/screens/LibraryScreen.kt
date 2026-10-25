@@ -160,29 +160,32 @@ fun LibraryScreen(
                         Column {
                             Text(
                                 text = "Библиотека",
-                                style = MaterialTheme.typography.titleLarge,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "FlacPlayer Audio • ${visibleTracks.size} треков",
+                                text = "${visibleTracks.size} треков",
                                 fontSize = 11.sp,
+                                maxLines = 1,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                     },
                     actions = {
-                        IconButton(onClick = onOpenSearch) {
-                            Icon(Icons.Default.Search, contentDescription = "Поиск", tint = MaterialTheme.colorScheme.onSurface)
+                        IconButton(onClick = onOpenSearch, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.Search, contentDescription = "Поиск", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
                         }
-                        IconButton(onClick = onRescanLibrary) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Пересканировать медиатеку", tint = MaterialTheme.colorScheme.onSurface)
+                        IconButton(onClick = onRescanLibrary, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Пересканировать медиатеку", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
                         }
-                        IconButton(onClick = onPickFolder) {
-                            Icon(Icons.Default.CreateNewFolder, contentDescription = "Папки", tint = MaterialTheme.colorScheme.onSurface)
+                        IconButton(onClick = onPickFolder, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.CreateNewFolder, contentDescription = "Папки", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
                         }
-                        IconButton(onClick = onOpenPowerampMenu) {
-                            Icon(Icons.Default.Settings, contentDescription = "Настройки", tint = MaterialTheme.colorScheme.onSurface)
+                        IconButton(onClick = onOpenPowerampMenu, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.Settings, contentDescription = "Настройки", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurface)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
