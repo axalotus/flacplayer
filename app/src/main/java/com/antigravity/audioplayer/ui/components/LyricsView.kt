@@ -387,29 +387,31 @@ fun LyricsView(
                 val density = LocalDensity.current
                 val verticalOffsetPx = with(density) { verticalOffsetDp.dp.roundToPx() }
 
-                // Centering function to keep active lyric dead-center in the window (accounting for user-configured offset)
+                // Centering function to keep active lyric smoothly centered without jumps
                 suspend fun centerActiveItem(smooth: Boolean = true) {
                     if (activeIndex !in lines.indices) return
-                    var visibleItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == activeIndex }
-                    if (visibleItem == null) {
-                        listState.scrollToItem(activeIndex)
-                        delay(20)
-                        visibleItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == activeIndex }
-                    }
-                    val viewportHeight = listState.layoutInfo.viewportSize.height
-                    if (visibleItem != null && viewportHeight > 0) {
-                        val itemCenter = visibleItem.offset + visibleItem.size / 2
-                        val targetCenter = (viewportHeight / 2) + verticalOffsetPx
-                        val delta = itemCenter - targetCenter
+                    val visibleItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == activeIndex }
+                    if (visibleItem != null) {
+                        // Because LazyColumn has contentPadding(top = topPadding), offset == 0 is already centered at topPadding
+                        val delta = visibleItem.offset
                         if (abs(delta) > 2) {
                             if (smooth) {
                                 listState.animateScrollBy(
                                     delta.toFloat(),
-                                    tween<Float>(durationMillis = 320, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                    tween<Float>(
+                                        durationMillis = 380,
+                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                    )
                                 )
                             } else {
                                 listState.scrollBy(delta.toFloat())
                             }
+                        }
+                    } else {
+                        if (smooth) {
+                            listState.animateScrollToItem(index = activeIndex, scrollOffset = 0)
+                        } else {
+                            listState.scrollToItem(index = activeIndex, scrollOffset = 0)
                         }
                     }
                 }
@@ -422,8 +424,8 @@ fun LyricsView(
 
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     val halfHeightDp = maxHeight / 2
-                    val topPadding = (halfHeightDp - 22.dp + verticalOffsetDp.dp).coerceAtLeast(30.dp)
-                    val bottomPadding = (halfHeightDp - 22.dp - verticalOffsetDp.dp).coerceAtLeast(30.dp)
+                    val topPadding = (halfHeightDp - 28.dp + verticalOffsetDp.dp).coerceAtLeast(24.dp)
+                    val bottomPadding = (halfHeightDp - 28.dp - verticalOffsetDp.dp).coerceAtLeast(24.dp)
 
                     Column(modifier = Modifier.fillMaxSize()) {
                         // Header with format badge and tuning button
@@ -483,50 +485,50 @@ fun LyricsView(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             itemsIndexed(lines, key = { idx, line -> "line_${idx}_${line.timestampMs}" }) { index, line ->
                                 val isActive = index == activeIndex
 
-                                // Distance to active line (used for progressive blur & opacity)
+                                // Distance to active line (used for progressive opacity)
                                 val distance = if (isAutoScrollActive && activeIndex >= 0) {
                                     abs(index - activeIndex)
                                 } else {
-                                    0 // Blur disabled in manual scrolling mode!
+                                    0
                                 }
 
                                 val targetAlpha = when {
                                     !isAutoScrollActive -> if (isActive) 1.0f else 0.72f
                                     distance == 0 -> 1.0f
-                                    distance == 1 -> 0.42f
-                                    distance == 2 -> 0.26f
-                                    else -> 0.14f
+                                    distance == 1 -> 0.45f
+                                    distance == 2 -> 0.28f
+                                    else -> 0.15f
                                 }
 
                                 val targetScale = when {
                                     !isAutoScrollActive -> 1.0f
-                                    distance == 0 -> 1.04f
+                                    distance == 0 -> 1.03f
                                     else -> 1.0f
                                 }
 
                                 val colorAnim by animateColorAsState(
                                     targetValue = if (isActive) Color.White else Color.White.copy(alpha = 0.75f),
-                                    animationSpec = tween(durationMillis = 240),
+                                    animationSpec = tween(durationMillis = 260),
                                     label = "lyricColor"
                                 )
                                 val scaleAnimState = animateFloatAsState(
                                     targetValue = targetScale,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioLowBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
+                                    animationSpec = tween(
+                                        durationMillis = 350,
+                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
                                     ),
                                     label = "lyricScale"
                                 )
                                 val alphaAnimState = animateFloatAsState(
                                     targetValue = targetAlpha,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioNoBouncy,
-                                        stiffness = Spring.StiffnessMediumLow
+                                    animationSpec = tween(
+                                        durationMillis = 350,
+                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
                                     ),
                                     label = "lyricAlpha"
                                 )
@@ -548,15 +550,15 @@ fun LyricsView(
                                                 centerActiveItem(smooth = true)
                                             }
                                         }
-                                        .padding(vertical = 4.dp, horizontal = 4.dp)
+                                        .padding(vertical = 3.dp, horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = line.text,
-                                        fontSize = if (isActive) 20.sp else 19.sp,
+                                        fontSize = if (isActive) 18.sp else 16.sp,
                                         fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                                         color = colorAnim,
                                         textAlign = TextAlign.Start,
-                                        lineHeight = 28.sp
+                                        lineHeight = if (isActive) 24.sp else 22.sp
                                     )
                                 }
                             }

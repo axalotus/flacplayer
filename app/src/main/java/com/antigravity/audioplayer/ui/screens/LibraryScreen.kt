@@ -533,7 +533,6 @@ private fun AllTracksSubScreen(
     val alphabetList = remember {
         listOf("^", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "#")
     }
-    var alphabetBarHeightPx by remember { mutableFloatStateOf(0f) }
 
     val filteredTracks = remember(tracks, searchQuery, selectedSortMode) {
         val list = tracks.filter { track ->
@@ -612,7 +611,8 @@ private fun AllTracksSubScreen(
         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize().padding(end = 20.dp),
+                modifier = Modifier.fillMaxSize().padding(end = 26.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(filteredTracks, key = { it.id }) { track ->
@@ -630,52 +630,60 @@ private fun AllTracksSubScreen(
                 }
             }
 
-            // TouchBar A-Z Indexer
-            Box(
+            // TouchBar A-Z Indexer (strictly bounded above bottom bars with 1:1 proportional touch mapping)
+            Column(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .width(20.dp)
+                    .padding(top = 6.dp, bottom = 18.dp)
+                    .width(22.dp)
                     .fillMaxHeight()
-                    .onGloballyPositioned { alphabetBarHeightPx = it.size.height.toFloat() }
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
+                    .padding(vertical = 4.dp)
                     .pointerInput(alphabetList) {
-                        detectVerticalDragGestures(
-                            onDragStart = { offset ->
-                                if (alphabetBarHeightPx > 0f) {
-                                    val fraction = (offset.y / alphabetBarHeightPx).coerceIn(0f, 0.999f)
-                                    val index = (fraction * alphabetList.size).toInt()
-                                    val letter = alphabetList.getOrElse(index) { "^" }
+                        fun selectLetterAtY(y: Float) {
+                            val h = size.height.toFloat()
+                            if (h > 0f) {
+                                val fraction = (y / h).coerceIn(0f, 0.9999f)
+                                val index = (fraction * alphabetList.size).toInt().coerceIn(0, alphabetList.lastIndex)
+                                val letter = alphabetList[index]
+                                if (activeScrubLetter != letter) {
                                     activeScrubLetter = letter
                                     scrollToLetter(letter)
                                 }
+                            }
+                        }
+                        detectVerticalDragGestures(
+                            onDragStart = { offset ->
+                                selectLetterAtY(offset.y)
                             },
                             onDragEnd = { activeScrubLetter = null },
                             onDragCancel = { activeScrubLetter = null },
                             onVerticalDrag = { change, _ ->
-                                if (alphabetBarHeightPx > 0f) {
-                                    val fraction = (change.position.y / alphabetBarHeightPx).coerceIn(0f, 0.999f)
-                                    val index = (fraction * alphabetList.size).toInt()
-                                    val letter = alphabetList.getOrElse(index) { "^" }
-                                    if (activeScrubLetter != letter) {
-                                        activeScrubLetter = letter
-                                        scrollToLetter(letter)
-                                    }
-                                }
+                                change.consume()
+                                selectLetterAtY(change.position.y)
                             }
                         )
-                    }
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    alphabetList.forEach { letter ->
-                        val isHovered = activeScrubLetter == letter
+                alphabetList.forEach { letter ->
+                    val isHovered = activeScrubLetter == letter
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = letter,
-                            fontSize = if (isHovered) 11.sp else 8.5.sp,
+                            fontSize = if (isHovered) 10.sp else 8.sp,
+                            lineHeight = 8.sp,
                             fontWeight = if (isHovered) FontWeight.ExtraBold else FontWeight.Medium,
-                            color = if (isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            color = if (isHovered) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            style = LocalTextStyle.current.copy(
+                                platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false)
+                            )
                         )
                     }
                 }

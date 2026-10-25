@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
@@ -274,6 +275,7 @@ fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
+                    .navigationBarsPadding()
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
@@ -316,476 +318,468 @@ fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
+                    .navigationBarsPadding()
                     .padding(
                         start = if (isSmallScreen) 16.dp else 22.dp,
                         end = if (isSmallScreen) 16.dp else 22.dp,
-                        top = if (isSmallScreen) 2.dp else 4.dp,
-                        bottom = if (isSmallScreen) 22.dp else 16.dp
+                        top = if (isSmallScreen) 4.dp else 8.dp,
+                        bottom = if (isSmallScreen) 14.dp else 20.dp
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top drag pill inside blurred background (with swipe dismiss gesture)
-                Box(
-                    modifier = Modifier
-                        .then(topBarDragModifier)
-                        .padding(top = if (isSmallScreen) 2.dp else 4.dp, bottom = if (isSmallScreen) 4.dp else 6.dp)
-                        .size(width = 38.dp, height = 4.5.dp)
-                        .clip(RoundedCornerShape(2.5.dp))
-                        .background(Color.White.copy(alpha = 0.38f))
-                        .clickable { onCollapsePlayer() }
-                )
-
-                // ── TOP: Header Row ───────────────────────────────────────────────
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(topBarDragModifier),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // ── 1. TOP: Drag Pill + Header Row ────────────────────────────────
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Collapse button
-                    IconButton(onClick = onCollapsePlayer) {
-                        Icon(
-                            Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Свернуть",
-                            modifier = Modifier.size(if (isSmallScreen) 26.dp else 30.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(0.8f)
-                        )
-                    }
-
-                    // Center info / Sleep Timer Active Indicator
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                    Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp)
+                            .then(topBarDragModifier)
+                            .padding(top = if (isSmallScreen) 2.dp else 4.dp, bottom = if (isSmallScreen) 4.dp else 6.dp)
+                            .size(width = 38.dp, height = 4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(Color.White.copy(alpha = 0.38f))
+                            .clickable { onCollapsePlayer() }
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(topBarDragModifier),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isSleepTimerActive) {
-                            Surface(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable { showSleepTimerModal = true },
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Bedtime,
-                                        contentDescription = "Таймер сна",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = "Zzz ${SleepTimerController.formatRemainingTime(sleepTimerRemainingSec)}",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        } else {
-                            Text(
-                                "СЕЙЧАС ИГРАЕТ",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                letterSpacing = 1.2.sp
+                        // Collapse button
+                        IconButton(onClick = onCollapsePlayer) {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Свернуть",
+                                modifier = Modifier.size(if (isSmallScreen) 26.dp else 30.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.8f)
                             )
                         }
-                        Text(
-                            currentTrack.album,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
 
-                    // Actions: Sleep Timer + Queue (+ 3-dots overflow on small screens)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (!isSmallScreen) {
-                            IconButton(onClick = { showSleepTimerModal = true }) {
-                                Icon(
-                                    Icons.Default.Bedtime,
-                                    contentDescription = "Таймер сна",
-                                    tint = if (isSleepTimerActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(20.dp)
+                        // Center info / Sleep Timer Active Indicator
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            if (isSleepTimerActive) {
+                                Surface(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { showSleepTimerModal = true },
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Bedtime,
+                                            contentDescription = "Таймер сна",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Text(
+                                            text = "Zzz ${SleepTimerController.formatRemainingTime(sleepTimerRemainingSec)}",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    "СЕЙЧАС ИГРАЕТ",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    letterSpacing = 1.2.sp
                                 )
                             }
-                        }
-
-                        IconButton(onClick = onOpenQueue) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.QueueMusic,
-                                contentDescription = "Очередь",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                            Text(
+                                currentTrack.album,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
-                        if (isSmallScreen) {
-                            Box {
-                                IconButton(onClick = { showOverflowMenu = true }) {
-                                    Icon(
-                                        Icons.Default.MoreVert,
-                                        contentDescription = "Меню",
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = showOverflowMenu,
-                                    onDismissRequest = {
-                                        showOverflowMenu = false
-                                        (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                                    },
-                                    properties = androidx.compose.ui.window.PopupProperties(focusable = false)
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(if (showLyrics) "Показать обложку" else "Текст песни") },
-                                        leadingIcon = { Icon(Icons.Default.Lyrics, contentDescription = null) },
-                                        onClick = {
-                                            showLyrics = !showLyrics
-                                            showOverflowMenu = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Эквалайзер") },
-                                        leadingIcon = { Icon(Icons.Default.Equalizer, contentDescription = null) },
-                                        onClick = {
-                                            showOverflowMenu = false
-                                            onOpenEqualizer()
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Аудио тракт") },
-                                        leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
-                                        onClick = {
-                                            showOverflowMenu = false
-                                            onOpenAudioChain()
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(if (isSleepTimerActive) "Таймер сна (Zzz ${SleepTimerController.formatRemainingTime(sleepTimerRemainingSec)})" else "Таймер сна")
-                                        },
-                                        leadingIcon = { Icon(Icons.Default.Bedtime, contentDescription = null) },
-                                        onClick = {
-                                            showOverflowMenu = false
-                                            showSleepTimerModal = true
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Добавить в плейлист") },
-                                        leadingIcon = { Icon(Icons.Default.PlaylistAdd, contentDescription = null) },
-                                        onClick = {
-                                            showOverflowMenu = false
-                                            showAddToPlaylist = true
-                                        }
-                                    )
-                                }
+                        // Actions: Queue + 3-dots BottomSheet Menu
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = onOpenQueue) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.QueueMusic,
+                                    contentDescription = "Очередь",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                                )
+                            }
+
+                            IconButton(onClick = { showOverflowMenu = true }) {
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = "Меню",
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(if (isSmallScreen) 22.dp else 24.dp)
+                                )
                             }
                         }
                     }
                 }
 
-                // ── ALBUM ART / LYRICS TOGGLE (Unified Player Composition) ──────
+                // ── 2. ALBUM ART / LYRICS (Strictly 1:1 Square Container) ─────────
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(vertical = if (isSmallScreen) 2.dp else 6.dp),
+                        .weight(1f, fill = false)
+                        .padding(vertical = if (isSmallScreen) 4.dp else 8.dp)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(22.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                        if (showLyrics) {
-                            LyricsView(
+                    if (showLyrics) {
+                        LyricsView(
+                            track = currentTrack,
+                            isPlaying = isPlaying,
+                            onSeekTo = onSeekTo,
+                            onPickLyricsFile = {
+                                lyricsFilePicker.launch(arrayOf("*/*", "text/plain", "application/octet-stream"))
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    val s = albumArtScaleState.value
+                                    scaleX = s
+                                    scaleY = s
+                                }
+                                .clip(RoundedCornerShape(22.dp))
+                                .clickable { showLyrics = true }
+                        ) {
+                            AlbumArtView(
                                 track = currentTrack,
-                                isPlaying = isPlaying,
-                                onSeekTo = onSeekTo,
-                                onPickLyricsFile = {
-                                    lyricsFilePicker.launch(arrayOf("*/*", "text/plain", "application/octet-stream"))
-                                },
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                cornerRadius = 22
                             )
-                        } else {
-                            Box(
+                        }
+                    }
+                }
+
+                // ── 3. TRACK INFO + QUALITY & OUTPUT BADGE ────────────────────────
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 6.dp else 10.dp)
+                ) {
+                    // Title row with thumbnail (in lyrics mode) and favorite heart
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        if (showLyrics) {
+                            Surface(
                                 modifier = Modifier
-                                    .fillMaxHeight()
-                                    .aspectRatio(1f)
-                                    .graphicsLayer {
-                                        val s = albumArtScaleState.value
-                                        scaleX = s
-                                        scaleY = s
-                                    }
-                                    .clip(RoundedCornerShape(22.dp))
-                                    .clickable { showLyrics = true }
+                                    .size(if (isSmallScreen) 40.dp else 46.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { showLyrics = false },
+                                shape = RoundedCornerShape(10.dp)
                             ) {
                                 AlbumArtView(
                                     track = currentTrack,
                                     modifier = Modifier.fillMaxSize(),
-                                    cornerRadius = 22
+                                    cornerRadius = 10
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+
+                        Column(modifier = Modifier.weight(1f).padding(end = 6.dp)) {
+                            Text(
+                                text = currentTrack.title,
+                                fontSize = if (isSmallScreen) 18.sp else 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Start
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = currentTrack.artist,
+                                fontSize = if (isSmallScreen) 13.sp else 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { onOpenArtist(currentTrack.artist) }
+                                    .padding(vertical = 1.dp, horizontal = 2.dp)
+                            )
+                        }
+                        // Action buttons: Add to playlist (on large screens) + Favorite heart
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (!isSmallScreen) {
+                                IconButton(
+                                    onClick = { showAddToPlaylist = true },
+                                    modifier = Modifier.size(42.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                                        contentDescription = "Добавить в плейлист",
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = { pm.toggleFavorite(currentTrack.id) },
+                                modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = "Избранное",
+                                    tint = if (isFavorite) Color(0xFFE44D7B) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(if (isSmallScreen) 23.dp else 25.dp)
                                 )
                             }
                         }
                     }
 
-                    // ── TRACK INFO + QUALITY ─────────────────────────────────────────
-                    Column(
+                    // Quality badge & Clickable Audio Device Output Switcher Row
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 4.dp else 8.dp)
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Title row with thumbnail (in lyrics mode) and favorite heart
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        QualityBadge(metadata = currentTrack)
+
+                        // Clickable Device Badge -> Opens custom AudioOutputBottomSheet
+                        Surface(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { showOutputBottomSheet = true },
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
-                            if (showLyrics) {
-                                Surface(
-                                    modifier = Modifier
-                                        .size(if (isSmallScreen) 40.dp else 46.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { showLyrics = false },
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    AlbumArtView(
-                                        track = currentTrack,
-                                        modifier = Modifier.fillMaxSize(),
-                                        cornerRadius = 10
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                            }
-
-                            Column(modifier = Modifier.weight(1f).padding(end = 6.dp)) {
-                                Text(
-                                    text = currentTrack.title,
-                                    fontSize = if (isSmallScreen) 18.sp else 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Start
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = currentTrack.artist,
-                                    fontSize = if (isSmallScreen) 13.sp else 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .clickable { onOpenArtist(currentTrack.artist) }
-                                        .padding(vertical = 1.dp, horizontal = 2.dp)
-                                )
-                            }
-                            // Action buttons: Add to playlist (hidden on small screen -> in 3 dots) + Favorite heart
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (!isSmallScreen) {
-                                    IconButton(
-                                        onClick = { showAddToPlaylist = true },
-                                        modifier = Modifier.size(42.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.PlaylistAdd,
-                                            contentDescription = "Добавить в плейлист",
-                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
-
-                                IconButton(
-                                    onClick = { pm.toggleFavorite(currentTrack.id) },
-                                    modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                        contentDescription = "Избранное",
-                                        tint = if (isFavorite) Color(0xFFE44D7B) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                        modifier = Modifier.size(if (isSmallScreen) 23.dp else 25.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        // Quality badge & Clickable Audio Device Output Switcher Row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            QualityBadge(metadata = currentTrack)
-
-                            // Clickable Device Badge -> Opens custom AudioOutputBottomSheet
-                            Surface(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable { showOutputBottomSheet = true },
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = when {
-                                            dacInfo.isExternalDac -> Icons.Default.Usb
-                                            dacInfo.deviceType.contains("Bluetooth", ignoreCase = true) -> Icons.Default.Bluetooth
-                                            dacInfo.deviceType.contains("Headphone", ignoreCase = true) || dacInfo.deviceType.contains("Analog", ignoreCase = true) -> Icons.Default.Headphones
-                                            else -> Icons.AutoMirrored.Filled.VolumeUp
-                                        },
-                                        contentDescription = "Аудиовыход",
-                                        tint = if (dacInfo.isHiResSupported) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = dacInfo.deviceName,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.ExpandMore,
-                                        contentDescription = "Сменить вывод",
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        // ── SEEK SLIDER (isolated progress recomposition) ───────────
-                        PlayerSeekSection(
-                            totalDurationMs = totalDurationMs,
-                            onSeekTo = onSeekTo
-                        )
-
-                        // ── MAIN PLAYBACK CONTROLS ──────────────────────────────────
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = if (isSmallScreen) 0.dp else 2.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(onClick = onToggleShuffle, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier) {
-                                Icon(
-                                    Icons.Default.Shuffle,
-                                    contentDescription = "Shuffle",
-                                    tint = if (isShuffleOn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
-                                    modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
-                                )
-                            }
-
-                            IconButton(onClick = onPreviousTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
-                                Icon(Icons.Default.SkipPrevious, contentDescription = "Пред", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
-                            }
-
-                            FloatingActionButton(
-                                onClick = onPlayPauseToggle,
-                                shape = CircleShape,
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(if (isSmallScreen) 58.dp else 68.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(if (isSmallScreen) 32.dp else 38.dp)
-                                )
-                            }
-
-                            IconButton(onClick = onNextTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
-                                Icon(Icons.Default.SkipNext, contentDescription = "След", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
-                            }
-
-                            IconButton(onClick = onToggleRepeat, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier) {
-                                Icon(
-                                    imageVector = when (repeatMode) {
-                                        RepeatMode.ONE -> Icons.Default.RepeatOne
-                                        else -> Icons.Default.Repeat
-                                    },
-                                    contentDescription = "Повтор",
-                                    tint = if (repeatMode != RepeatMode.OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
-                                    modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
-                                )
-                            }
-                        }
-
-                        // ── SECONDARY CONTROLS ROW (Only on larger screens) ──────────
-                        if (!isSmallScreen) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
-                                // Rewind 10s
-                                IconButton(onClick = {
-                                    val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
-                                    onSeekTo((cur - 10000L).coerceAtLeast(0L))
-                                }) {
-                                    Icon(Icons.Default.Replay10, contentDescription = "−10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
-                                }
-
-                                // EQ shortcut button
-                                IconButton(onClick = onOpenEqualizer) {
-                                    Icon(
-                                        Icons.Default.Equalizer,
-                                        contentDescription = "Эквалайзер",
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-
-                                // Lyrics button
-                                IconButton(onClick = { showLyrics = !showLyrics }) {
-                                    Icon(
-                                        Icons.Default.Lyrics,
-                                        contentDescription = "Текст песни",
-                                        tint = if (showLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.6f),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-
-                                // Audio Chain info — subtle, minimal
-                                IconButton(onClick = onOpenAudioChain) {
-                                    Icon(Icons.Default.Info, contentDescription = "Аудио тракт", tint = MaterialTheme.colorScheme.onSurface.copy(0.28f), modifier = Modifier.size(18.dp))
-                                }
-
-                                // Forward 10s
-                                IconButton(onClick = {
-                                    val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
-                                    onSeekTo((cur + 10000L).coerceAtMost(totalDurationMs))
-                                }) {
-                                    Icon(Icons.Default.Forward10, contentDescription = "+10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
-                                }
+                                Icon(
+                                    imageVector = when {
+                                        dacInfo.isExternalDac -> Icons.Default.Usb
+                                        dacInfo.deviceType.contains("Bluetooth", ignoreCase = true) -> Icons.Default.Bluetooth
+                                        dacInfo.deviceType.contains("Headphone", ignoreCase = true) || dacInfo.deviceType.contains("Analog", ignoreCase = true) -> Icons.Default.Headphones
+                                        else -> Icons.AutoMirrored.Filled.VolumeUp
+                                    },
+                                    contentDescription = "Аудиовыход",
+                                    tint = if (dacInfo.isHiResSupported) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = dacInfo.deviceName,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ExpandMore,
+                                    contentDescription = "Сменить вывод",
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                                    modifier = Modifier.size(14.dp)
+                                )
                             }
                         }
                     }
                 }
+
+                // ── 4. SEEK SLIDER (isolated progress recomposition) ──────────────
+                PlayerSeekSection(
+                    totalDurationMs = totalDurationMs,
+                    onSeekTo = onSeekTo
+                )
+
+                // ── 5. MAIN PLAYBACK CONTROLS ─────────────────────────────────────
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onToggleShuffle, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier.size(44.dp)) {
+                        Icon(
+                            Icons.Default.Shuffle,
+                            contentDescription = "Shuffle",
+                            tint = if (isShuffleOn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
+                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                        )
+                    }
+
+                    IconButton(onClick = onPreviousTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
+                        Icon(Icons.Default.SkipPrevious, contentDescription = "Пред", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
+                    }
+
+                    FloatingActionButton(
+                        onClick = onPlayPauseToggle,
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(if (isSmallScreen) 58.dp else 68.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(if (isSmallScreen) 32.dp else 38.dp)
+                        )
+                    }
+
+                    IconButton(onClick = onNextTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
+                        Icon(Icons.Default.SkipNext, contentDescription = "След", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
+                    }
+
+                    IconButton(onClick = onToggleRepeat, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier.size(44.dp)) {
+                        Icon(
+                            imageVector = when (repeatMode) {
+                                RepeatMode.ONE -> Icons.Default.RepeatOne
+                                else -> Icons.Default.Repeat
+                            },
+                            contentDescription = "Повтор",
+                            tint = if (repeatMode != RepeatMode.OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
+                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                        )
+                    }
+                }
+
+                // ── 6. SECONDARY CONTROLS ROW (Only on larger screens) ────────────
+                if (!isSmallScreen) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Rewind 10s
+                        IconButton(onClick = {
+                            val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
+                            onSeekTo((cur - 10000L).coerceAtLeast(0L))
+                        }) {
+                            Icon(Icons.Default.Replay10, contentDescription = "−10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
+                        }
+
+                        // EQ shortcut button
+                        IconButton(onClick = onOpenEqualizer) {
+                            Icon(
+                                Icons.Default.Equalizer,
+                                contentDescription = "Эквалайзер",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.6f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        // Lyrics button
+                        IconButton(onClick = { showLyrics = !showLyrics }) {
+                            Icon(
+                                Icons.Default.Lyrics,
+                                contentDescription = "Текст песни",
+                                tint = if (showLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.6f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        // Audio Chain info — subtle, minimal
+                        IconButton(onClick = onOpenAudioChain) {
+                            Icon(Icons.Default.Info, contentDescription = "Аудио тракт", tint = MaterialTheme.colorScheme.onSurface.copy(0.28f), modifier = Modifier.size(18.dp))
+                        }
+
+                        // Forward 10s
+                        IconButton(onClick = {
+                            val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
+                            onSeekTo((cur + 10000L).coerceAtMost(totalDurationMs))
+                        }) {
+                            Icon(Icons.Default.Forward10, contentDescription = "+10с", tint = MaterialTheme.colorScheme.onSurface.copy(0.6f), modifier = Modifier.size(24.dp))
+                        }
+                    }
+                }
+
+                // Bottom anchor so Arrangement.SpaceBetween distributes breathing room below controls on tall screens
+                Spacer(modifier = Modifier.height(2.dp))
             }
         }
+    }
+
+    if (showOverflowMenu && currentTrack != null) {
+        PlayerOptionsBottomSheet(
+            currentTrack = currentTrack,
+            showLyrics = showLyrics,
+            isSleepTimerActive = isSleepTimerActive,
+            sleepTimerRemainingSec = sleepTimerRemainingSec,
+            dacInfo = dacInfo,
+            onToggleLyrics = {
+                showLyrics = !showLyrics
+                showOverflowMenu = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+            },
+            onOpenEqualizer = {
+                showOverflowMenu = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+                onOpenEqualizer()
+            },
+            onOpenAudioChain = {
+                showOverflowMenu = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+                onOpenAudioChain()
+            },
+            onOpenSleepTimer = {
+                showOverflowMenu = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+                showSleepTimerModal = true
+            },
+            onAddToPlaylist = {
+                showOverflowMenu = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+                showAddToPlaylist = true
+            },
+            onOpenAudioOutput = {
+                showOverflowMenu = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+                showOutputBottomSheet = true
+            },
+            onDismissRequest = {
+                showOverflowMenu = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+            }
+        )
+    }
 
     if (showOutputBottomSheet) {
         AudioOutputBottomSheet(
             currentDacInfo = dacInfo,
-            onDismissRequest = { showOutputBottomSheet = false }
+            onDismissRequest = {
+                showOutputBottomSheet = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+            }
         )
     }
 
     if (showSleepTimerModal) {
         SleepTimerModalSheet(
-            onDismissRequest = { showSleepTimerModal = false },
+            onDismissRequest = {
+                showSleepTimerModal = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+            },
             onPausePlayback = onPlayPauseToggle
         )
     }
@@ -793,8 +787,191 @@ fun PlayerScreen(
     if (showAddToPlaylist && currentTrack != null) {
         AddToPlaylistDialog(
             track = currentTrack,
-            onDismissRequest = { showAddToPlaylist = false }
+            onDismissRequest = {
+                showAddToPlaylist = false
+                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+            }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PlayerOptionsBottomSheet(
+    currentTrack: AudioFileMetadata,
+    showLyrics: Boolean,
+    isSleepTimerActive: Boolean,
+    sleepTimerRemainingSec: Long,
+    dacInfo: DacOutputInfo,
+    onToggleLyrics: () -> Unit,
+    onOpenEqualizer: () -> Unit,
+    onOpenAudioChain: () -> Unit,
+    onOpenSleepTimer: () -> Unit,
+    onAddToPlaylist: () -> Unit,
+    onOpenAudioOutput: () -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Track summary header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AlbumArtView(
+                    track = currentTrack,
+                    modifier = Modifier.size(44.dp),
+                    cornerRadius = 10
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = currentTrack.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${currentTrack.artist} • ${currentTrack.album}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+            )
+
+            PlayerOptionSheetRow(
+                icon = Icons.Default.Lyrics,
+                title = if (showLyrics) "Показать обложку альбома" else "Текст песни (LRC)",
+                subtitle = if (showLyrics) "Вернуться к обложке" else "Синхронизированный текст",
+                isHighlighted = showLyrics,
+                onClick = onToggleLyrics
+            )
+
+            PlayerOptionSheetRow(
+                icon = Icons.Default.Equalizer,
+                title = "Эквалайзер и эффекты",
+                subtitle = "Настройка частот и усиления баса",
+                onClick = onOpenEqualizer
+            )
+
+            PlayerOptionSheetRow(
+                icon = Icons.Default.Info,
+                title = "Аудио тракт и сигнал",
+                subtitle = "${currentTrack.format.name} • ${currentTrack.sampleRateKHzFormatted} / ${currentTrack.bitDepth}-бит",
+                onClick = onOpenAudioChain
+            )
+
+            PlayerOptionSheetRow(
+                icon = Icons.Default.Bedtime,
+                title = "Таймер сна",
+                subtitle = if (isSleepTimerActive) "Активен: Zzz ${SleepTimerController.formatRemainingTime(sleepTimerRemainingSec)}" else "Автоматическая остановка музыки",
+                isHighlighted = isSleepTimerActive,
+                onClick = onOpenSleepTimer
+            )
+
+            PlayerOptionSheetRow(
+                icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+                title = "Добавить в плейлист",
+                subtitle = "Сохранить трек в пользовательский список",
+                onClick = onAddToPlaylist
+            )
+
+            PlayerOptionSheetRow(
+                icon = Icons.Default.Headphones,
+                title = "Аудиовыход / ЦАП",
+                subtitle = dacInfo.deviceName,
+                onClick = onOpenAudioOutput
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun PlayerOptionSheetRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    isHighlighted: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
+        color = if (isHighlighted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else Color.Transparent,
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
 
