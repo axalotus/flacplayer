@@ -1,6 +1,7 @@
 package com.antigravity.audioplayer.ui.screens
 
 import android.content.Intent
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -297,10 +298,23 @@ fun SettingsScreen(
                         Text("Звук и вывод", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
                         Text("Аудиодвижок:", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        val isAndroid8Plus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                         listOf(
-                            Triple("AAudio (Low Latency Direct)", "Минимальная задержка, Android 8+ (рекомендуется)", 0),
-                            Triple("AudioTrack OpenSL ES", "Максимальная совместимость", 1),
-                            Triple("Direct Hi-Res DAC Passthrough", "Без передискретизации, прямое PCM для внешних ЦАП", 2)
+                            Triple(
+                                "AAudio (Low Latency Direct)",
+                                if (isAndroid8Plus) "Минимальная задержка, Android 8+ (рекомендуется)" else "Требуется Android 8+ (на этом устройстве авто-OpenSL ES)",
+                                0
+                            ),
+                            Triple(
+                                "AudioTrack OpenSL ES",
+                                if (isAndroid8Plus) "Максимальная совместимость" else "Максимальная совместимость (рекомендуется для Android 7.x)",
+                                1
+                            ),
+                            Triple(
+                                "Direct Hi-Res DAC Passthrough",
+                                if (isAndroid8Plus) "Без передискретизации, прямое PCM для внешних ЦАП" else "Прямой PCM поток для внешних ЦАП (через OpenSL ES)",
+                                2
+                            )
                         ).forEach { (mode, desc, modeIndex) ->
                             Row(
                                 modifier = Modifier

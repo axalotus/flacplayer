@@ -287,22 +287,22 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
            ->setChannelCount(channelCount)
            ->setCallback(this);
 
-    // Apply audio mode
-    switch (mAudioMode) {
-        case 1: // OpenSL ES
-            builder.setAudioApi(oboe::AudioApi::OpenSLES);
-            builder.setSampleRate(sampleRate);
-            break;
-        case 2: // Hi-Res: request exact sample rate, no resampling
-            builder.setAudioApi(oboe::AudioApi::AAudio);
-            builder.setSampleRate(sampleRate);
-            builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::None);
-            break;
-        default: // 0 = AAudio low latency (default)
-            builder.setAudioApi(oboe::AudioApi::AAudio);
-            builder.setSampleRate(sampleRate);
-            break;
+    // Apply audio mode with automatic fallback for Android < 8.0 (API < 26)
+    bool wantsAAudio = (mAudioMode == 0 || mAudioMode == 2);
+    if (wantsAAudio && !builder.isAAudioSupported()) {
+        LOG_OBOE_I("openStream: AAudio is not supported on this device/Android version (API < 26). Auto-falling back to OpenSL ES.");
+        wantsAAudio = false;
     }
+
+    if (!wantsAAudio || mAudioMode == 1) {
+        builder.setAudioApi(oboe::AudioApi::OpenSLES);
+    } else {
+        builder.setAudioApi(oboe::AudioApi::AAudio);
+        if (mAudioMode == 2) {
+            builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::None);
+        }
+    }
+    builder.setSampleRate(sampleRate);
 
     // Apply output device routing if specified
     if (mDeviceId != oboe::kUnspecified) {
@@ -310,6 +310,12 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
     }
 
     oboe::Result result = builder.openStream(mStream);
+    if (result != oboe::Result::OK && wantsAAudio) {
+        LOG_OBOE_W("openStream: AAudio openStream failed (%s), retrying with OpenSL ES...", oboe::convertToText(result));
+        builder.setAudioApi(oboe::AudioApi::OpenSLES);
+        result = builder.openStream(mStream);
+    }
+
     if (result != oboe::Result::OK) {
         LOG_OBOE_E("openStream: Failed to open stream: %s", oboe::convertToText(result));
         return false;
@@ -317,8 +323,8 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
 
     mEqualizer->init((float)sampleRate, channelCount);
 
-    LOG_OBOE_I("openStream: Stream opened successfully: Mode=%d, SampleRate=%d, Channels=%d",
-               mAudioMode, mStream->getSampleRate(), mStream->getChannelCount());
+    LOG_OBOE_I("openStream: Stream opened successfully: Mode=%d, API=%s, SampleRate=%d, Channels=%d",
+               mAudioMode, oboe::convertToText(mStream->getAudioApi()), mStream->getSampleRate(), mStream->getChannelCount());
     return true;
 }
 

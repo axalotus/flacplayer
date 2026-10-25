@@ -51,8 +51,9 @@ class LibraryPreferences private constructor(private val context: Context) {
         _blurRadiusPercent.value = clamped
     }
 
-    // Audio Engine Mode: 0=AAudio (default), 1=OpenSL ES, 2=Hi-Res Direct
-    private val _audioEngineMode = MutableStateFlow(prefs.getInt("audio_engine_mode", 0))
+    // Audio Engine Mode: 0=AAudio (default on Android 8+), 1=OpenSL ES (default on Android < 8.0), 2=Hi-Res Direct
+    private val defaultAudioEngineMode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) 0 else 1
+    private val _audioEngineMode = MutableStateFlow(prefs.getInt("audio_engine_mode", defaultAudioEngineMode))
     val audioEngineMode = _audioEngineMode.asStateFlow()
 
     fun setAudioEngineMode(mode: Int) {
