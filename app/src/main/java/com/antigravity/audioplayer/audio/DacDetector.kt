@@ -27,9 +27,11 @@ data class DacOutputInfo(
 )
 
 @Stable
-class DacDetector(private val context: Context) {
+class DacDetector private constructor(context: Context) {
 
-    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val appContext: Context = context.applicationContext
+    private val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var isCallbackRegistered = false
 
     // User's explicitly selected device ID (null = automatic routing by OS / highest priority)
     private var userSelectedDeviceId: Int? = null
@@ -56,22 +58,30 @@ class DacDetector(private val context: Context) {
     }
 
     init {
-        INSTANCE = this
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        ensureCallbackRegistered()
+    }
+
+    @Synchronized
+    fun ensureCallbackRegistered() {
+        if (!isCallbackRegistered && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 audioManager.registerAudioDeviceCallback(audioDeviceCallback, Handler(Looper.getMainLooper()))
+                isCallbackRegistered = true
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
 
+    @Synchronized
     fun release() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (isCallbackRegistered && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                isCallbackRegistered = false
             }
         }
     }
@@ -237,9 +247,11 @@ class DacDetector(private val context: Context) {
         private var INSTANCE: DacDetector? = null
 
         fun getInstance(context: Context): DacDetector {
-            return INSTANCE ?: synchronized(this) {
+            val instance = INSTANCE ?: synchronized(this) {
                 INSTANCE ?: DacDetector(context.applicationContext).also { INSTANCE = it }
             }
+            instance.ensureCallbackRegistered()
+            return instance
         }
 
         /**

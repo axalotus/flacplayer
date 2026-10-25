@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        dacDetector = DacDetector(applicationContext)
+        dacDetector = DacDetector.getInstance(applicationContext)
 
         val prefs = LibraryPreferences.getInstance(applicationContext)
         hideSystemNavigationBar()
@@ -300,7 +300,6 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             // Ignored if not registered
         }
-        dacDetector.release()
         super.onDestroy()
     }
 }
