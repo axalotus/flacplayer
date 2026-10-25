@@ -99,6 +99,16 @@ class LibraryPreferences private constructor(private val context: Context) {
         _playerControlsBottomOffsetDp.value = clamped
     }
 
+    // Manual spacing between Start/Stop controls and bottom action buttons (0dp to 64dp, default 8dp)
+    private val _playerSecondaryControlsSpacingDp = MutableStateFlow(prefs.getInt("player_secondary_controls_spacing_dp", 8))
+    val playerSecondaryControlsSpacingDp = _playerSecondaryControlsSpacingDp.asStateFlow()
+
+    fun setPlayerSecondaryControlsSpacingDp(spacingDp: Int) {
+        val clamped = spacingDp.coerceIn(0, 64)
+        prefs.edit().putInt("player_secondary_controls_spacing_dp", clamped).apply()
+        _playerSecondaryControlsSpacingDp.value = clamped
+    }
+
     // Dedicated Lyrics Folder Uri
     private val _lyricsFolderUri = MutableStateFlow<String?>(prefs.getString("lyrics_folder_uri", null))
     val lyricsFolderUri = _lyricsFolderUri.asStateFlow()

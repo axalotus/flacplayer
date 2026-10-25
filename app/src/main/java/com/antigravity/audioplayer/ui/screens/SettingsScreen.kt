@@ -64,6 +64,7 @@ fun SettingsScreen(
     val themeMode by prefs.themeMode.collectAsState()
     val isHideNavigationBar by prefs.isHideNavigationBar.collectAsState()
     val playerControlsBottomOffsetDp by prefs.playerControlsBottomOffsetDp.collectAsState()
+    val playerSecondaryControlsSpacingDp by prefs.playerSecondaryControlsSpacingDp.collectAsState()
     var showTrackNumbers by remember { mutableStateOf(false) }
     var compactMode by remember { mutableStateOf(false) }
 
@@ -177,7 +178,7 @@ fun SettingsScreen(
                     }
                 }
 
-                // Quick Slider: Manual Bottom Controls Offset
+                // Quick Sliders: Manual Bottom Controls Offset & Spacing from Start/Stop
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -225,6 +226,48 @@ fun SettingsScreen(
                             value = playerControlsBottomOffsetDp.toFloat(),
                             onValueChange = { prefs.setPlayerControlsBottomOffsetDp(it.toInt()) },
                             valueRange = 0f..80f
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 6.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text(
+                                    text = "Отступ нижних кнопок от Старт/Стоп",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Расстояние между Play/Pause и нижним рядом (${playerSecondaryControlsSpacingDp} dp)",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (playerSecondaryControlsSpacingDp != 8) {
+                                TextButton(onClick = { prefs.setPlayerSecondaryControlsSpacingDp(8) }) {
+                                    Text("Сброс (8 dp)", fontSize = 11.sp)
+                                }
+                            } else {
+                                Text(
+                                    text = "${playerSecondaryControlsSpacingDp} dp",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Slider(
+                            value = playerSecondaryControlsSpacingDp.toFloat(),
+                            onValueChange = { prefs.setPlayerSecondaryControlsSpacingDp(it.toInt()) },
+                            valueRange = 0f..64f
                         )
                     }
                 }
@@ -800,6 +843,34 @@ fun SettingsScreen(
                             value = playerControlsBottomOffsetDp.toFloat(),
                             onValueChange = { prefs.setPlayerControlsBottomOffsetDp(it.toInt()) },
                             valueRange = 0f..80f
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text("Отступ нижних кнопок от Старт/Стоп", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = "Расстояние между Play/Pause и нижним рядом (${playerSecondaryControlsSpacingDp} dp)",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (playerSecondaryControlsSpacingDp != 8) {
+                                TextButton(onClick = { prefs.setPlayerSecondaryControlsSpacingDp(8) }) {
+                                    Text("Сброс (8 dp)", fontSize = 11.sp)
+                                }
+                            } else {
+                                Text("${playerSecondaryControlsSpacingDp} dp", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Slider(
+                            value = playerSecondaryControlsSpacingDp.toFloat(),
+                            onValueChange = { prefs.setPlayerSecondaryControlsSpacingDp(it.toInt()) },
+                            valueRange = 0f..64f
                         )
 
                         SettingsToggleRow(

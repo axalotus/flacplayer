@@ -326,6 +326,7 @@ fun PlayerScreen(
         } else {
             val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
             val playerControlsBottomOffsetDp by prefs.playerControlsBottomOffsetDp.collectAsState()
+            val playerSecondaryControlsSpacingDp by prefs.playerSecondaryControlsSpacingDp.collectAsState()
 
             Column(
                 modifier = Modifier
@@ -624,149 +625,157 @@ fun PlayerScreen(
                     onSeekTo = onSeekTo
                 )
 
-                // ── 5. MAIN PLAYBACK CONTROLS ─────────────────────────────────────
-                Row(
+                // ── 5 & 6. PLAYBACK CONTROLS + BOTTOM ACTION BUTTONS ──────────────
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    IconButton(onClick = onToggleShuffle, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier.size(44.dp)) {
-                        Icon(
-                            Icons.Default.Shuffle,
-                            contentDescription = "Shuffle",
-                            tint = if (isShuffleOn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
-                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
-                        )
-                    }
-
-                    IconButton(onClick = onPreviousTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
-                        Icon(Icons.Default.SkipPrevious, contentDescription = "Пред", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
-                    }
-
-                    FloatingActionButton(
-                        onClick = onPlayPauseToggle,
-                        shape = CircleShape,
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(if (isSmallScreen) 58.dp else 68.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            modifier = Modifier.size(if (isSmallScreen) 32.dp else 38.dp)
-                        )
+                        IconButton(onClick = onToggleShuffle, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier.size(44.dp)) {
+                            Icon(
+                                Icons.Default.Shuffle,
+                                contentDescription = "Shuffle",
+                                tint = if (isShuffleOn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
+                                modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                            )
+                        }
+
+                        IconButton(onClick = onPreviousTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
+                            Icon(Icons.Default.SkipPrevious, contentDescription = "Пред", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
+                        }
+
+                        FloatingActionButton(
+                            onClick = onPlayPauseToggle,
+                            shape = CircleShape,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(if (isSmallScreen) 58.dp else 68.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(if (isSmallScreen) 32.dp else 38.dp)
+                            )
+                        }
+
+                        IconButton(onClick = onNextTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
+                            Icon(Icons.Default.SkipNext, contentDescription = "След", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
+                        }
+
+                        IconButton(onClick = onToggleRepeat, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier.size(44.dp)) {
+                            Icon(
+                                imageVector = when (repeatMode) {
+                                    RepeatMode.ONE -> Icons.Default.RepeatOne
+                                    else -> Icons.Default.Repeat
+                                },
+                                contentDescription = "Повтор",
+                                tint = if (repeatMode != RepeatMode.OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
+                                modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                            )
+                        }
                     }
 
-                    IconButton(onClick = onNextTrack, modifier = Modifier.size(if (isSmallScreen) 44.dp else 52.dp)) {
-                        Icon(Icons.Default.SkipNext, contentDescription = "След", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(if (isSmallScreen) 30.dp else 36.dp))
-                    }
+                    // Manually adjustable spacing between Start/Stop and bottom buttons (0..64dp, default 8dp)
+                    Spacer(modifier = Modifier.height(playerSecondaryControlsSpacingDp.dp))
 
-                    IconButton(onClick = onToggleRepeat, modifier = if (isSmallScreen) Modifier.size(38.dp) else Modifier.size(44.dp)) {
-                        Icon(
-                            imageVector = when (repeatMode) {
-                                RepeatMode.ONE -> Icons.Default.RepeatOne
-                                else -> Icons.Default.Repeat
+                    // Bottom Action Buttons Row (Always visible, spread across bottom)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Rewind 10s
+                        IconButton(
+                            onClick = {
+                                val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
+                                onSeekTo((cur - 10000L).coerceAtLeast(0L))
                             },
-                            contentDescription = "Повтор",
-                            tint = if (repeatMode != RepeatMode.OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.35f),
-                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
-                        )
+                            modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Replay10,
+                                contentDescription = "−10с",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                                modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                            )
+                        }
+
+                        // EQ shortcut button
+                        IconButton(
+                            onClick = onOpenEqualizer,
+                            modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Equalizer,
+                                contentDescription = "Эквалайзер",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                                modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                            )
+                        }
+
+                        // Lyrics button
+                        IconButton(
+                            onClick = { showLyrics = !showLyrics },
+                            modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Lyrics,
+                                contentDescription = "Текст песни",
+                                tint = if (showLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                                modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                            )
+                        }
+
+                        // Sleep Timer button
+                        IconButton(
+                            onClick = { showSleepTimerModal = true },
+                            modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Bedtime,
+                                contentDescription = "Таймер сна",
+                                tint = if (isSleepTimerActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                                modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                            )
+                        }
+
+                        // Audio Chain info button
+                        IconButton(
+                            onClick = onOpenAudioChain,
+                            modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = "Аудио тракт",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.55f),
+                                modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
+                            )
+                        }
+
+                        // Forward 10s
+                        IconButton(
+                            onClick = {
+                                val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
+                                onSeekTo((cur + 10000L).coerceAtMost(totalDurationMs))
+                            },
+                            modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Forward10,
+                                contentDescription = "+10с",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
+                                modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
+                            )
+                        }
                     }
+
+                    // Default is 0dp (original layout), manually adjustable in Settings (0..80dp)
+                    Spacer(modifier = Modifier.height((2 + playerControlsBottomOffsetDp).dp))
                 }
-
-                // ── 6. BOTTOM ACTION BUTTONS ROW (Always visible, spread across bottom) ──
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Rewind 10s
-                    IconButton(
-                        onClick = {
-                            val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
-                            onSeekTo((cur - 10000L).coerceAtLeast(0L))
-                        },
-                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Replay10,
-                            contentDescription = "−10с",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
-                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
-                        )
-                    }
-
-                    // EQ shortcut button
-                    IconButton(
-                        onClick = onOpenEqualizer,
-                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Equalizer,
-                            contentDescription = "Эквалайзер",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
-                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
-                        )
-                    }
-
-                    // Lyrics button
-                    IconButton(
-                        onClick = { showLyrics = !showLyrics },
-                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Lyrics,
-                            contentDescription = "Текст песни",
-                            tint = if (showLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.65f),
-                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
-                        )
-                    }
-
-                    // Sleep Timer button
-                    IconButton(
-                        onClick = { showSleepTimerModal = true },
-                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Bedtime,
-                            contentDescription = "Таймер сна",
-                            tint = if (isSleepTimerActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(0.65f),
-                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
-                        )
-                    }
-
-                    // Audio Chain info button
-                    IconButton(
-                        onClick = onOpenAudioChain,
-                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Info,
-                            contentDescription = "Аудио тракт",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(0.55f),
-                            modifier = Modifier.size(if (isSmallScreen) 20.dp else 22.dp)
-                        )
-                    }
-
-                    // Forward 10s
-                    IconButton(
-                        onClick = {
-                            val cur = com.antigravity.audioplayer.service.AudioPlayerService.progressMs.value
-                            onSeekTo((cur + 10000L).coerceAtMost(totalDurationMs))
-                        },
-                        modifier = Modifier.size(if (isSmallScreen) 38.dp else 42.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Forward10,
-                            contentDescription = "+10с",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(0.65f),
-                            modifier = Modifier.size(if (isSmallScreen) 21.dp else 24.dp)
-                        )
-                    }
-                }
-
-                // Default is 0dp (original layout), manually adjustable in Settings (0..80dp)
-                Spacer(modifier = Modifier.height((2 + playerControlsBottomOffsetDp).dp))
             }
         }
     }
