@@ -493,29 +493,23 @@ fun LyricsView(
                                 }
 
                                 val targetAlpha = when {
-                                    !isAutoScrollActive -> 0.88f
+                                    !isAutoScrollActive -> if (isActive) 1.0f else 0.72f
                                     distance == 0 -> 1.0f
-                                    distance == 1 -> 0.58f
-                                    distance == 2 -> 0.35f
-                                    else -> 0.18f
+                                    distance == 1 -> 0.42f
+                                    distance == 2 -> 0.26f
+                                    else -> 0.14f
                                 }
 
                                 val targetScale = when {
                                     !isAutoScrollActive -> 1.0f
-                                    distance == 0 -> 1.08f
-                                    distance == 1 -> 0.96f
-                                    else -> 0.92f
+                                    distance == 0 -> 1.04f
+                                    else -> 1.0f
                                 }
 
                                 val colorAnim by animateColorAsState(
                                     targetValue = if (isActive) Color.White else Color.White.copy(alpha = 0.75f),
-                                    animationSpec = tween(durationMillis = 280),
+                                    animationSpec = tween(durationMillis = 240),
                                     label = "lyricColor"
-                                )
-                                val bgAnim by animateColorAsState(
-                                    targetValue = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent,
-                                    animationSpec = tween(durationMillis = 280),
-                                    label = "lyricBg"
                                 )
                                 val scaleAnim by animateFloatAsState(
                                     targetValue = targetScale,
@@ -543,8 +537,6 @@ fun LyricsView(
                                             alpha = alphaAnim
                                             transformOrigin = TransformOrigin(0f, 0.5f)
                                         }
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(bgAnim)
                                         .clickable {
                                             userInteracting = false
                                             onSeekTo(line.timestampMs)
@@ -552,15 +544,15 @@ fun LyricsView(
                                                 centerActiveItem(smooth = true)
                                             }
                                         }
-                                        .padding(vertical = 6.dp, horizontal = 10.dp)
+                                        .padding(vertical = 4.dp, horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = line.text,
-                                        fontSize = 19.sp,
+                                        fontSize = if (isActive) 20.sp else 19.sp,
                                         fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                                         color = colorAnim,
                                         textAlign = TextAlign.Start,
-                                        lineHeight = 26.sp
+                                        lineHeight = 28.sp
                                     )
                                 }
                             }

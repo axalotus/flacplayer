@@ -138,24 +138,6 @@ fun PlayerScreen(
     val isSmallScreen = configuration.screenHeightDp < 700 || configuration.screenWidthDp < 380
     var showOverflowMenu by remember { mutableStateOf(false) }
 
-    val view = LocalView.current
-    DisposableEffect(Unit) {
-        val activity = context as? ComponentActivity ?: (context as? android.app.Activity)
-        val window = activity?.window
-        if (window != null) {
-            val insetsController = WindowCompat.getInsetsController(window, view)
-            insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            insetsController.hide(WindowInsetsCompat.Type.navigationBars())
-            insetsController.show(WindowInsetsCompat.Type.statusBars())
-        }
-        onDispose {
-            if (window != null) {
-                val insetsController = WindowCompat.getInsetsController(window, view)
-                insetsController.show(WindowInsetsCompat.Type.navigationBars())
-            }
-        }
-    }
-
     val coroutineScope = rememberCoroutineScope()
     val dismissOffsetY = remember { Animatable(0f) }
     val density = LocalDensity.current
@@ -329,10 +311,11 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(if (isSmallScreen) Modifier else Modifier.navigationBarsPadding())
                     .padding(
-                        horizontal = if (isSmallScreen) 16.dp else 22.dp,
-                        vertical = if (isSmallScreen) 2.dp else 4.dp
+                        start = if (isSmallScreen) 16.dp else 22.dp,
+                        end = if (isSmallScreen) 16.dp else 22.dp,
+                        top = if (isSmallScreen) 2.dp else 4.dp,
+                        bottom = if (isSmallScreen) 22.dp else 16.dp
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
@@ -452,7 +435,11 @@ fun PlayerScreen(
                                 }
                                 DropdownMenu(
                                     expanded = showOverflowMenu,
-                                    onDismissRequest = { showOverflowMenu = false }
+                                    onDismissRequest = {
+                                        showOverflowMenu = false
+                                        (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
+                                    },
+                                    properties = androidx.compose.ui.window.PopupProperties(focusable = false)
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text(if (showLyrics) "Показать обложку" else "Текст песни") },
