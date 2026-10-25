@@ -46,6 +46,11 @@ public:
     bool setSafeBufferMode(bool enabled);
     bool getSafeBufferMode() const { return mSafeBufferMode.load(); }
 
+    // Crossfade volume (0.0 .. 1.0), ReplayGain normalization, and Gapless transition mode
+    void setVolume(float volume);
+    void setReplayGainEnabled(bool enabled);
+    void setGaplessEnabled(bool enabled);
+
     bool isEof() const;
 
     EqualizerEngine* getEqualizer() const { return mEqualizer.get(); }
@@ -80,6 +85,11 @@ private:
     int mAudioMode = 0; // 0=AAudio, 1=OpenSL ES, 2=Hi-Res
     int mDeviceId = oboe::kUnspecified;
     std::atomic<bool> mSafeBufferMode{false};
+    std::atomic<float> mTargetVolume{1.0f};
+    float mCurrentVolume = 1.0f;
+    std::atomic<bool> mReplayGainEnabled{false};
+    std::atomic<float> mTrackReplayGainLinear{1.0f};
+    std::atomic<bool> mGaplessEnabled{true};
 
     bool openStream(int channelCount, int sampleRate);
     void closeStream();

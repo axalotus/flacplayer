@@ -41,23 +41,38 @@ class MainActivity : ComponentActivity() {
     private lateinit var dacDetector: DacDetector
     private val equalizerController = EqualizerController()
 
+    private var wasPlayingBeforeDisconnect = false
+
     private val mediaActionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            val prefs = LibraryPreferences.getInstance(applicationContext)
             when (intent?.action) {
                 MediaNotificationManager.ACTION_PLAY -> AudioPlayerService.play()
                 MediaNotificationManager.ACTION_PAUSE -> AudioPlayerService.pause()
                 MediaNotificationManager.ACTION_NEXT -> AudioPlayerService.skipToNext()
                 MediaNotificationManager.ACTION_PREV -> AudioPlayerService.skipToPrevious()
                 AudioManager.ACTION_AUDIO_BECOMING_NOISY -> {
-                    AudioPlayerService.pause()
+                    if (prefs.isAutoPauseOnDisconnect.value) {
+                        wasPlayingBeforeDisconnect = AudioPlayerService.isPlaying.value
+                        AudioPlayerService.pause()
+                    }
                     dacDetector.updateDevice()
                 }
                 BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
-                    AudioPlayerService.pause()
+                    if (prefs.isAutoPauseOnDisconnect.value) {
+                        if (AudioPlayerService.isPlaying.value) {
+                            wasPlayingBeforeDisconnect = true
+                        }
+                        AudioPlayerService.pause()
+                    }
                     dacDetector.updateDevice()
                 }
                 BluetoothDevice.ACTION_ACL_CONNECTED -> {
                     dacDetector.updateDevice()
+                    if (prefs.isAutoResumeOnConnect.value && wasPlayingBeforeDisconnect) {
+                        wasPlayingBeforeDisconnect = false
+                        AudioPlayerService.play()
+                    }
                 }
             }
         }

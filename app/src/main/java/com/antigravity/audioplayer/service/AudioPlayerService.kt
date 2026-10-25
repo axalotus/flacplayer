@@ -81,6 +81,9 @@ object AudioPlayerService {
         val prefs = LibraryPreferences.getInstance(context.applicationContext)
         NativeAudioEngine.initEngine()
         NativeAudioEngine.setSafeBufferMode(prefs.isSafeBufferMode.value)
+        NativeAudioEngine.setReplayGainEnabled(prefs.isReplayGainEnabled.value)
+        NativeAudioEngine.setGaplessEnabled(prefs.isGaplessEnabled.value)
+        NativeAudioEngine.setVolume(1.0f)
         NativeAudioEngine.recreateStream(prefs.audioEngineMode.value)
 
         mediaNotificationManager = MediaNotificationManager(
@@ -345,10 +348,13 @@ object AudioPlayerService {
                     val currentMs = (framePos * 1000L) / sr
                     _progressMs.value = currentMs
 
+                    val ctx = appContext
+                    val prefs = if (ctx != null) LibraryPreferences.getInstance(ctx) else null
+
                     val now = System.currentTimeMillis()
                     if (now - lastProgressSaveTimestamp > 2000L) {
                         lastProgressSaveTimestamp = now
-                        appContext?.let { com.antigravity.audioplayer.data.storage.LibraryPreferences.getInstance(it).saveLastProgress(currentMs) }
+                        prefs?.saveLastProgress(currentMs)
                     }
 
                     val durationFrames = NativeAudioEngine.getDuration()
@@ -357,13 +363,59 @@ object AudioPlayerService {
                         _durationMs.value = totalMs
                     }
 
-                    val isEngineEof = NativeAudioEngine.isEof()
-                    val isTimeNearEnd = totalMs > 1000L && currentMs >= (totalMs - 250L)
+                    val crossfadeSec = prefs?.crossfadeSeconds?.value ?: 0
+                    val isGapless = prefs?.isGaplessEnabled?.value ?: true
+                    val crossfadeWindowMs = crossfadeSec * 1000L
+                    val remainingMs = (totalMs - currentMs).coerceAtLeast(0L)
 
-                    if (!eofHandled && (isEngineEof || isTimeNearEnd)) {
-                        Log.d(TAG, "Track end detected! isEngineEof: $isEngineEof, isTimeNearEnd: $isTimeNearEnd (cur: $currentMs ms, dur: $totalMs ms)")
+                    // Apply Crossfade volume envelope if enabled and track is long enough
+                    if (crossfadeWindowMs > 0L && totalMs > crossfadeWindowMs * 2) {
+                        val halfFadeMs = (crossfadeWindowMs / 2L).coerceAtLeast(500L)
+                        when {
+                            currentMs < halfFadeMs -> {
+                                // Smooth fade-in at start of track
+                                val fadeIn = (0.2f + 0.8f * (currentMs.toFloat() / halfFadeMs.toFloat())).coerceIn(0.2f, 1.0f)
+                                NativeAudioEngine.setVolume(fadeIn)
+                            }
+                            remainingMs <= crossfadeWindowMs -> {
+                                // Smooth fade-out approaching transition
+                                val fadeOut = (remainingMs.toFloat() / crossfadeWindowMs.toFloat()).coerceIn(0.08f, 1.0f)
+                                NativeAudioEngine.setVolume(fadeOut)
+                            }
+                            else -> {
+                                NativeAudioEngine.setVolume(1.0f)
+                            }
+                        }
+                    } else {
+                        NativeAudioEngine.setVolume(1.0f)
+                    }
+
+                    val isEngineEof = NativeAudioEngine.isEof()
+                    val shouldAdvance = when {
+                        crossfadeWindowMs > 0L && totalMs > crossfadeWindowMs * 2 -> {
+                            isEngineEof || remainingMs <= (crossfadeWindowMs / 2L).coerceAtLeast(400L)
+                        }
+                        isGapless -> {
+                            isEngineEof || (totalMs > 1000L && remainingMs <= 160L)
+                        }
+                        else -> {
+                            isEngineEof
+                        }
+                    }
+
+                    if (!eofHandled && shouldAdvance) {
+                        Log.d(TAG, "Track transition triggered! eof=$isEngineEof, cur=$currentMs/$totalMs ms, crossfade=${crossfadeSec}s, gapless=$isGapless")
                         eofHandled = true
+                        if (!isGapless && crossfadeWindowMs == 0L) {
+                            // Non-gapless mode: insert a clean inter-track gap before starting next track
+                            delay(250)
+                        }
                         withContext(Dispatchers.Main) {
+                            if (crossfadeWindowMs > 0L) {
+                                NativeAudioEngine.setVolume(0.2f)
+                            } else {
+                                NativeAudioEngine.setVolume(1.0f)
+                            }
                             playNextInternal()
                         }
                     }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -522,6 +523,10 @@ private fun AllTracksSubScreen(
     onHideTrack: (String) -> Unit,
     onOpenSearch: () -> Unit
 ) {
+    val context = LocalContext.current
+    val prefs = remember { LibraryPreferences.getInstance(context) }
+    val isCompactMode by prefs.isCompactMode.collectAsState()
+    val isShowTrackNumbers by prefs.isShowTrackNumbers.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var selectedSortMode by remember { mutableStateOf(SortMode.TITLE_AZ) }
     var showSortDropdown by remember { mutableStateOf(false) }
@@ -613,15 +618,18 @@ private fun AllTracksSubScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize().padding(end = 26.dp),
                 contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(if (isCompactMode) 3.dp else 6.dp)
             ) {
-                items(filteredTracks, key = { it.id }) { track ->
+                itemsIndexed(filteredTracks, key = { _, it -> it.id }) { index, track ->
                     val isPlayingCurrent = currentTrack?.id == track.id
                     TrackListItem(
                         track = track,
                         isSelected = isPlayingCurrent,
                         isFavorite = favoriteIds.contains(track.id),
                         playlists = playlists,
+                        showTrackNumber = isShowTrackNumbers,
+                        compactMode = isCompactMode,
+                        displayIndex = index + 1,
                         onFavoriteToggle = { onFavoriteToggle(track.id) },
                         onAddToPlaylist = { pId -> onAddToPlaylist(pId, track.id) },
                         onHideTrack = { onHideTrack(track.id) },
@@ -1016,6 +1024,11 @@ private fun TrackListDrilldownSubScreen(
     onAddToPlaylist: (String, String) -> Unit,
     onHideTrack: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val prefs = remember { LibraryPreferences.getInstance(context) }
+    val isCompactMode by prefs.isCompactMode.collectAsState()
+    val isShowTrackNumbers by prefs.isShowTrackNumbers.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
         TopAppBar(
             navigationIcon = {
@@ -1047,15 +1060,18 @@ private fun TrackListDrilldownSubScreen(
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(if (isCompactMode) 3.dp else 6.dp)
         ) {
-            items(tracks, key = { it.id }) { track ->
+            itemsIndexed(tracks, key = { _, it -> it.id }) { index, track ->
                 val isPlayingCurrent = currentTrack?.id == track.id
                 TrackListItem(
                     track = track,
                     isSelected = isPlayingCurrent,
                     isFavorite = favoriteIds.contains(track.id),
                     playlists = playlists,
+                    showTrackNumber = isShowTrackNumbers,
+                    compactMode = isCompactMode,
+                    displayIndex = index + 1,
                     onFavoriteToggle = { onFavoriteToggle(track.id) },
                     onAddToPlaylist = { pId -> onAddToPlaylist(pId, track.id) },
                     onHideTrack = { onHideTrack(track.id) },
@@ -1075,65 +1091,90 @@ private fun TrackListItem(
     isSelected: Boolean,
     isFavorite: Boolean,
     playlists: List<Playlist>,
+    showTrackNumber: Boolean = false,
+    compactMode: Boolean = false,
+    displayIndex: Int? = null,
     onFavoriteToggle: () -> Unit,
     onAddToPlaylist: (String) -> Unit,
     onHideTrack: () -> Unit = {},
     onClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val trackNum = if (track.trackNumber > 0) track.trackNumber else displayIndex
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(if (compactMode) 10.dp else 14.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                              else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
         )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 7.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = if (compactMode) 3.dp else 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(if (compactMode) 8.dp else 10.dp)
         ) {
-            AlbumArtView(track = track, modifier = Modifier.size(46.dp), cornerRadius = 10)
+            if (showTrackNumber && trackNum != null && trackNum > 0) {
+                Text(
+                    text = String.format("%02d", trackNum),
+                    fontSize = if (compactMode) 11.sp else 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                    modifier = Modifier.width(if (compactMode) 22.dp else 26.dp)
+                )
+            }
+
+            AlbumArtView(
+                track = track,
+                modifier = Modifier.size(if (compactMode) 34.dp else 46.dp),
+                cornerRadius = if (compactMode) 7 else 10
+            )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = track.title,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    fontSize = if (compactMode) 13.sp else 14.sp,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(1.dp))
+                if (!compactMode) {
+                    Spacer(modifier = Modifier.height(1.dp))
+                }
                 Text(
                     text = "${track.artist} • ${track.album}",
-                    fontSize = 11.sp,
+                    fontSize = if (compactMode) 10.sp else 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
 
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(if (compactMode) 1.dp else 3.dp)) {
                 QualityBadge(metadata = track)
-                Text(formatMs(track.durationMs), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                Text(formatMs(track.durationMs), fontSize = if (compactMode) 9.sp else 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
             }
 
             // Favorite + context menu
-            Column {
-                IconButton(onClick = onFavoriteToggle, modifier = Modifier.size(30.dp)) {
+            @Composable
+            fun actionButtons() {
+                val btnSize = if (compactMode) 28.dp else 30.dp
+                val iconSize = if (compactMode) 15.dp else 16.dp
+                IconButton(onClick = onFavoriteToggle, modifier = Modifier.size(btnSize)) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Избранное",
                         tint = if (isFavorite) Color(0xFFE44D7B) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(iconSize)
                     )
                 }
                 Box {
-                    IconButton(onClick = { showMenu = true }, modifier = Modifier.size(30.dp)) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Ещё", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f))
+                    IconButton(onClick = { showMenu = true }, modifier = Modifier.size(btnSize)) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Ещё", modifier = Modifier.size(iconSize), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f))
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
@@ -1170,6 +1211,12 @@ private fun TrackListItem(
                         }
                     }
                 }
+            }
+
+            if (compactMode) {
+                Row(verticalAlignment = Alignment.CenterVertically) { actionButtons() }
+            } else {
+                Column { actionButtons() }
             }
         }
     }

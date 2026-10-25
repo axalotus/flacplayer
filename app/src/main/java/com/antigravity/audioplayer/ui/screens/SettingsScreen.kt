@@ -54,9 +54,9 @@ fun SettingsScreen(
     var activeSection by remember { mutableStateOf(SettingsSection.NONE) }
 
     // Sound Settings State
-    var crossfadeSeconds by remember { mutableIntStateOf(0) }
-    var replayGain by remember { mutableStateOf(false) }
-    var gapless by remember { mutableStateOf(true) }
+    val crossfadeSeconds by prefs.crossfadeSeconds.collectAsState()
+    val replayGain by prefs.isReplayGainEnabled.collectAsState()
+    val gapless by prefs.isGaplessEnabled.collectAsState()
     val audioEngineMode by prefs.audioEngineMode.collectAsState()
     val isSafeBufferMode by prefs.isSafeBufferMode.collectAsState()
 
@@ -65,8 +65,8 @@ fun SettingsScreen(
     val isHideNavigationBar by prefs.isHideNavigationBar.collectAsState()
     val playerControlsBottomOffsetDp by prefs.playerControlsBottomOffsetDp.collectAsState()
     val playerSecondaryControlsSpacingDp by prefs.playerSecondaryControlsSpacingDp.collectAsState()
-    var showTrackNumbers by remember { mutableStateOf(false) }
-    var compactMode by remember { mutableStateOf(false) }
+    val showTrackNumbers by prefs.isShowTrackNumbers.collectAsState()
+    val compactMode by prefs.isCompactMode.collectAsState()
 
     // Background / Covers State
     val isBlurBackground by prefs.isBlurBackground.collectAsState()
@@ -74,8 +74,8 @@ fun SettingsScreen(
     val isEmbeddedCoversEnabled by prefs.isEmbeddedCoversEnabled.collectAsState()
 
     // Bluetooth Settings State
-    var autoPauseOnDisconnect by remember { mutableStateOf(true) }
-    var autoResumeOnConnect by remember { mutableStateOf(true) }
+    val autoPauseOnDisconnect by prefs.isAutoPauseOnDisconnect.collectAsState()
+    val autoResumeOnConnect by prefs.isAutoResumeOnConnect.collectAsState()
 
     val lyricsFolderUri by prefs.lyricsFolderUri.collectAsState()
     val isOnlineLyricsEnabled by prefs.isOnlineLyricsEnabled.collectAsState()
@@ -509,7 +509,7 @@ fun SettingsScreen(
                         Text("Кроссфейд: ${crossfadeSeconds} сек", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         Slider(
                             value = crossfadeSeconds.toFloat(),
-                            onValueChange = { crossfadeSeconds = it.toInt() },
+                            onValueChange = { prefs.setCrossfadeSeconds(it.toInt()) },
                             valueRange = 0f..10f,
                             steps = 9
                         )
@@ -525,7 +525,13 @@ fun SettingsScreen(
                                 Text("ReplayGain", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                                 Text("Выравнивание громкости треков", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                             }
-                            Switch(checked = replayGain, onCheckedChange = { replayGain = it })
+                            Switch(
+                                checked = replayGain,
+                                onCheckedChange = { enabled ->
+                                    prefs.setReplayGainEnabled(enabled)
+                                    NativeAudioEngine.setReplayGainEnabled(enabled)
+                                }
+                            )
                         }
 
                         Row(
@@ -537,7 +543,13 @@ fun SettingsScreen(
                                 Text("Гапплесс (Gapless)", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                                 Text("Плавный переход между треками без пауз", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                             }
-                            Switch(checked = gapless, onCheckedChange = { gapless = it })
+                            Switch(
+                                checked = gapless,
+                                onCheckedChange = { enabled ->
+                                    prefs.setGaplessEnabled(enabled)
+                                    NativeAudioEngine.setGaplessEnabled(enabled)
+                                }
+                            )
                         }
 
                         HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
@@ -751,13 +763,13 @@ fun SettingsScreen(
                             title = "Пауза при отключении наушников",
                             subtitle = "Автоматически ставить воспроизведение на паузу при разрыве соединения",
                             checked = autoPauseOnDisconnect,
-                            onCheckedChange = { autoPauseOnDisconnect = it }
+                            onCheckedChange = { prefs.setAutoPauseOnDisconnect(it) }
                         )
                         SettingsToggleRow(
                             title = "Возобновление при подключении",
                             subtitle = "Продолжать воспроизведение при повторном подключении Bluetooth",
                             checked = autoResumeOnConnect,
-                            onCheckedChange = { autoResumeOnConnect = it }
+                            onCheckedChange = { prefs.setAutoResumeOnConnect(it) }
                         )
 
                         Spacer(modifier = Modifier.height(10.dp))
@@ -877,13 +889,13 @@ fun SettingsScreen(
                             title = "Показывать номера треков",
                             subtitle = "Отображать номер трека в альбоме",
                             checked = showTrackNumbers,
-                            onCheckedChange = { showTrackNumbers = it }
+                            onCheckedChange = { prefs.setShowTrackNumbers(it) }
                         )
                         SettingsToggleRow(
                             title = "Компактный список треков",
                             subtitle = "Меньший размер строк для больших библиотек",
                             checked = compactMode,
-                            onCheckedChange = { compactMode = it }
+                            onCheckedChange = { prefs.setCompactMode(it) }
                         )
                     }
 

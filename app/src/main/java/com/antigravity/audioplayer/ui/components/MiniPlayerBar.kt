@@ -32,9 +32,6 @@ fun MiniPlayerBar(
 ) {
     if (currentTrack == null) return
 
-    val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
-    val progressState = AudioPlayerService.progressMs.collectAsState()
-
     Surface(
         onClick = onClickExpand,
         modifier = modifier
@@ -107,14 +104,31 @@ fun MiniPlayerBar(
                 }
             }
 
-            // Slim Bottom Progress Bar
-            LinearProgressIndicator(
-                progress = { (progressState.value.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.5.dp),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            // Slim Bottom Progress Bar (isolated from MiniPlayerBar recomposition; reads progress in draw phase only)
+            MiniPlayerProgressBar(fallbackDurationMs = currentTrack.durationMs)
+        }
+    }
+}
+
+@Composable
+private fun MiniPlayerProgressBar(fallbackDurationMs: Long) {
+    val progressState = AudioPlayerService.progressMs.collectAsState()
+    val durationState = AudioPlayerService.durationMs.collectAsState()
+    val activeColor = MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+
+    androidx.compose.foundation.Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(2.5.dp)
+    ) {
+        val totalMs = durationState.value.takeIf { it > 0L } ?: fallbackDurationMs.coerceAtLeast(1L)
+        val fraction = (progressState.value.toFloat() / totalMs.toFloat()).coerceIn(0f, 1f)
+        drawRect(color = trackColor, size = size)
+        if (fraction > 0f) {
+            drawRect(
+                color = activeColor,
+                size = size.copy(width = size.width * fraction)
             )
         }
     }

@@ -56,26 +56,58 @@ bool AudioEngine::initStreamAfterLoad() {
     uint64_t framesToRead = PREBUFFER_SIZE / ch;
     uint64_t framesDecoded = mDecoder->decodeFrames(mPreBuffer.data(), framesToRead);
     if (framesDecoded > 0) {
-        mRingBuffer->write(mPreBuffer.data(), framesDecoded * ch);
-        LOG_OBOE_D("initStreamAfterLoad: Pre-buffered %lld frames into RingBuffer", (long long)framesDecoded);
+        int32_t totalSamples = (int32_t)(framesDecoded * ch);
+        mRingBuffer->write(mPreBuffer.data(), totalSamples);
+
+        // Estimate initial ReplayGain loudness from pre-buffered samples
+        double sumSq = 0.0;
+        float peak = 0.0f;
+        int32_t nonSilentCount = 0;
+        for (int32_t i = 0; i < totalSamples; ++i) {
+            float absVal = std::fabs(mPreBuffer[i]);
+            if (absVal > 0.001f) {
+                sumSq += (double)absVal * (double)absVal;
+                nonSilentCount++;
+            }
+            if (absVal > peak) peak = absVal;
+        }
+        if (nonSilentCount > 256) {
+            float rms = (float)std::sqrt(sumSq / (double)nonSilentCount);
+            // Target reference RMS ~0.18f (-15 dBFS), clamped to [-6 dB .. +6 dB] (0.5f .. 2.0f) and headroom-limited by peak
+            float desiredGain = (rms > 0.005f) ? (0.18f / rms) : 1.0f;
+            if (desiredGain > 2.0f) desiredGain = 2.0f;
+            if (desiredGain < 0.5f) desiredGain = 0.5f;
+            if (peak * desiredGain > 0.98f && peak > 0.01f) {
+                desiredGain = 0.98f / peak;
+            }
+            mTrackReplayGainLinear.store(desiredGain, std::memory_order_release);
+        } else {
+            mTrackReplayGainLinear.store(1.0f, std::memory_order_release);
+        }
+        LOG_OBOE_D("initStreamAfterLoad: Pre-buffered %lld frames into RingBuffer (ReplayGain linear=%.2f)",
+                   (long long)framesDecoded, mTrackReplayGainLinear.load());
+    } else {
+        mTrackReplayGainLinear.store(1.0f, std::memory_order_release);
     }
 
-    // Check if existing Oboe stream can be reused
+    // Check if existing Oboe stream can be reused (always reuse when Gapless is enabled and format matches)
+    bool gapless = mGaplessEnabled.load(std::memory_order_acquire);
     bool needNewStream = (!mStream ||
+                          !gapless ||
                           mStream->getState() == oboe::StreamState::Closed ||
                           mStream->getState() == oboe::StreamState::Disconnected ||
                           mStream->getSampleRate() != sampleRate ||
                           mStream->getChannelCount() != channels);
 
     if (needNewStream) {
-        LOG_OBOE_I("initStreamAfterLoad: Stream params changed or stream closed -> creating new Oboe stream (SR: %d, Ch: %d)", sampleRate, channels);
+        LOG_OBOE_I("initStreamAfterLoad: Creating Oboe stream (SR: %d, Ch: %d, gapless=%d)", sampleRate, channels, (int)gapless);
         closeStream();
         if (!openStream(channels, sampleRate)) {
             LOG_OBOE_E("initStreamAfterLoad: openStream failed!");
             return false;
         }
     } else {
-        LOG_OBOE_I("initStreamAfterLoad: Reusing existing Oboe stream (Current State: %s)", oboe::convertToText(mStream->getState()));
+        LOG_OBOE_I("initStreamAfterLoad: Gapless reuse of existing Oboe stream (Current State: %s)", oboe::convertToText(mStream->getState()));
     }
 
     return true;
@@ -489,15 +521,45 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream
         mEqualizer->processBuffer(floatData, samplesRead);
     }
 
-    // Safety guard: ensure no NaN/Inf or >0dBFS overflow ever reaches OpenSL ES / AAudio hardware
+    // Apply ReplayGain loudness normalization and smooth Crossfade/Master Volume ramping
+    float targetVol = mTargetVolume.load(std::memory_order_relaxed);
+    float rgGain = mReplayGainEnabled.load(std::memory_order_relaxed)
+                       ? mTrackReplayGainLinear.load(std::memory_order_relaxed)
+                       : 1.0f;
+
+    // Continuously refine ReplayGain estimate on active audio blocks when enabled
+    if (mReplayGainEnabled.load(std::memory_order_relaxed) && samplesRead > 0) {
+        double blockSq = 0.0;
+        int32_t activeCount = 0;
+        for (int32_t i = 0; i < samplesRead; i += 4) {
+            float v = std::fabs(floatData[i]);
+            if (v > 0.005f) {
+                blockSq += (double)v * (double)v;
+                activeCount++;
+            }
+        }
+        if (activeCount > 16) {
+            float blockRms = (float)std::sqrt(blockSq / (double)activeCount);
+            float blockTarget = std::clamp(0.18f / blockRms, 0.5f, 2.0f);
+            float smoothedRg = rgGain * 0.995f + blockTarget * 0.005f;
+            mTrackReplayGainLinear.store(smoothedRg, std::memory_order_relaxed);
+            rgGain = smoothedRg;
+        }
+    }
+
+    // Safety guard + smooth volume/ReplayGain application + soft limiting:
+    // ensure no NaN/Inf or >0dBFS overflow ever reaches OpenSL ES / AAudio hardware
     for (int32_t i = 0; i < totalSamples; ++i) {
-        float s = floatData[i];
+        mCurrentVolume += (targetVol - mCurrentVolume) * 0.0015f;
+        float s = floatData[i] * mCurrentVolume * rgGain;
         if (std::isnan(s) || std::isinf(s)) {
             floatData[i] = 0.0f;
         } else if (s > 1.0f) {
             floatData[i] = 1.0f;
         } else if (s < -1.0f) {
             floatData[i] = -1.0f;
+        } else {
+            floatData[i] = s;
         }
     }
 
@@ -619,6 +681,21 @@ bool AudioEngine::setSafeBufferMode(bool enabled) {
     LOG_OBOE_I("setSafeBufferMode: changing to %d (was %d)", (int)enabled, (int)mSafeBufferMode.load());
     mSafeBufferMode.store(enabled);
     return reopenStream(mIsPlaying);
+}
+
+void AudioEngine::setVolume(float volume) {
+    float clamped = std::clamp(volume, 0.0f, 1.0f);
+    mTargetVolume.store(clamped, std::memory_order_release);
+}
+
+void AudioEngine::setReplayGainEnabled(bool enabled) {
+    LOG_OBOE_I("setReplayGainEnabled: %d", (int)enabled);
+    mReplayGainEnabled.store(enabled, std::memory_order_release);
+}
+
+void AudioEngine::setGaplessEnabled(bool enabled) {
+    LOG_OBOE_I("setGaplessEnabled: %d", (int)enabled);
+    mGaplessEnabled.store(enabled, std::memory_order_release);
 }
 
 bool AudioEngine::isEof() const {

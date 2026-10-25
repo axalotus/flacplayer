@@ -109,6 +109,69 @@ class LibraryPreferences private constructor(private val context: Context) {
         _playerSecondaryControlsSpacingDp.value = clamped
     }
 
+    // Crossfade duration in seconds (0 = disabled, 1..10s)
+    private val _crossfadeSeconds = MutableStateFlow(prefs.getInt("crossfade_seconds", 0).coerceIn(0, 10))
+    val crossfadeSeconds = _crossfadeSeconds.asStateFlow()
+
+    fun setCrossfadeSeconds(seconds: Int) {
+        val clamped = seconds.coerceIn(0, 10)
+        prefs.edit().putInt("crossfade_seconds", clamped).apply()
+        _crossfadeSeconds.value = clamped
+    }
+
+    // ReplayGain loudness normalization toggle
+    private val _isReplayGainEnabled = MutableStateFlow(prefs.getBoolean("replay_gain_enabled", false))
+    val isReplayGainEnabled = _isReplayGainEnabled.asStateFlow()
+
+    fun setReplayGainEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("replay_gain_enabled", enabled).apply()
+        _isReplayGainEnabled.value = enabled
+    }
+
+    // Gapless playback toggle
+    private val _isGaplessEnabled = MutableStateFlow(prefs.getBoolean("gapless_enabled", true))
+    val isGaplessEnabled = _isGaplessEnabled.asStateFlow()
+
+    fun setGaplessEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("gapless_enabled", enabled).apply()
+        _isGaplessEnabled.value = enabled
+    }
+
+    // Show track numbers in library lists
+    private val _isShowTrackNumbers = MutableStateFlow(prefs.getBoolean("show_track_numbers", false))
+    val isShowTrackNumbers = _isShowTrackNumbers.asStateFlow()
+
+    fun setShowTrackNumbers(enabled: Boolean) {
+        prefs.edit().putBoolean("show_track_numbers", enabled).apply()
+        _isShowTrackNumbers.value = enabled
+    }
+
+    // Compact track list mode for large libraries
+    private val _isCompactMode = MutableStateFlow(prefs.getBoolean("compact_mode", false))
+    val isCompactMode = _isCompactMode.asStateFlow()
+
+    fun setCompactMode(enabled: Boolean) {
+        prefs.edit().putBoolean("compact_mode", enabled).apply()
+        _isCompactMode.value = enabled
+    }
+
+    // Bluetooth / Headset auto-pause and auto-resume toggles
+    private val _isAutoPauseOnDisconnect = MutableStateFlow(prefs.getBoolean("auto_pause_on_disconnect", true))
+    val isAutoPauseOnDisconnect = _isAutoPauseOnDisconnect.asStateFlow()
+
+    fun setAutoPauseOnDisconnect(enabled: Boolean) {
+        prefs.edit().putBoolean("auto_pause_on_disconnect", enabled).apply()
+        _isAutoPauseOnDisconnect.value = enabled
+    }
+
+    private val _isAutoResumeOnConnect = MutableStateFlow(prefs.getBoolean("auto_resume_on_connect", true))
+    val isAutoResumeOnConnect = _isAutoResumeOnConnect.asStateFlow()
+
+    fun setAutoResumeOnConnect(enabled: Boolean) {
+        prefs.edit().putBoolean("auto_resume_on_connect", enabled).apply()
+        _isAutoResumeOnConnect.value = enabled
+    }
+
     // Dedicated Lyrics Folder Uri
     private val _lyricsFolderUri = MutableStateFlow<String?>(prefs.getString("lyrics_folder_uri", null))
     val lyricsFolderUri = _lyricsFolderUri.asStateFlow()

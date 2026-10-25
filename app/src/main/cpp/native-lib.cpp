@@ -145,4 +145,28 @@ Java_com_antigravity_audioplayer_audio_NativeAudioEngine_isEof(JNIEnv *env, jobj
     return gAudioEngine->isEof() ? JNI_TRUE : JNI_FALSE;
 }
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_antigravity_audioplayer_audio_NativeAudioEngine_setVolume(JNIEnv *env, jobject thiz, jfloat volume) {
+    if (gAudioEngine) {
+        gAudioEngine->setVolume((float)volume);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_antigravity_audioplayer_audio_NativeAudioEngine_setReplayGainEnabled(JNIEnv *env, jobject thiz, jboolean enabled) {
+    if (gAudioEngine) {
+        gAudioEngine->setReplayGainEnabled(enabled == JNI_TRUE);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_antigravity_audioplayer_audio_NativeAudioEngine_setGaplessEnabled(JNIEnv *env, jobject thiz, jboolean enabled) {
+    if (gAudioEngine) {
+        gAudioEngine->setGaplessEnabled(enabled == JNI_TRUE);
+    }
+}
+
 

@@ -114,4 +114,19 @@ object NativeAudioEngine {
      * @param deviceId The device ID from AudioDeviceInfo (or 0 for unspecified/system default).
      */
     external fun setAudioDeviceId(deviceId: Int): Boolean
+
+    /**
+     * Sets master playback volume (0.0f to 1.0f) with smooth per-sample ramping (used for Crossfade).
+     */
+    external fun setVolume(volume: Float)
+
+    /**
+     * Enables or disables automatic ReplayGain loudness normalization in the native DSP pipeline.
+     */
+    external fun setReplayGainEnabled(enabled: Boolean)
+
+    /**
+     * Enables or disables gapless stream reuse across track transitions.
+     */
+    external fun setGaplessEnabled(enabled: Boolean)
 }
