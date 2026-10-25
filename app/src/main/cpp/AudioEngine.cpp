@@ -11,8 +11,9 @@
 
 // 1 second of audio at 192kHz (stereo) = 192000 * 2 = 384000 floats.
 const int32_t RING_BUFFER_CAPACITY = 384000;
+const int32_t PREBUFFER_SIZE = 16384;
 
-AudioEngine::AudioEngine() {
+AudioEngine::AudioEngine() : mPreBuffer(PREBUFFER_SIZE) {
     mDecoder = std::make_unique<AudioDecoder>();
     mRingBuffer = std::make_unique<RingBuffer<float>>(RING_BUFFER_CAPACITY);
     mEqualizer = std::make_unique<EqualizerEngine>();
@@ -24,6 +25,26 @@ AudioEngine::~AudioEngine() {
     LOG_OBOE_I("AudioEngine destroyed");
 }
 
+void AudioEngine::stopDecodeThread() {
+    mDecodeThreadRunning.store(false, std::memory_order_release);
+    mDecodeCv.notify_all();
+    if (mDecodeThread.joinable()) {
+        mDecodeThread.join();
+    }
+}
+
+void AudioEngine::beginBufferReset() {
+    mIsResettingBuffer.store(true, std::memory_order_seq_cst);
+    // Wait for any in-flight onAudioReady callback to finish reading from mRingBuffer
+    while (mActiveCallbacks.load(std::memory_order_acquire) > 0) {
+        std::this_thread::yield();
+    }
+}
+
+void AudioEngine::endBufferReset() {
+    mIsResettingBuffer.store(false, std::memory_order_release);
+}
+
 bool AudioEngine::initStreamAfterLoad() {
     int sampleRate = mDecoder->getSampleRate();
     int channels = mDecoder->getChannels();
@@ -31,13 +52,11 @@ bool AudioEngine::initStreamAfterLoad() {
                sampleRate, channels, (long long)mDecoder->getTotalFrames());
 
     // Pre-decode initial frames into RingBuffer so buffer is never dry on startup
-    const int32_t PREBUFFER_SIZE = 16384;
-    std::vector<float> preBuffer(PREBUFFER_SIZE);
     uint32_t ch = (channels > 0) ? (uint32_t)channels : 2u;
     uint64_t framesToRead = PREBUFFER_SIZE / ch;
-    uint64_t framesDecoded = mDecoder->decodeFrames(preBuffer.data(), framesToRead);
+    uint64_t framesDecoded = mDecoder->decodeFrames(mPreBuffer.data(), framesToRead);
     if (framesDecoded > 0) {
-        mRingBuffer->write(preBuffer.data(), framesDecoded * ch);
+        mRingBuffer->write(mPreBuffer.data(), framesDecoded * ch);
         LOG_OBOE_D("initStreamAfterLoad: Pre-buffered %lld frames into RingBuffer", (long long)framesDecoded);
     }
 
@@ -66,26 +85,27 @@ bool AudioEngine::loadFd(int fd) {
     std::lock_guard<std::mutex> lock(mLock);
     LOG_OBOE_I("loadFd: requesting to open fd %d", fd);
 
-    mIsPlaying = false;
-    mDecodeThreadRunning = false;
-    if (mDecodeThread.joinable()) {
-        mDecodeThread.join();
-    }
+    mIsPlaying.store(false, std::memory_order_release);
+    stopDecodeThread();
 
+    beginBufferReset();
     mIsEof = false;
     mDecoderReachedEof = false;
-    mPlayedSampleCount.store(0);
+    mPlayedSampleCount.store(0, std::memory_order_release);
     mRingBuffer->clear();
     if (mEqualizer) {
         mEqualizer->reset();
     }
 
     if (!mDecoder->openFd(fd)) {
+        endBufferReset();
         LOG_OBOE_E("loadFd: Failed to open fd %d in AudioDecoder", fd);
         return false;
     }
 
-    return initStreamAfterLoad();
+    bool ok = initStreamAfterLoad();
+    endBufferReset();
+    return ok;
 }
 
 bool AudioEngine::loadFile(const std::string& filePath) {
@@ -100,26 +120,27 @@ bool AudioEngine::loadFile(const std::string& filePath) {
     std::lock_guard<std::mutex> lock(mLock);
     LOG_OBOE_I("loadFile: requesting to open '%s'", filePath.c_str());
 
-    mIsPlaying = false;
-    mDecodeThreadRunning = false;
-    if (mDecodeThread.joinable()) {
-        mDecodeThread.join();
-    }
+    mIsPlaying.store(false, std::memory_order_release);
+    stopDecodeThread();
 
+    beginBufferReset();
     mIsEof = false;
     mDecoderReachedEof = false;
-    mPlayedSampleCount.store(0);
+    mPlayedSampleCount.store(0, std::memory_order_release);
     mRingBuffer->clear();
     if (mEqualizer) {
         mEqualizer->reset();
     }
 
     if (!mDecoder->openFile(filePath)) {
+        endBufferReset();
         LOG_OBOE_E("loadFile: Failed to open '%s' in AudioDecoder", filePath.c_str());
         return false;
     }
 
-    return initStreamAfterLoad();
+    bool ok = initStreamAfterLoad();
+    endBufferReset();
+    return ok;
 }
 
 int64_t AudioEngine::seekTo(int64_t targetFrame) {
@@ -133,42 +154,41 @@ int64_t AudioEngine::seekTo(int64_t targetFrame) {
     }
 
     LOG_OBOE_I("seekTo: targetFrame = %lld", (long long)targetFrame);
+
+    // Pause decoding thread temporarily
+    bool wasRunning = mDecodeThreadRunning.load(std::memory_order_acquire);
+    if (wasRunning) {
+        stopDecodeThread();
+    }
+
+    // Fence off onAudioReady so clear(), EQ reset, and pre-buffering happen atomically with respect to audio callback
+    beginBufferReset();
     mIsEof = false;
     mDecoderReachedEof = false;
-
-    // Pause decoding temporarily
-    bool wasRunning = mDecodeThreadRunning;
-    if (wasRunning) {
-        mDecodeThreadRunning = false;
-        if (mDecodeThread.joinable()) {
-            mDecodeThread.join();
-        }
-    }
 
     int64_t result = mDecoder->seek(targetFrame);
     int64_t actualFrame = (result >= 0) ? result : targetFrame;
     if (actualFrame < 0) actualFrame = 0;
     uint32_t ch = mDecoder->getChannels();
     if (ch == 0) ch = 2;
-    mPlayedSampleCount.store((uint64_t)(actualFrame * ch));
+    mPlayedSampleCount.store((uint64_t)(actualFrame * ch), std::memory_order_release);
 
     mRingBuffer->clear();
     if (mEqualizer) {
         mEqualizer->reset();
     }
 
-    // Pre-decode frames immediately to prevent onAudioReady from returning silence
-    const int32_t PREBUFFER_SIZE = 16384;
-    std::vector<float> preBuffer(PREBUFFER_SIZE);
+    // Pre-decode frames immediately using pre-allocated buffer to prevent onAudioReady from underrunning
     uint64_t framesToRead = PREBUFFER_SIZE / ch;
-    uint64_t framesDecoded = mDecoder->decodeFrames(preBuffer.data(), framesToRead);
+    uint64_t framesDecoded = mDecoder->decodeFrames(mPreBuffer.data(), framesToRead);
     if (framesDecoded > 0) {
-        mRingBuffer->write(preBuffer.data(), framesDecoded * ch);
+        mRingBuffer->write(mPreBuffer.data(), framesDecoded * ch);
     }
+    endBufferReset();
 
     // Resume decoding thread if it was running or player is playing
-    if ((wasRunning || mIsPlaying) && mDecoder->getSampleRate() > 0) {
-        mDecodeThreadRunning = true;
+    if ((wasRunning || mIsPlaying.load(std::memory_order_acquire)) && mDecoder->getSampleRate() > 0) {
+        mDecodeThreadRunning.store(true, std::memory_order_release);
         mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
     }
 
@@ -180,7 +200,7 @@ int64_t AudioEngine::getCurrentFrame() const {
     if (!mDecoder) return 0;
     uint32_t ch = mDecoder->getChannels();
     if (ch == 0) ch = 1;
-    uint64_t count = mPlayedSampleCount.load();
+    uint64_t count = mPlayedSampleCount.load(std::memory_order_acquire);
     return (int64_t)(count / ch);
 }
 
@@ -216,9 +236,11 @@ bool AudioEngine::start() {
             LOG_OBOE_W("start(): requestStart failed (%s), attempting full stream reopen...", oboe::convertToText(result));
             closeStream();
             if (openStream(mDecoder->getChannels(), mDecoder->getSampleRate())) {
+                beginBufferReset();
                 int64_t currentFrame = getCurrentFrame();
                 mDecoder->seek(currentFrame);
                 mRingBuffer->clear();
+                endBufferReset();
                 result = mStream->requestStart();
                 LOG_OBOE_I("start(): retry requestStart returned %s", oboe::convertToText(result));
             }
@@ -229,16 +251,13 @@ bool AudioEngine::start() {
         }
     }
 
-    mIsPlaying = true;
+    mIsPlaying.store(true, std::memory_order_release);
     mIsEof = false;
     mDecoderReachedEof = false;
 
     // Safely start decode thread
-    mDecodeThreadRunning = false;
-    if (mDecodeThread.joinable()) {
-        mDecodeThread.join();
-    }
-    mDecodeThreadRunning = true;
+    stopDecodeThread();
+    mDecodeThreadRunning.store(true, std::memory_order_release);
     mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
 
     LOG_OBOE_I("start(): AudioEngine playback active and running");
@@ -249,27 +268,21 @@ void AudioEngine::pause() {
     std::lock_guard<std::mutex> lock(mLock);
     LOG_OBOE_I("pause() called. mIsPlaying: %d", (int)mIsPlaying.load());
 
-    if (!mIsPlaying || !mStream) return;
+    if (!mIsPlaying.load(std::memory_order_acquire) || !mStream) return;
 
     oboe::Result result = mStream->requestPause();
     LOG_OBOE_I("pause(): requestPause returned %s", oboe::convertToText(result));
 
-    mIsPlaying = false;
-    mDecodeThreadRunning = false;
-    if (mDecodeThread.joinable()) {
-        mDecodeThread.join();
-    }
+    mIsPlaying.store(false, std::memory_order_release);
+    stopDecodeThread();
 }
 
 void AudioEngine::stop() {
     std::lock_guard<std::mutex> lock(mLock);
     LOG_OBOE_I("stop() called");
 
-    mIsPlaying = false;
-    mDecodeThreadRunning = false;
-    if (mDecodeThread.joinable()) {
-        mDecodeThread.join();
-    }
+    mIsPlaying.store(false, std::memory_order_release);
+    stopDecodeThread();
 
     if (!mStream) return;
 
@@ -283,29 +296,45 @@ void AudioEngine::decodeLoop() {
     LOG_OBOE_D("Decode thread started");
     setpriority(PRIO_PROCESS, 0, -8); // Boost decode thread priority to prevent underruns
     const int32_t BUFFER_SIZE = 8192;
+    const int32_t MIN_WRITE_CHUNK = 2048;
     std::vector<float> tempBuffer(BUFFER_SIZE);
 
-    while (mDecodeThreadRunning) {
+    while (mDecodeThreadRunning.load(std::memory_order_acquire)) {
+        if (mDecoderReachedEof.load(std::memory_order_acquire)) {
+            std::unique_lock<std::mutex> lock(mDecodeCvMutex);
+            mDecodeCv.wait_for(lock, std::chrono::milliseconds(100), [this]() {
+                return !mDecodeThreadRunning.load(std::memory_order_acquire) ||
+                       !mDecoderReachedEof.load(std::memory_order_acquire);
+            });
+            continue;
+        }
+
         int32_t availableWrite = mRingBuffer->getAvailableWrite();
-        if (availableWrite > BUFFER_SIZE) {
+        if (availableWrite >= MIN_WRITE_CHUNK) {
             uint32_t ch = mDecoder->getChannels();
             if (ch == 0) ch = 2;
-            uint64_t framesToRead = BUFFER_SIZE / ch;
+            int32_t samplesToDecode = std::min<int32_t>(availableWrite, BUFFER_SIZE);
+            uint64_t framesToRead = (uint64_t)(samplesToDecode / ch);
+            if (framesToRead == 0) framesToRead = 1;
+
             uint64_t framesDecoded = mDecoder->decodeFrames(tempBuffer.data(), framesToRead);
 
             if (framesDecoded > 0) {
                 mRingBuffer->write(tempBuffer.data(), framesDecoded * ch);
             } else {
                 // End of file reached by decoder
-                if (!mDecoderReachedEof.load()) {
+                if (!mDecoderReachedEof.load(std::memory_order_acquire)) {
                     LOG_OBOE_I("decodeLoop: Decoder reached EOF");
-                    mDecoderReachedEof = true;
+                    mDecoderReachedEof.store(true, std::memory_order_release);
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         } else {
-            // Ring buffer is full, wait a bit
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // Ring buffer is nearly full; wait until onAudioReady consumes frames or thread stops
+            std::unique_lock<std::mutex> lock(mDecodeCvMutex);
+            mDecodeCv.wait_for(lock, std::chrono::milliseconds(4), [this, MIN_WRITE_CHUNK]() {
+                return !mDecodeThreadRunning.load(std::memory_order_acquire) ||
+                       mRingBuffer->getAvailableWrite() >= MIN_WRITE_CHUNK;
+            });
         }
     }
     LOG_OBOE_D("Decode thread finished");
@@ -405,20 +434,37 @@ void AudioEngine::closeStream() {
 }
 
 oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
+    struct CallbackScopeGuard {
+        std::atomic<int32_t>& counter;
+        explicit CallbackScopeGuard(std::atomic<int32_t>& c) : counter(c) {
+            counter.fetch_add(1, std::memory_order_acq_rel);
+        }
+        ~CallbackScopeGuard() {
+            counter.fetch_sub(1, std::memory_order_acq_rel);
+        }
+    } guard(mActiveCallbacks);
+
     float *floatData = static_cast<float *>(audioData);
     int32_t channelCount = oboeStream->getChannelCount();
     int32_t totalSamples = numFrames * channelCount;
 
-    if (!mIsPlaying.load() || !mRingBuffer) {
+    if (!mIsPlaying.load(std::memory_order_acquire) ||
+        mIsResettingBuffer.load(std::memory_order_acquire) ||
+        !mRingBuffer) {
         memset(audioData, 0, totalSamples * sizeof(float));
         return oboe::DataCallbackResult::Continue;
     }
 
     int32_t samplesRead = mRingBuffer->read(floatData, totalSamples);
 
+    // Wake up decode thread immediately if space opened up in RingBuffer
+    if (samplesRead > 0 && mRingBuffer->getAvailableWrite() >= 8192) {
+        mDecodeCv.notify_one();
+    }
+
     // Track actual samples played for accurate position
     if (samplesRead > 0) {
-        mPlayedSampleCount += samplesRead;
+        mPlayedSampleCount.fetch_add((uint64_t)samplesRead, std::memory_order_relaxed);
     }
 
     // Fill the rest with silence if we had an underrun
@@ -428,9 +474,11 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream
         }
 
         // Only set EOF if decoder finished reading AND ring buffer is completely drained AND we played frames
-        if (mDecoderReachedEof.load() && mRingBuffer->getAvailableRead() == 0 && mPlayedSampleCount.load() > 0) {
-            if (!mIsEof.load()) {
-                mIsEof = true;
+        if (mDecoderReachedEof.load(std::memory_order_acquire) &&
+            mRingBuffer->getAvailableRead() == 0 &&
+            mPlayedSampleCount.load(std::memory_order_relaxed) > 0) {
+            if (!mIsEof.load(std::memory_order_relaxed)) {
+                mIsEof.store(true, std::memory_order_release);
                 LOG_OBOE_I("onAudioReady: Hardware playback reached EOF! Total samples played: %lld", (long long)mPlayedSampleCount.load());
             }
         }
@@ -469,10 +517,11 @@ void AudioEngine::onErrorAfterClose(oboe::AudioStream *oboeStream, oboe::Result 
         error == oboe::Result::ErrorInternal ||
         error == oboe::Result::ErrorInvalidState) {
         LOG_OBOE_I("Device disconnected or routing changed, recovering audio stream...");
-        reopenStream(mIsPlaying);
+        reopenStream(mIsPlaying.load(std::memory_order_acquire));
     } else {
-        mIsPlaying = false;
-        mDecodeThreadRunning = false;
+        mIsPlaying.store(false, std::memory_order_release);
+        mDecodeThreadRunning.store(false, std::memory_order_release);
+        mDecodeCv.notify_all();
     }
 }
 
@@ -487,13 +536,10 @@ bool AudioEngine::reopenStream(bool restartIfPlaying) {
     LOG_OBOE_I("reopenStream: Reopening stream (restartIfPlaying=%d, wasPlaying=%d)", restartIfPlaying, (int)mIsPlaying.load());
 
     // Stop decode thread safely
-    mDecodeThreadRunning = false;
-    if (mDecodeThread.joinable()) {
-        mDecodeThread.join();
-    }
+    stopDecodeThread();
 
-    bool shouldPlay = restartIfPlaying && mIsPlaying;
-    mIsPlaying = false;
+    bool shouldPlay = restartIfPlaying && mIsPlaying.load(std::memory_order_acquire);
+    mIsPlaying.store(false, std::memory_order_release);
 
     // Close old dead stream
     closeStream();
@@ -505,14 +551,15 @@ bool AudioEngine::reopenStream(bool restartIfPlaying) {
     }
 
     // Seek decoder back to exact playback frame (preserves mPlayedSampleCount)
+    beginBufferReset();
     int64_t currentFrame = getCurrentFrame();
     mDecoder->seek(currentFrame);
-
     mRingBuffer->clear();
+    endBufferReset();
 
     if (shouldPlay) {
-        mIsPlaying = true;
-        mDecodeThreadRunning = true;
+        mIsPlaying.store(true, std::memory_order_release);
+        mDecodeThreadRunning.store(true, std::memory_order_release);
         mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
         oboe::Result res = mStream->requestStart();
         if (res != oboe::Result::OK) {
@@ -533,11 +580,10 @@ bool AudioEngine::recreateStream(int mode) {
     if (!mDecoder || mDecoder->getSampleRate() == 0) return false;
 
     // Stop decode thread
-    mDecodeThreadRunning = false;
-    if (mDecodeThread.joinable()) mDecodeThread.join();
+    stopDecodeThread();
 
-    bool wasPlaying = mIsPlaying;
-    mIsPlaying = false;
+    bool wasPlaying = mIsPlaying.load(std::memory_order_acquire);
+    mIsPlaying.store(false, std::memory_order_release);
 
     if (mStream) {
         mStream->requestStop();
@@ -547,13 +593,15 @@ bool AudioEngine::recreateStream(int mode) {
     if (!openStream(mDecoder->getChannels(), mDecoder->getSampleRate())) return false;
 
     // Re-sync decoder to current playback frame
+    beginBufferReset();
     int64_t currentFrame = getCurrentFrame();
     mDecoder->seek(currentFrame);
     mRingBuffer->clear();
+    endBufferReset();
 
     if (wasPlaying) {
-        mIsPlaying = true;
-        mDecodeThreadRunning = true;
+        mIsPlaying.store(true, std::memory_order_release);
+        mDecodeThreadRunning.store(true, std::memory_order_release);
         mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
         mStream->requestStart();
     }

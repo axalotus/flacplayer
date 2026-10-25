@@ -24,8 +24,9 @@ public:
      * @return Number of elements actually written.
      */
     int32_t write(const T* data, int32_t count) {
+        uint32_t gen = mGeneration.load(std::memory_order_acquire);
         int32_t available = getAvailableWrite();
-        if (available == 0) return 0;
+        if (available <= 0 || count <= 0) return 0;
 
         int32_t toWrite = std::min(count, available);
         int32_t writeIndex = mWriteIndex.load(std::memory_order_relaxed);
@@ -38,6 +39,9 @@ public:
             std::copy(data + firstPart, data + toWrite, mBuffer.data());
         }
 
+        if (mGeneration.load(std::memory_order_acquire) != gen) {
+            return 0;
+        }
         mWriteIndex.store((writeIndex + toWrite) % mCapacity, std::memory_order_release);
         return toWrite;
     }
@@ -49,8 +53,9 @@ public:
      * @return Number of elements actually read.
      */
     int32_t read(T* data, int32_t count) {
+        uint32_t gen = mGeneration.load(std::memory_order_acquire);
         int32_t available = getAvailableRead();
-        if (available == 0) return 0;
+        if (available <= 0 || count <= 0) return 0;
 
         int32_t toRead = std::min(count, available);
         int32_t readIndex = mReadIndex.load(std::memory_order_relaxed);
@@ -63,13 +68,16 @@ public:
             std::copy(mBuffer.data(), mBuffer.data() + secondPart, data + firstPart);
         }
 
+        if (mGeneration.load(std::memory_order_acquire) != gen) {
+            return 0;
+        }
         mReadIndex.store((readIndex + toRead) % mCapacity, std::memory_order_release);
         return toRead;
     }
 
     int32_t getAvailableRead() const {
         int32_t w = mWriteIndex.load(std::memory_order_acquire);
-        int32_t r = mReadIndex.load(std::memory_order_relaxed);
+        int32_t r = mReadIndex.load(std::memory_order_acquire);
         if (w >= r) {
             return w - r;
         } else {
@@ -83,6 +91,7 @@ public:
     }
 
     void clear() {
+        mGeneration.fetch_add(1, std::memory_order_acq_rel);
         mReadIndex.store(0, std::memory_order_release);
         mWriteIndex.store(0, std::memory_order_release);
     }
@@ -96,6 +105,7 @@ private:
     std::vector<T> mBuffer;
     std::atomic<int32_t> mReadIndex;
     std::atomic<int32_t> mWriteIndex;
+    std::atomic<uint32_t> mGeneration{0};
 };
 
 #endif //AUDIOPLAYER_RINGBUFFER_H

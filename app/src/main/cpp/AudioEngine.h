@@ -4,9 +4,11 @@
 #include <oboe/Oboe.h>
 #include <android/log.h>
 #include <mutex>
+#include <condition_variable>
 #include <thread>
 #include <atomic>
 #include <memory>
+#include <vector>
 #include "AudioDecoder.h"
 #include "RingBuffer.h"
 #include "EqualizerEngine.h"
@@ -58,12 +60,20 @@ private:
     std::shared_ptr<oboe::AudioStream> mStream;
     std::atomic<bool> mIsPlaying{false};
 
+    // Real-time lock-free synchronization between control thread (clear/seek) and onAudioReady callback
+    std::atomic<bool> mIsResettingBuffer{false};
+    std::atomic<int32_t> mActiveCallbacks{0};
+
     std::unique_ptr<AudioDecoder> mDecoder;
     std::unique_ptr<RingBuffer<float>> mRingBuffer;
     std::unique_ptr<EqualizerEngine> mEqualizer;
+    std::vector<float> mPreBuffer;
 
     std::thread mDecodeThread;
     std::atomic<bool> mDecodeThreadRunning{false};
+    std::mutex mDecodeCvMutex;
+    std::condition_variable mDecodeCv;
+
     std::atomic<uint64_t> mPlayedSampleCount{0};
     std::atomic<bool> mIsEof{false};
     std::atomic<bool> mDecoderReachedEof{false};
@@ -73,6 +83,9 @@ private:
 
     bool openStream(int channelCount, int sampleRate);
     void closeStream();
+    void stopDecodeThread();
+    void beginBufferReset();
+    void endBufferReset();
     void decodeLoop();
     bool initStreamAfterLoad();
 };
