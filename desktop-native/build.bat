@@ -4,7 +4,7 @@ echo =======================================================
 echo   Building Modern FlacPlayer Native C++ (Direct2D Win64)
 echo =======================================================
 
-set COMPILER_DIR=C:\Users\debil\AppData\Local\Microsoft\WinGet\Packages\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\llvm-mingw-20260616-ucrt-x86_64\bin
+if "%COMPILER_DIR%"=="" set COMPILER_DIR=%LOCALAPPDATA%\Microsoft\WinGet\Packages\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\llvm-mingw-20260616-ucrt-x86_64\bin
 set GPP="%COMPILER_DIR%\g++.exe"
 set WINDRES="%COMPILER_DIR%\windres.exe"
 

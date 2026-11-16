@@ -9,7 +9,12 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+/desktop/build
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+*.apk
+logcat*.txt
+crash*.txt
+backtrace.txt

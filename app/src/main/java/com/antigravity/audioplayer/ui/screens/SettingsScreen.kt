@@ -1213,7 +1213,7 @@ fun SettingsScreen(
                                 prefs.setOtaGithubRepo(it)
                             },
                             label = { Text("GitHub Репозиторий (owner/repo)") },
-                            placeholder = { Text("debil/flacplayer") },
+                            placeholder = { Text("axalotus/flacplayer") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
