@@ -17,3 +17,6 @@ local.properties
 logcat*.txt
 crash*.txt
 backtrace.txt
+desktop/node_modules/
+desktop/dist/
+desktop/*.log

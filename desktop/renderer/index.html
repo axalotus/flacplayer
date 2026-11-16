@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlacPlayer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="font-jakarta">
+  <!-- GLOBAL APP BACKGROUND (STATIC IMAGE / COVER / LIVE VIDEO) -->
+  <div id="app-bg-wrap" class="bg-media-wrap">
+    <img id="app-bg-img" class="bg-media-el hidden" alt="" />
+    <video id="app-bg-video" class="bg-media-el hidden" autoplay loop muted playsinline></video>
+    <div id="app-bg-scrim" class="bg-scrim"></div>
+  </div>
+
+  <div id="main-shell" class="main-shell">
+    <div class="app-layout">
+      <!-- LEFT SIDEBAR (TOGGLES TO 68PX ICON RAIL MODE ON LOGO CLICK OR NARROW WINDOW) -->
+      <aside id="left-sidebar" class="sidebar">
+        <div id="brand-toggle" class="brand" title="Нажмите для переключения компактного режима">
+          <img src="../assets/icon.png" class="brand-logo-img" alt="FlacPlayer" />
+          <span class="brand-name nav-text">FlacPlayer</span>
+          <svg class="collapse-chevron nav-text" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </div>
+
+        <button id="btn-sidebar-add-folder" class="mono-btn solid full" title="Добавить папку с музыкой">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span class="nav-text">Добавить папку</span>
+        </button>
+
+        <div class="nav-label nav-text">МЕДИАТЕКА</div>
+        <nav class="nav-list">
+          <button class="nav-link active" data-view="home" title="Обзор">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+            </svg>
+            <span class="nav-text">Обзор</span>
+          </button>
+          <button class="nav-link" data-view="tracks" title="Треки">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <circle cx="4" cy="6" r="1"></circle>
+              <circle cx="4" cy="12" r="1"></circle>
+              <circle cx="4" cy="18" r="1"></circle>
+            </svg>
+            <span class="nav-text">Треки</span>
+            <span id="nav-count-tracks" class="mono-count nav-text">0</span>
+          </button>
+          <button class="nav-link" data-view="albums" title="Альбомы">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span class="nav-text">Альбомы</span>
+          </button>
+          <button class="nav-link" data-view="artists" title="Исполнители">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="nav-text">Исполнители</span>
+          </button>
+          <button class="nav-link" data-view="favorites" title="Избранное">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span class="nav-text">Избранное</span>
+            <span id="nav-count-favs" class="mono-count nav-text">0</span>
+          </button>
+        </nav>
+
+        <div class="nav-label nav-text">ЗВУК</div>
+        <nav class="nav-list">
+          <button class="nav-link" data-view="equalizer" title="Эквалайзер">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <line x1="4" y1="21" x2="4" y2="14"></line>
+              <line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line>
+              <line x1="20" y1="12" x2="20" y2="3"></line>
+              <line x1="1" y1="14" x2="7" y2="14"></line>
+              <line x1="9" y1="8" x2="15" y2="8"></line>
+              <line x1="17" y1="16" x2="23" y2="16"></line>
+            </svg>
+            <span class="nav-text">Эквалайзер</span>
+            <span id="nav-eq-badge" class="mono-count nav-text">OFF</span>
+          </button>
+          <button class="nav-link" data-view="settings" title="Настройки и Темы">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span class="nav-text">Настройки</span>
+          </button>
+        </nav>
+
+        <div class="nav-row-header">
+          <span class="nav-label nav-text" style="padding:0;">ПЛЕЙЛИСТЫ</span>
+          <button id="btn-new-playlist" class="icon-square-btn" title="Создать плейлист">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        <div id="sidebar-playlists" class="nav-list playlists-box"></div>
+      </aside>
+
+      <!-- CENTER WORKSPACE -->
+      <main class="workspace">
+        <header class="topbar">
+          <div class="topbar-left">
+            <div class="search-field">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input id="search-input" type="text" placeholder="Поиск треков, альбомов, исполнителей..." />
+              <button id="btn-clear-search" class="icon-btn hidden">✕</button>
+            </div>
+          </div>
+
+          <div class="topbar-right">
+            <button id="btn-toggle-dock" class="mono-btn" title="Показать / скрыть боковую панель">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <line x1="15" y1="3" x2="15" y2="21"></line>
+              </svg>
+              <span class="top-btn-label">Панель</span>
+            </button>
+            <button id="btn-open-fullscreen" class="mono-btn" title="Полноэкранный плеер">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+              <span class="top-btn-label">Полный экран</span>
+            </button>
+          </div>
+        </header>
+
+        <section id="main-view" class="main-view"></section>
+      </main>
+
+      <!-- RESIZABLE RIGHT DOCK -->
+      <aside id="right-dock" class="right-dock">
+        <div id="dock-resizer" class="dock-resizer" title="Потяните для изменения ширины панели"></div>
+
+        <div class="dock-now-playing">
+          <div id="dock-cover-box" class="dock-cover-box" title="Открыть полный экран">
+            <img id="dock-cover-img" class="hidden" alt="" />
+            <img id="dock-cover-fallback" src="../assets/icon.png" class="dock-fallback-logo" alt="" />
+          </div>
+          <div class="dock-np-meta">
+            <div id="dock-np-title" class="dock-np-title">FlacPlayer</div>
+            <div id="dock-np-artist" class="dock-np-artist">Выберите трек</div>
+            <div id="dock-np-specs" class="dock-np-specs hidden"></div>
+          </div>
+        </div>
+
+        <div class="dock-header">
+          <div class="dock-tabs">
+            <button id="tab-dock-lyrics" class="dock-tab active">Текст</button>
+            <button id="tab-dock-queue" class="dock-tab">Очередь</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button id="btn-manual-lrc" class="mono-btn tiny" title="Загрузить .lrc/.txt файл">.LRC</button>
+            <button id="btn-hide-dock" class="icon-btn" title="Скрыть боковую панель" style="width:26px;height:26px;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="13 17 18 12 13 7"></polyline>
+                <polyline points="6 17 11 12 6 7"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="dock-lyrics-pane" class="dock-pane">
+          <div class="lyrics-meta-bar">
+            <div id="lyrics-status-tag" class="lyrics-status-tag">LRC / LRCLIB</div>
+            <div id="dock-lyric-offset-bar" class="lyric-offset-bar hidden">
+              <button class="offset-step-btn" data-lyric-step="-500" title="Текст раньше на 0.5с">−0.5</button>
+              <button class="offset-step-btn" data-lyric-step="-100" title="Текст раньше на 0.1с">−0.1</button>
+              <button id="dock-lyric-offset-val" class="offset-val-btn" data-lyric-reset="1" title="Задержка текста для этого трека (нажмите для сброса в 0.0s)">0.0s</button>
+              <button class="offset-step-btn" data-lyric-step="100" title="Задержка текста +0.1с">+0.1</button>
+              <button class="offset-step-btn" data-lyric-step="500" title="Задержка текста +0.5с">+0.5</button>
+            </div>
+          </div>
+          <div id="lyrics-container" class="lyrics-container">
+            <div class="empty-note">Запустите трек для синхронизации текста</div>
+          </div>
+        </div>
+
+        <div id="dock-queue-pane" class="dock-pane hidden">
+          <div id="queue-container" class="queue-container"></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- BOTTOM PLAYER BAR (CLICKING BACKGROUND OPENS FULLSCREEN PLAYER) -->
+    <footer id="bottom-player-bar" class="player-bar" title="Нажмите на свободное место панели для открытия полного экрана">
+      <div class="bar-left">
+        <div id="bar-cover" class="bar-cover" title="Открыть полный экран">
+          <img id="bar-cover-img" class="hidden" alt="" />
+          <img id="bar-cover-svg" src="../assets/icon.png" class="bar-fallback-logo" alt="" />
+        </div>
+        <div class="bar-meta">
+          <div class="bar-title-row">
+            <div id="bar-title" class="bar-title">Нет активного трека</div>
+            <button id="btn-bar-fav" class="icon-btn no-expand" title="Избранное">
+              <svg id="svg-bar-fav" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="bar-artist" class="bar-artist">Выберите композицию</div>
+          <div id="bar-format-tag" class="format-tag hidden"></div>
+        </div>
+      </div>
+
+      <div class="bar-center no-expand">
+        <div class="transport-row">
+          <button id="btn-shuffle" class="transport-icon-btn" title="Перемешать">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9">
+              <polyline points="16 3 21 3 21 8"></polyline>
+              <line x1="4" y1="20" x2="21" y2="3"></line>
+              <polyline points="21 16 21 21 16 21"></polyline>
+              <line x1="15" y1="15" x2="21" y2="21"></line>
+              <line x1="4" y1="4" x2="9" y2="9"></line>
+            </svg>
+          </button>
+          <button id="btn-prev" class="transport-icon-btn" title="Предыдущий трек">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <polygon points="19 20 9 12 19 4 19 20"></polygon>
+              <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"></line>
+            </svg>
+          </button>
+          <button id="btn-play-pause" class="play-circle-btn" title="Старт / Пауза (Space)">
+            <svg id="svg-play-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <polygon points="6 4 20 12 6 20 6 4"></polygon>
+            </svg>
+          </button>
+          <button id="btn-next" class="transport-icon-btn" title="Следующий трек">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"></line>
+            </svg>
+          </button>
+          <button id="btn-repeat" class="transport-icon-btn" title="Повтор">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9">
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="seek-bar-row">
+          <span id="time-cur" class="time-num">0:00</span>
+          <input id="seek-bar" type="range" min="0" max="1000" step="1" value="0" class="mobile-slider" />
+          <span id="time-dur" class="time-num">0:00</span>
+        </div>
+      </div>
+
+      <div class="bar-right no-expand">
+        <canvas id="mini-spectrum" width="84" height="28" class="mini-spectrum" title="Визуализатор спектра"></canvas>
+        <div class="vol-group">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <input id="vol-bar" type="range" min="0" max="100" step="1" value="85" class="mobile-slider vol" />
+          <span id="vol-num" class="time-num">85%</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- SLIDE-UP FULLSCREEN STAGE (SLIDES FROM BOTTOM MINI-PLAYER + PROGRESSIVE BLUR) -->
+  <div id="fs-stage" class="fs-stage">
+    <!-- Fullscreen Background (Cover / Custom Photo / Live Video) -->
+    <div id="fs-bg-wrap" class="bg-media-wrap">
+      <img id="fs-bg-img" class="bg-media-el hidden" alt="" />
+      <video id="fs-bg-video" class="bg-media-el hidden" autoplay loop muted playsinline></video>
+      <div id="fs-bg-scrim" class="bg-scrim"></div>
+    </div>
+
+    <div class="fs-header">
+      <!-- Top-left: ONLY the clean logo, no text or frame! -->
+      <img src="../assets/icon.png" class="fs-clean-logo" alt="FlacPlayer" />
+
+      <!-- Top-right: Clean Downward Arrow Button that glides down with the drawer -->
+      <button id="btn-close-fs" class="fs-chevron-btn" title="Свернуть в мини-плеер (Esc)">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <div class="fs-body">
+      <div class="fs-left">
+        <div class="fs-cover-frame">
+          <img id="fs-cover-img" class="hidden" alt="" />
+          <img id="fs-cover-svg" src="../assets/icon.png" class="fs-fallback-logo" alt="" />
+        </div>
+        <div class="fs-meta">
+          <div id="fs-title" class="fs-title">Нет активного трека</div>
+          <div id="fs-artist" class="fs-artist">—</div>
+          <div id="fs-album" class="fs-album"></div>
+        </div>
+      </div>
+
+      <div class="fs-right">
+        <div id="fs-lyric-offset-bar" class="fs-lyric-offset-wrap hidden">
+          <span class="fs-offset-label">ЗАДЕРЖКА ТЕКСТА</span>
+          <div class="lyric-offset-bar">
+            <button class="offset-step-btn" data-lyric-step="-500" title="Текст раньше на 0.5с">−0.5s</button>
+            <button class="offset-step-btn" data-lyric-step="-100" title="Текст раньше на 0.1с">−0.1s</button>
+            <button id="fs-lyric-offset-val" class="offset-val-btn" data-lyric-reset="1" title="Задержка текста для этого трека (нажмите для сброса в 0.0s)">0.0s</button>
+            <button class="offset-step-btn" data-lyric-step="100" title="Задержка текста +0.1с">+0.1s</button>
+            <button class="offset-step-btn" data-lyric-step="500" title="Задержка текста +0.5с">+0.5s</button>
+          </div>
+        </div>
+        <div id="fs-lyrics-container" class="lyrics-container fs-mode"></div>
+      </div>
+    </div>
+
+    <!-- Fullscreen Bottom Transport Controls (Guaranteed clickable, never overlapped) -->
+    <div class="fs-footer">
+      <div class="fs-seek-row">
+        <span id="fs-time-cur" class="time-num">0:00</span>
+        <input id="fs-seek-bar" type="range" min="0" max="1000" step="1" value="0" class="mobile-slider" />
+        <span id="fs-time-dur" class="time-num">0:00</span>
+      </div>
+      <div class="fs-controls-bar">
+        <div class="fs-controls-left">
+          <button id="btn-fs-fav" class="transport-icon-btn" title="Избранное">
+            <svg id="svg-fs-fav" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="transport-row">
+          <button id="btn-fs-shuffle" class="transport-icon-btn" title="Перемешать">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <polyline points="16 3 21 3 21 8"></polyline>
+              <line x1="4" y1="20" x2="21" y2="3"></line>
+              <polyline points="21 16 21 21 16 21"></polyline>
+              <line x1="15" y1="15" x2="21" y2="21"></line>
+              <line x1="4" y1="4" x2="9" y2="9"></line>
+            </svg>
+          </button>
+          <button id="btn-fs-back-10" class="transport-text-btn">−10s</button>
+          <button id="btn-fs-prev" class="transport-icon-btn">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor">
+              <polygon points="19 20 9 12 19 4 19 20"></polygon>
+              <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"></line>
+            </svg>
+          </button>
+          <button id="btn-fs-play" class="play-circle-btn large">
+            <svg id="svg-fs-play-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <polygon points="6 4 20 12 6 20 6 4"></polygon>
+            </svg>
+          </button>
+          <button id="btn-fs-next" class="transport-icon-btn">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"></line>
+            </svg>
+          </button>
+          <button id="btn-fs-fwd-10" class="transport-text-btn">+10s</button>
+          <button id="btn-fs-repeat" class="transport-icon-btn" title="Повтор">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9">
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="vol-group">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <input id="fs-vol-bar" type="range" min="0" max="100" step="1" value="85" class="mobile-slider vol" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING PLAYLIST PICKER POPOVER MENU -->
+  <div id="playlist-popover" class="playlist-popover hidden"></div>
+
+  <!-- MODAL FOR NEW PLAYLIST -->
+  <div id="playlist-modal" class="modal-mask hidden">
+    <div class="modal-box">
+      <div class="modal-title">Новый плейлист</div>
+      <input id="playlist-name-input" type="text" placeholder="Название плейлиста..." class="mono-input" />
+      <div class="modal-btns">
+        <button id="btn-cancel-pl" class="mono-btn">Отмена</button>
+        <button id="btn-confirm-pl" class="mono-btn solid">Создать</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

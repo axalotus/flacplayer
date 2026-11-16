@@ -1,0 +1,50 @@
+{
+  "name": "flacplayer-desktop",
+  "version": "1.20.0",
+  "description": "FlacPlayer — Monochrome Hi-Res Lossless Audio Player",
+  "main": "main.js",
+  "author": "Antigravity AI",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:linux": "electron-builder --linux AppImage",
+    "dist:win": "electron-builder --win portable nsis"
+  },
+  "build": {
+    "appId": "com.antigravity.flacplayer.desktop",
+    "productName": "FlacPlayer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "assets/icon.png",
+      "category": "AudioVideo;Audio;Player"
+    },
+    "win": {
+      "target": ["portable", "nsis"],
+      "icon": "assets/icon.png"
+    },
+    "portable": {
+      "artifactName": "FlacPlayer-${version}-Windows-x64.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "FlacPlayer-${version}-Setup.exe"
+    }
+  },
+  "dependencies": {
+    "music-metadata": "^10.6.3"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12"
+  }
+}
