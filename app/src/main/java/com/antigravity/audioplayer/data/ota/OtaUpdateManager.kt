@@ -121,8 +121,12 @@ object OtaUpdateManager {
                     val asset = assets.getJSONObject(a)
                     val assetName = asset.optString("name", "")
                     if (assetName.endsWith(".apk", ignoreCase = true)) {
-                        apkAsset = asset
-                        break
+                        if (apkAsset == null || assetName.contains("release", ignoreCase = true)) {
+                            apkAsset = asset
+                        }
+                        if (assetName.contains("release", ignoreCase = true)) {
+                            break
+                        }
                     }
                 }
 
