@@ -108,18 +108,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         dacDetector = DacDetector.getInstance(applicationContext)
 
-        val prefs = LibraryPreferences.getInstance(applicationContext)
-        hideSystemNavigationBar()
-
-        @Suppress("DEPRECATION")
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if (prefs.isHideNavigationBar.value && (visibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0) {
-                window.decorView.postDelayed({
-                    hideSystemNavigationBar()
-                }, 150)
-            }
-        }
-
         AudioPlayerService.init(applicationContext)
         equalizerController.init(applicationContext)
 
@@ -144,11 +132,6 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val appPrefs = remember { LibraryPreferences.getInstance(context) }
             val themeMode by appPrefs.themeMode.collectAsState()
-            val isHideNavigationBar by appPrefs.isHideNavigationBar.collectAsState()
-
-            LaunchedEffect(isHideNavigationBar) {
-                hideSystemNavigationBar()
-            }
 
             AntigravityPlayerTheme(themeMode = themeMode) {
                 val tracks by repository.tracksFlow.collectAsState(initial = emptyList())
@@ -269,43 +252,6 @@ class MainActivity : ComponentActivity() {
             lifecycleScopeLaunch {
                 repository.loadTracks(applicationContext)
             }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        hideSystemNavigationBar()
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            hideSystemNavigationBar()
-        }
-    }
-
-    fun hideSystemNavigationBar() {
-        val window = window ?: return
-        val shouldHide = LibraryPreferences.getInstance(this).isHideNavigationBar.value
-        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        insetsController.show(WindowInsetsCompat.Type.statusBars())
-
-        if (shouldHide) {
-            insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            insetsController.hide(WindowInsetsCompat.Type.navigationBars())
-
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            )
-        } else {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
-
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
         }
     }
 

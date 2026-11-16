@@ -785,7 +785,6 @@ fun PlayerScreen(
             currentDacInfo = dacInfo,
             onDismissRequest = {
                 showOutputBottomSheet = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
             }
         )
     }
@@ -794,7 +793,6 @@ fun PlayerScreen(
         SleepTimerModalSheet(
             onDismissRequest = {
                 showSleepTimerModal = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
             },
             onPausePlayback = onPlayPauseToggle
         )
@@ -805,7 +803,6 @@ fun PlayerScreen(
             track = currentTrack,
             onDismissRequest = {
                 showAddToPlaylist = false
-                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
             }
         )
     }

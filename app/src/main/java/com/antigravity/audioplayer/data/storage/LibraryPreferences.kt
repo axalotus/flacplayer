@@ -80,15 +80,6 @@ class LibraryPreferences private constructor(private val context: Context) {
         _isEmbeddedCoversEnabled.value = value
     }
 
-    // Hide System Navigation Bar (Immersive Mode) toggle
-    private val _isHideNavigationBar = MutableStateFlow(prefs.getBoolean("hide_navigation_bar", true))
-    val isHideNavigationBar = _isHideNavigationBar.asStateFlow()
-
-    fun setHideNavigationBar(value: Boolean) {
-        prefs.edit().putBoolean("hide_navigation_bar", value).apply()
-        _isHideNavigationBar.value = value
-    }
-
     // Manual bottom offset for Player controls (0dp to 80dp, default 0 = original layout)
     private val _playerControlsBottomOffsetDp = MutableStateFlow(prefs.getInt("player_controls_bottom_offset_dp", 0))
     val playerControlsBottomOffsetDp = _playerControlsBottomOffsetDp.asStateFlow()

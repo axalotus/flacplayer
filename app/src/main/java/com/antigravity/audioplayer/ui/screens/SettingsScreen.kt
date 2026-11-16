@@ -62,7 +62,6 @@ fun SettingsScreen(
 
     // Interface Settings State
     val themeMode by prefs.themeMode.collectAsState()
-    val isHideNavigationBar by prefs.isHideNavigationBar.collectAsState()
     val playerControlsBottomOffsetDp by prefs.playerControlsBottomOffsetDp.collectAsState()
     val playerSecondaryControlsSpacingDp by prefs.playerSecondaryControlsSpacingDp.collectAsState()
     val showTrackNumbers by prefs.isShowTrackNumbers.collectAsState()
@@ -134,49 +133,6 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
-
-                // Quick Toggle: Immersive Navigation Bar
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable {
-                            prefs.setHideNavigationBar(!isHideNavigationBar)
-                            (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                        },
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                            Text(
-                                text = "Скрывать кнопки навигации (Immersive Mode)",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (isHideNavigationBar) "Системный навбар автоматически скрывается" else "Кнопки Назад/Домой/Меню всегда видны",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
-                        Switch(
-                            checked = isHideNavigationBar,
-                            onCheckedChange = { enabled ->
-                                prefs.setHideNavigationBar(enabled)
-                                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
-                            }
-                        )
-                    }
-                }
 
                 // Quick Sliders: Manual Bottom Controls Offset & Spacing from Start/Stop
                 Surface(
@@ -816,16 +772,6 @@ fun SettingsScreen(
                                     else -> com.antigravity.audioplayer.data.storage.ThemeMode.DARK
                                 }
                                 prefs.setThemeMode(newMode)
-                            }
-                        )
-
-                        SettingsToggleRow(
-                            title = "Скрывать кнопки навигации (Immersive Mode)",
-                            subtitle = "Автоматически прятать системную панель навигации (Назад / Домой / Меню)",
-                            checked = isHideNavigationBar,
-                            onCheckedChange = { enabled ->
-                                prefs.setHideNavigationBar(enabled)
-                                (context as? com.antigravity.audioplayer.MainActivity)?.hideSystemNavigationBar()
                             }
                         )
 
