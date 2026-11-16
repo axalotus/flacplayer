@@ -33,4 +33,3 @@ plugins {
 
 rootProject.name = "AntigravityPlayer"
 include(":app")
-include(":desktop")

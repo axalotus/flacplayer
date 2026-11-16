@@ -1,11 +1,11 @@
-# 🎧 FlacPlayer — Hi-Res Lossless Audio Player (Android & Desktop)
+# 🎧 FlacPlayer — Hi-Res Lossless Audio Player for Android
 
 ![Version](https://img.shields.io/badge/Version-v1.20-00B4D8?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B%20%7C%20Windows%20x64-06D6A0?style=for-the-badge)
+![Platform](https://img.shields.io/badge/Platform-Android%207.0%2B-06D6A0?style=for-the-badge)
 ![Engine](https://img.shields.io/badge/Audio%20Engine-C%2B%2B17%20%2B%20Google%20Oboe-FFB703?style=for-the-badge)
 ![100% AI Generated](https://img.shields.io/badge/100%25%20AI%20Written-Google%20Antigravity-9B5DE5?style=for-the-badge)
 
-**FlacPlayer** — аудиофильский плеер для Android (и экспериментальной десктопной сборки), спроектированный вокруг собственного **C++17 / NDK DSP-движка** на базе **Google Oboe (AAudio / OpenSL ES)** и современного интерфейса на **Jetpack Compose (Material 3 + AMOLED Pitch Black)**.
+**FlacPlayer** — аудиофильский плеер для Android, спроектированный вокруг собственного **C++17 / NDK DSP-движка** на базе **Google Oboe (AAudio / OpenSL ES)** и современного интерфейса на **Jetpack Compose (Material 3 + AMOLED Pitch Black)**.
 
 > 🤖 **Дисклеймер: 100% AI-Generated Code**  
 > **Абсолютно весь код в этом репозитории — на 100% от первой до последней строчки — написан нейросетью (Google Antigravity AI)** под руководством человека-архитектора в диалоговом режиме: включая нативный C++17 аудиодвижок, кольцевой буфер `RingBuffer`, 10-полосный каскадный биквадратный эквалайзер, ресемплер, парсеры заголовков FLAC/WAV/MP3, синхронизированную систему караоке-лирики с прогрессивным блюром, OTA-апдейтер и весь UI на Jetpack Compose.
@@ -51,21 +51,19 @@
 
 ```text
 flacplayer/
-├── app/src/main/
-│   ├── cpp/                         # Нативный C++17 аудиодвижок (NDK + CMake)
-│   │   ├── AudioEngine.cpp/.h       # Управление потоком Oboe, ReplayGain, Volume smoothing
-│   │   ├── AudioDecoder.cpp/.h      # Декодеры FLAC, WAV, MP3 + линейный стерео-ресемплер
-│   │   ├── EqualizerEngine.cpp/.h   # 10-полосный EQ + Bass Boost (Double-snapshot lock-free DSP)
-│   │   ├── BiquadFilter.cpp/.h      # Каскадные IIR-фильтры Peaking / Low-Shelf / High-Shelf
-│   │   ├── RingBuffer.h             # Потокобезопасный кольцевой буфер сэмплов
-│   │   └── native-lib.cpp           # JNI-мост между Kotlin и C++
-│   └── java/com/antigravity/audioplayer/
-│       ├── audio/                   # NativeAudioEngine, DacDetector, EqualizerController, SleepTimer
-│       ├── data/                    # AudioRepository, LyricsRepository, LRCLIB, OTA, Preferences
-│       ├── service/                 # AudioPlayerService & Foreground MusicPlaybackService
-│       └── ui/                      # Экраны и компоненты на Jetpack Compose (Material 3)
-├── desktop/                         # Экспериментальный клиент на Compose Multiplatform Desktop
-└── desktop-native/                  # Экспериментальный нативный Win64 Direct2D C++ плеер
+└── app/src/main/
+    ├── cpp/                         # Нативный C++17 аудиодвижок (NDK + CMake)
+    │   ├── AudioEngine.cpp/.h       # Управление потоком Oboe, ReplayGain, Volume smoothing
+    │   ├── AudioDecoder.cpp/.h      # Декодеры FLAC, WAV, MP3 + линейный стерео-ресемплер
+    │   ├── EqualizerEngine.cpp/.h   # 10-полосный EQ + Bass Boost (Double-snapshot lock-free DSP)
+    │   ├── BiquadFilter.cpp/.h      # Каскадные IIR-фильтры Peaking / Low-Shelf / High-Shelf
+    │   ├── RingBuffer.h             # Потокобезопасный кольцевой буфер сэмплов
+    │   └── native-lib.cpp           # JNI-мост между Kotlin и C++
+    └── java/com/antigravity/audioplayer/
+        ├── audio/                   # NativeAudioEngine, DacDetector, EqualizerController, SleepTimer
+        ├── data/                    # AudioRepository, LyricsRepository, LRCLIB, OTA, Preferences
+        ├── service/                 # AudioPlayerService & Foreground MusicPlaybackService
+        └── ui/                      # Экраны и компоненты на Jetpack Compose (Material 3)
 ```
 
 ---
