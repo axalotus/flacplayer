@@ -1,265 +1,201 @@
 package com.antigravity.audioplayer.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.antigravity.audioplayer.R
 import com.antigravity.audioplayer.data.model.AudioFileMetadata
-import com.antigravity.audioplayer.data.model.AudioFormat
-import com.antigravity.audioplayer.ui.components.AlbumArtView
-import com.antigravity.audioplayer.ui.components.QualityBadge
+import com.antigravity.audioplayer.data.storage.LibraryPreferences
+import com.antigravity.audioplayer.data.storage.PlaylistManager
+import com.antigravity.audioplayer.ui.components.*
+import com.antigravity.audioplayer.ui.theme.LocalFlacTheme
 
 @Composable
 fun HomeScreen(
     tracks: List<AudioFileMetadata>,
     currentTrack: AudioFileMetadata?,
-    onTrackSelect: (AudioFileMetadata, List<AudioFileMetadata>?) -> Unit,
-    onAlbumSelect: (String, List<AudioFileMetadata>) -> Unit,
-    onArtistSelect: (String, List<AudioFileMetadata>) -> Unit,
-    onNavigateToCategory: (LibraryCategoryType) -> Unit,
-    onOpenSearch: () -> Unit,
-    modifier: Modifier = Modifier
+    isLoading: Boolean,
+    onPlayTrack: (AudioFileMetadata, List<AudioFileMetadata>) -> Unit,
+    onOpenSectionTracks: (String, List<AudioFileMetadata>) -> Unit,
+    onOpenTrackMenu: (AudioFileMetadata) -> Unit,
+    bottomInsetPadding: androidx.compose.ui.unit.Dp
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val prefs = remember { com.antigravity.audioplayer.data.storage.LibraryPreferences.getInstance(context) }
+    val context = LocalContext.current
+    val tokens = LocalFlacTheme.current
+    val prefs = remember { LibraryPreferences.getInstance(context) }
+    val pm = remember { PlaylistManager.getInstance(context) }
+
     val recentlyPlayedIds by prefs.recentlyPlayedIds.collectAsState()
+    val favoriteIds by pm.favoriteIds.collectAsState()
+    val showQualityBadges by prefs.showQualityBadges.collectAsState()
+    val compactMode by prefs.isCompactMode.collectAsState()
 
-    val albums = remember(tracks) { tracks.groupBy { it.album }.entries.toList() }
-    val artists = remember(tracks) { tracks.groupBy { it.artist }.entries.toList() }
-    val hiResTracks = remember(tracks) { tracks.filter { it.format == AudioFormat.FLAC || it.format == AudioFormat.WAV || it.bitDepth >= 24 } }
-    val recentAddedTracks = remember(tracks) { tracks.sortedByDescending { it.dateAdded }.take(20) }
-    val recentlyPlayedTracks = remember(tracks, recentlyPlayedIds) {
-        recentlyPlayedIds.mapNotNull { id -> tracks.find { it.id == id } }.take(15)
+    val tracksById = remember(tracks) { tracks.associateBy { it.id } }
+
+    val historyTracks = remember(recentlyPlayedIds, tracksById) {
+        recentlyPlayedIds.mapNotNull { tracksById[it] }
     }
-    val rediscoverTracks = remember(tracks) { tracks.shuffled().take(12) }
-    val randomArtists = remember(artists) { artists.shuffled().take(10) }
-
-    val appIconBitmap = remember(context) {
-        try {
-            val drawable = context.packageManager.getApplicationIcon(context.packageName)
-            val w = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 96
-            val h = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 96
-            val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(bmp)
-            drawable.setBounds(0, 0, canvas.width, canvas.height)
-            drawable.draw(canvas)
-            bmp.asImageBitmap()
-        } catch (e: Exception) {
-            null
-        }
+    val recentlyAddedTracks = remember(tracks) {
+        tracks.sortedByDescending { it.dateAdded }.take(40)
+    }
+    val favoriteTracks = remember(tracks, favoriteIds) {
+        tracks.filter { favoriteIds.contains(it.id) }
     }
 
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = 90.dp, top = 8.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            top = 12.dp,
+            bottom = bottomInsetPadding + 20.dp
+        ),
         verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
-        // ── TOP HEADER: App Brand & Search ──────────────────────────────────
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        item(key = "header") {
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (appIconBitmap != null) {
-                        Image(
-                            bitmap = appIconBitmap,
-                            contentDescription = "Логотип FlacPlayer",
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.GraphicEq,
-                                contentDescription = "Логотип FlacPlayer",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                    Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Обзор",
+                        color = tokens.fg0,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.6).sp
+                    )
+                    if (tracks.isNotEmpty()) {
                         Text(
-                            text = "FlacPlayer",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = "v1.17",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
+                            text = "${tracks.size} треков",
+                            color = tokens.fg2,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                IconButton(
-                    onClick = onOpenSearch,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Поиск",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    item {
+                        FlacPillButton(
+                            text = "Микс треков",
+                            icon = Icons.Rounded.Shuffle,
+                            accentFill = true,
+                            onClick = {
+                                if (tracks.isNotEmpty()) {
+                                    val shuffled = tracks.shuffled()
+                                    onPlayTrack(shuffled.first(), shuffled)
+                                }
+                            }
+                        )
+                    }
+                    item {
+                        FlacPillButton(
+                            text = "Случайный альбом",
+                            icon = Icons.Rounded.Album,
+                            onClick = {
+                                val albums = tracks.groupBy { it.album.ifBlank { "Без альбома" } }.values.toList()
+                                val picked = albums.randomOrNull()?.sortedBy { it.trackNumber }
+                                if (!picked.isNullOrEmpty()) {
+                                    onPlayTrack(picked.first(), picked)
+                                }
+                            }
+                        )
+                    }
+                    item {
+                        FlacPillButton(
+                            text = "Случайный артист",
+                            icon = Icons.Rounded.Person,
+                            onClick = {
+                                val artists = tracks.groupBy { it.artist.ifBlank { "Неизвестный" } }.values.toList()
+                                val picked = artists.randomOrNull()
+                                if (!picked.isNullOrEmpty()) {
+                                    val queue = picked.shuffled()
+                                    onPlayTrack(queue.first(), queue)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
 
-        // ── EMPTY STATE OR QUICK MIX CARDS ──────────────────────────────────
-        if (tracks.isEmpty()) {
-            item {
-                Card(
+        if (isLoading && tracks.isEmpty()) {
+            item(key = "loading") {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Сканирование медиатеки...", color = tokens.fg2, fontSize = 14.sp)
+                }
+            }
+        } else if (tracks.isEmpty()) {
+            item(key = "empty") {
+                FlacGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                        .padding(horizontal = 16.dp)
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.LibraryMusic,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(54.dp)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Медиатека пуста",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = tokens.fg0,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Выберите папку с вашей музыкой (FLAC, WAV, MP3), чтобы начать воспроизведение.",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center
+                            text = "Добавь папки с музыкой или просканируй устройство в Настройках → Система.",
+                            color = tokens.fg2,
+                            fontSize = 13.sp
                         )
                     }
                 }
             }
         } else {
-            // ── QUICK MIX CARDS ─────────────────────────────────────────────────
-            item {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    item {
-                        MixChipCard(
-                            title = "Микс треков",
-                            subtitle = "${tracks.size} песен",
-                            icon = Icons.Default.Shuffle,
-                            gradientColors = listOf(Color(0xFF3A7BD5), Color(0xFF3A6073)),
-                            onClick = {
-                                if (tracks.isNotEmpty()) {
-                                    val shuffledQueue = tracks.shuffled(kotlin.random.Random(System.currentTimeMillis()))
-                                    com.antigravity.audioplayer.service.AudioPlayerService.setShuffle(true)
-                                    onTrackSelect(shuffledQueue.first(), shuffledQueue)
-                                }
+            if (historyTracks.isNotEmpty()) {
+                item(key = "history") {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FlacSectionHeader(
+                            title = "История прослушивания",
+                            count = historyTracks.size,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            onSeeAllClick = {
+                                onOpenSectionTracks("История прослушивания", historyTracks)
                             }
                         )
-                    }
-                    item {
-                        MixChipCard(
-                            title = "Случайный альбом",
-                            subtitle = "${albums.size} альбомов",
-                            icon = Icons.Default.Album,
-                            gradientColors = listOf(Color(0xFF8A2387), Color(0xFFE94057)),
-                            onClick = {
-                                if (albums.isNotEmpty()) {
-                                    val randomAlbum = albums.random()
-                                    onAlbumSelect(randomAlbum.key, randomAlbum.value)
-                                }
-                            }
-                        )
-                    }
-                    item {
-                        MixChipCard(
-                            title = "Hi-Res / Lossless",
-                            subtitle = "${hiResTracks.size} Master",
-                            icon = Icons.Default.Star,
-                            gradientColors = listOf(Color(0xFF11998E), Color(0xFF38EF7D)),
-                            onClick = {
-                                if (hiResTracks.isNotEmpty()) {
-                                    val shuffledHiRes = hiResTracks.shuffled(kotlin.random.Random(System.currentTimeMillis()))
-                                    com.antigravity.audioplayer.service.AudioPlayerService.setShuffle(true)
-                                    onTrackSelect(shuffledHiRes.first(), shuffledHiRes)
-                                } else if (tracks.isNotEmpty()) {
-                                    val shuffledTracks = tracks.shuffled(kotlin.random.Random(System.currentTimeMillis()))
-                                    com.antigravity.audioplayer.service.AudioPlayerService.setShuffle(true)
-                                    onTrackSelect(shuffledTracks.first(), shuffledTracks)
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-
-            // ── SECTION: ИСТОРИЯ ПРОСЛУШИВАНИЯ (если есть) ──────────────────────
-            if (recentlyPlayedTracks.isNotEmpty()) {
-                item {
-                    DashboardSection(
-                        title = "История прослушивания",
-                        countText = "${recentlyPlayedTracks.size}",
-                        onClickHeader = { onNavigateToCategory(LibraryCategoryType.HISTORY) }
-                    ) {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(recentlyPlayedTracks, key = { "history_${it.id}" }) { track ->
-                                val isPlaying = track.id == currentTrack?.id
-                                TrackCard(
+                            items(historyTracks.take(18), key = { "hist_${it.id}" }) { track ->
+                                HomeTrackSquareCard(
                                     track = track,
-                                    isPlaying = isPlaying,
-                                    onClick = { onTrackSelect(track, recentlyPlayedTracks) }
+                                    isCurrent = track.id == currentTrack?.id,
+                                    onClick = { onPlayTrack(track, historyTracks) },
+                                    onMenu = { onOpenTrackMenu(track) }
                                 )
                             }
                         }
@@ -267,341 +203,112 @@ fun HomeScreen(
                 }
             }
 
-            // ── SECTION 1: НЕДАВНО ДОБАВЛЕННЫЕ (Честная дата) ───────────────────
-            item {
-                DashboardSection(
-                    title = "Недавно добавленные",
-                    countText = "${recentAddedTracks.size}",
-                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.RECENTLY_ADDED) }
-                ) {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(recentAddedTracks, key = { "recent_${it.id}" }) { track ->
-                            val isPlaying = track.id == currentTrack?.id
-                            TrackCard(
-                                track = track,
-                                isPlaying = isPlaying,
-                                onClick = { onTrackSelect(track, recentAddedTracks) }
-                            )
+            if (recentlyAddedTracks.isNotEmpty()) {
+                item(key = "added") {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FlacSectionHeader(
+                            title = "Недавно добавленные",
+                            count = recentlyAddedTracks.size,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            onSeeAllClick = {
+                                onOpenSectionTracks(
+                                    "Недавно добавленные",
+                                    tracks.sortedByDescending { it.dateAdded }
+                                )
+                            }
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(recentlyAddedTracks.take(18), key = { "add_${it.id}" }) { track ->
+                                HomeTrackSquareCard(
+                                    track = track,
+                                    isCurrent = track.id == currentTrack?.id,
+                                    onClick = { onPlayTrack(track, recentlyAddedTracks) },
+                                    onMenu = { onOpenTrackMenu(track) }
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            // ── SECTION 2: ОТКРОЙТЕ ЗАНОВО ──────────────────────────────────────
-            item {
-                DashboardSection(
-                    title = "Откройте заново",
-                    countText = "Микс",
-                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.ALL_TRACKS) }
-                ) {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(rediscoverTracks, key = { it.id }) { track ->
-                            val isPlaying = track.id == currentTrack?.id
-                            TrackCard(
-                                track = track,
-                                isPlaying = isPlaying,
-                                onClick = { onTrackSelect(track, rediscoverTracks) }
-                            )
+            if (favoriteTracks.isNotEmpty()) {
+                item(key = "favorites_header") {
+                    FlacSectionHeader(
+                        title = "Избранное",
+                        count = favoriteTracks.size,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        onSeeAllClick = {
+                            onOpenSectionTracks("Избранное", favoriteTracks)
                         }
-                    }
-                }
-            }
-
-            // ── SECTION 3: СЛУЧАЙНЫЕ ИСПОЛНИТЕЛИ ────────────────────────────────
-            item {
-                DashboardSection(
-                    title = "Исполнители",
-                    countText = "${artists.size}",
-                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.ARTISTS) }
-                ) {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        items(randomArtists, key = { it.key }) { (artistName, artistTracks) ->
-                            ArtistCircleCard(
-                                artistName = artistName,
-                                sampleTrack = artistTracks.firstOrNull(),
-                                trackCount = artistTracks.size,
-                                onClick = { onArtistSelect(artistName, artistTracks) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // ── SECTION 4: АЛЬБОМЫ ──────────────────────────────────────────────
-            item {
-                DashboardSection(
-                    title = "Альбомы",
-                    countText = "${albums.size}",
-                    onClickHeader = { onNavigateToCategory(LibraryCategoryType.ALBUMS) }
-                ) {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(albums.take(12), key = { it.key }) { (albumName, albumTracks) ->
-                            AlbumCard(
-                                albumName = albumName,
-                                artistName = albumTracks.firstOrNull()?.artist ?: "",
-                                sampleTrack = albumTracks.firstOrNull(),
-                                trackCount = albumTracks.size,
-                                onClick = { onAlbumSelect(albumName, albumTracks) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DashboardSection(
-    title: String,
-    countText: String,
-    onClickHeader: (() -> Unit)? = null,
-    content: @Composable () -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .then(
-                    if (onClickHeader != null) {
-                        Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable(onClick = onClickHeader)
-                    } else Modifier
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                if (onClickHeader != null) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Перейти",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                        modifier = Modifier.size(18.dp)
                     )
                 }
-            }
-            Surface(
-                color = if (onClickHeader != null) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = countText,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (onClickHeader != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        content()
-    }
-}
-
-@Composable
-private fun MixChipCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    gradientColors: List<Color>,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .width(150.dp)
-            .height(76.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.linearGradient(gradientColors))
-                .padding(12.dp)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                }
-                Column {
-                    Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1)
-                    Text(subtitle, color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp, maxLines = 1)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TrackCard(
-    track: AudioFileMetadata,
-    isPlaying: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = if (isPlaying) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        modifier = Modifier.width(136.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(12.dp))
-            ) {
-                AlbumArtView(
-                    track = track,
-                    modifier = Modifier.fillMaxSize(),
-                    cornerRadius = 12
-                )
-                if (isPlaying) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.VolumeUp,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
+                items(favoriteTracks.take(6), key = { "fav_${it.id}" }) { track ->
+                    Box(modifier = Modifier.padding(horizontal = 12.dp)) {
+                        TrackRow(
+                            track = track,
+                            isCurrent = track.id == currentTrack?.id,
+                            onClick = { onPlayTrack(track, favoriteTracks) },
+                            onMoreClick = { onOpenTrackMenu(track) },
+                            showQualityBadge = showQualityBadges,
+                            compact = compactMode
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun HomeTrackSquareCard(
+    track: AudioFileMetadata,
+    isCurrent: Boolean,
+    onClick: () -> Unit,
+    onMenu: () -> Unit
+) {
+    val tokens = LocalFlacTheme.current
+    val shape = RoundedCornerShape(tokens.radiusMd)
+    Column(
+        modifier = Modifier
+            .width(132.dp)
+            .clip(shape)
+            .background(if (isCurrent) tokens.accent.copy(alpha = 0.12f) else tokens.cardBg, shape)
+            .border(
+                width = 1.dp,
+                color = if (isCurrent) tokens.accent.copy(alpha = 0.65f) else tokens.line,
+                shape = shape
+            )
+            .clickable(onClick = onClick)
+            .padding(9.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
+            TrackArtwork(
+                track = track,
+                modifier = Modifier.fillMaxSize(),
+                cornerRadius = tokens.radiusSm,
+                iconSize = 28.dp
+            )
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = track.title,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                color = if (isCurrent) tokens.accent else tokens.fg0,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = track.artist,
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            QualityBadge(metadata = track)
-        }
-    }
-}
-
-@Composable
-private fun AlbumCard(
-    albumName: String,
-    artistName: String,
-    sampleTrack: AudioFileMetadata?,
-    trackCount: Int,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        modifier = Modifier.width(136.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            AlbumArtView(
-                track = sampleTrack,
-                modifier = Modifier.size(120.dp),
-                cornerRadius = 12
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = albumName,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = "$artistName • $trackCount",
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                color = tokens.fg2,
+                fontSize = 11.5.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
-    }
-}
-
-@Composable
-private fun ArtistCircleCard(
-    artistName: String,
-    sampleTrack: AudioFileMetadata?,
-    trackCount: Int,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .width(90.dp)
-            .clickable { onClick() },
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        AlbumArtView(
-            track = sampleTrack,
-            modifier = Modifier.size(80.dp),
-            cornerRadius = 40
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = artistName,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = "$trackCount треков",
-            fontSize = 9.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
-        )
     }
 }

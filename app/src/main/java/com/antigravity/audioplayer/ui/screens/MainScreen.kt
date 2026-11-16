@@ -1,463 +1,647 @@
 package com.antigravity.audioplayer.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.activity.ComponentActivity
-import kotlinx.coroutines.launch
 import com.antigravity.audioplayer.audio.DacOutputInfo
 import com.antigravity.audioplayer.audio.EqualizerController
 import com.antigravity.audioplayer.data.model.AudioFileMetadata
 import com.antigravity.audioplayer.data.storage.LibraryPreferences
-import com.antigravity.audioplayer.data.storage.ThemeMode
-import com.antigravity.audioplayer.ui.components.AudioChainModalSheet
-import com.antigravity.audioplayer.ui.components.MiniPlayerBar
-import com.antigravity.audioplayer.ui.components.QueueModalSheet
-import com.antigravity.audioplayer.ui.components.RepeatMode
+import com.antigravity.audioplayer.data.storage.PlaylistManager
+import com.antigravity.audioplayer.service.AudioPlayerService
+import com.antigravity.audioplayer.ui.components.*
+import com.antigravity.audioplayer.ui.theme.LocalFlacTheme
 
-enum class MainTab {
-    HOME, LIBRARY, PLAYLISTS, SEARCH, SETTINGS
+enum class MainTab(val icon: ImageVector, val label: String) {
+    HOME(Icons.Rounded.Home, "Обзор"),
+    LIBRARY(Icons.Rounded.LibraryMusic, "Медиатека"),
+    SEARCH(Icons.Rounded.Search, "Поиск"),
+    SETTINGS(Icons.Rounded.Tune, "Настройки")
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+private sealed class DetailRoute {
+    data class Album(val albumName: String) : DetailRoute()
+    data class Artist(val artistName: String) : DetailRoute()
+    data class PlaylistDetail(val playlistId: String) : DetailRoute()
+    data class SectionTracks(val title: String, val trackIds: List<String>) : DetailRoute()
+}
+
 @Composable
 fun MainScreen(
     tracks: List<AudioFileMetadata>,
-    allTracks: List<AudioFileMetadata> = tracks,
+    allTracks: List<AudioFileMetadata>,
     queueTracks: List<AudioFileMetadata>,
     currentTrack: AudioFileMetadata?,
     currentTrackIndex: Int,
     isPlaying: Boolean,
     dacInfo: DacOutputInfo,
-    showVisualizer: Boolean,
     isShuffleOn: Boolean,
     repeatMode: RepeatMode,
     isLoading: Boolean,
     onToggleShuffle: () -> Unit,
     onToggleRepeat: () -> Unit,
-    onToggleVisualizer: () -> Unit,
     eqController: EqualizerController,
-    onTrackSelectIndex: (Int) -> Unit,
-    onTrackSelect: (AudioFileMetadata, List<AudioFileMetadata>?) -> Unit,
+    onTrackSelect: (AudioFileMetadata, List<AudioFileMetadata>) -> Unit,
     onPlayPauseToggle: () -> Unit,
     onNextTrack: () -> Unit,
     onPreviousTrack: () -> Unit,
     onSeekTo: (Long) -> Unit,
     onPickFolder: () -> Unit,
-    onRescanLibrary: () -> Unit,
-    onAddNavidromeServer: (String, String) -> Unit
+    onRescanLibrary: () -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf(MainTab.HOME) }
-    var isPlayerExpanded by remember { mutableStateOf(false) }
-    var showQueueModal by remember { mutableStateOf(false) }
-    var showAudioChainModal by remember { mutableStateOf(false) }
-    // EQ screen overlay (triggered from Settings)
-    var showEqualizer by remember { mutableStateOf(false) }
-
-    // Full-screen Album & Artist Details
-    var selectedAlbumName by remember { mutableStateOf<String?>(null) }
-    var selectedAlbumTracks by remember { mutableStateOf<List<AudioFileMetadata>>(emptyList()) }
-    var selectedArtistName by remember { mutableStateOf<String?>(null) }
-    var selectedArtistTracks by remember { mutableStateOf<List<AudioFileMetadata>>(emptyList()) }
-
-    var selectedLibraryCategory by remember { mutableStateOf<LibraryCategoryType?>(null) }
-
-    val isEqActive by eqController.isEnabled.collectAsState()
-    val eqPresetName by eqController.selectedPresetName.collectAsState()
-    val bassBoostVal by eqController.bassBoostStrength.collectAsState()
-
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+    val tokens = LocalFlacTheme.current
     val prefs = remember { LibraryPreferences.getInstance(context) }
-    val themeMode by prefs.themeMode.collectAsState()
-    val audioEngineMode by prefs.audioEngineMode.collectAsState()
+    val pm = remember { PlaylistManager.getInstance(context) }
 
-    val saveableStateHolder = rememberSaveableStateHolder()
+    val favoriteIds by pm.favoriteIds.collectAsState()
+    val hiddenIds by prefs.hiddenTrackIds.collectAsState()
+    val playlists by pm.playlists.collectAsState()
 
-    var showExitDialog by remember { mutableStateOf(false) }
+    var activeTab by remember { mutableStateOf(MainTab.HOME) }
+    var libraryCategory by remember { mutableStateOf(LibraryCategoryType.ALL_TRACKS) }
+    var detailRoute by remember { mutableStateOf<DetailRoute?>(null) }
+    var isPlayerExpanded by remember { mutableStateOf(false) }
 
-    BackHandler {
-        if (selectedAlbumName != null) selectedAlbumName = null
-        else if (selectedArtistName != null) selectedArtistName = null
-        else if (showEqualizer) showEqualizer = false
-        else if (showAudioChainModal) showAudioChainModal = false
-        else if (showQueueModal) showQueueModal = false
-        else if (isPlayerExpanded) isPlayerExpanded = false
-        else if (selectedLibraryCategory != null) selectedLibraryCategory = null
-        else showExitDialog = true
+    var menuTrack by remember { mutableStateOf<AudioFileMetadata?>(null) }
+    var playlistTargetTrack by remember { mutableStateOf<AudioFileMetadata?>(null) }
+    var infoTargetTrack by remember { mutableStateOf<AudioFileMetadata?>(null) }
+    var showQueueOverlay by remember { mutableStateOf(false) }
+    var showSleepOverlay by remember { mutableStateOf(false) }
+
+    val hasAnyOverlay = menuTrack != null ||
+        playlistTargetTrack != null ||
+        infoTargetTrack != null ||
+        showQueueOverlay ||
+        showSleepOverlay
+
+    BackHandler(
+        enabled = hasAnyOverlay || isPlayerExpanded || detailRoute != null || activeTab != MainTab.HOME
+    ) {
+        when {
+            menuTrack != null -> menuTrack = null
+            playlistTargetTrack != null -> playlistTargetTrack = null
+            infoTargetTrack != null -> infoTargetTrack = null
+            showQueueOverlay -> showQueueOverlay = false
+            showSleepOverlay -> showSleepOverlay = false
+            isPlayerExpanded -> isPlayerExpanded = false
+            detailRoute != null -> detailRoute = null
+            activeTab != MainTab.HOME -> activeTab = MainTab.HOME
+        }
     }
 
-    if (showExitDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitDialog = false },
-            title = { Text("Выход") },
-            text = { Text("Вы действительно хотите выйти из приложения?") },
-            confirmButton = {
-                TextButton(onClick = { (context as? ComponentActivity)?.finish() }) {
-                    Text("Выйти", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExitDialog = false }) { Text("Отмена") }
-            },
-            containerColor = if (themeMode == ThemeMode.AMOLED) Color(0xFF121212) else AlertDialogDefaults.containerColor
+    val tracksById = remember(tracks) { tracks.associateBy { it.id } }
+
+    // Space needed above bottom nav + floating mini player
+    val navReservedHeight = if (currentTrack != null) 144.dp else 74.dp
+
+    val screenBackdrop = rememberFlacBackdropState()
+    var rootSize by remember { mutableStateOf(IntSize.Zero) }
+    var rootOffset by remember { mutableStateOf(Offset.Zero) }
+
+    val frostedBmp by produceState<ImageBitmap?>(
+        initialValue = null,
+        key1 = "${tokens.config.appBgMode}|${tokens.config.appBgCustomPath}|${tokens.config.appBgIsVideo}",
+        key2 = currentTrack?.id,
+        key3 = "${tokens.config.appBgBlurPx}|${tokens.config.panelBlurPx}|${tokens.config.appBgColorMode}"
+    ) {
+        value = getPanelFrostedBg(
+            context = context,
+            mode = tokens.config.appBgMode,
+            customPath = tokens.config.appBgCustomPath,
+            isVideo = tokens.config.appBgIsVideo,
+            bgBlurPx = tokens.config.appBgBlurPx,
+            panelBlurPx = tokens.config.panelBlurPx,
+            monochrome = tokens.config.appBgColorMode != "color",
+            track = currentTrack
+        )?.asImageBitmap()
+    }
+
+    val frostedInfo = remember(frostedBmp, rootSize, rootOffset, tokens.config.appBgDimPercent, tokens.config.appBgMode) {
+        FrostedBgInfo(
+            bitmap = frostedBmp,
+            rootWidthPx = rootSize.width,
+            rootHeightPx = rootSize.height,
+            rootOffset = rootOffset,
+            dimAlpha = if (tokens.config.appBgMode != "none") (tokens.config.appBgDimPercent.coerceIn(15, 95)) / 100f else 0f
         )
     }
 
-    val isAnyOverlayOpen = showEqualizer || selectedAlbumName != null || selectedArtistName != null
+    CompositionLocalProvider(
+        LocalFrostedBg provides frostedInfo,
+        LocalScreenBackdrop provides screenBackdrop
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged { rootSize = it }
+                .onGloballyPositioned { rootOffset = it.positionInRoot() }
+        ) {
+            // Isolated App Background Layer OUTSIDE screenBackdrop so scrolling never re-blurs wallpaper
+            FlacBackgroundLayer(
+                mode = tokens.config.appBgMode,
+                colorMode = tokens.config.appBgColorMode,
+                customPath = tokens.config.appBgCustomPath,
+                isVideo = tokens.config.appBgIsVideo,
+                blurPx = tokens.config.appBgBlurPx,
+                dimPercent = tokens.config.appBgDimPercent,
+                currentTrack = currentTrack
+            )
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            containerColor = if (themeMode == ThemeMode.AMOLED) Color.Black else MaterialTheme.colorScheme.background,
-            bottomBar = {
-                Column {
-                    // Mini-Player (kept mounted under PlayerScreen overlay so Scaffold never resizes)
-                    if (!isAnyOverlayOpen && currentTrack != null) {
-                        MiniPlayerBar(
+            // Tab content recorded alone into screenBackdrop (when dock/overlays visible)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (!isPlayerExpanded && tokens.config.panelBlurPx > 0) {
+                            Modifier.flacBackdropSource(screenBackdrop)
+                        } else Modifier
+                    )
+            ) {
+                // Active Tab or Detail Content
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                ) {
+            val activeDetail = detailRoute
+            if (activeDetail != null) {
+                when (activeDetail) {
+                    is DetailRoute.Album -> {
+                        val albumTracks = remember(tracks, activeDetail.albumName) {
+                            tracks.filter {
+                                it.album.ifBlank { "Без альбома" } == activeDetail.albumName
+                            }.sortedBy { it.trackNumber }
+                        }
+                        TrackCollectionDetailView(
+                            title = activeDetail.albumName,
+                            subtitle = albumTracks.firstOrNull()?.artist,
+                            tracks = albumTracks,
+                            heroTrack = albumTracks.firstOrNull(),
                             currentTrack = currentTrack,
-                            isPlaying = isPlaying,
-                            onPlayPauseToggle = onPlayPauseToggle,
-                            onNextTrack = onNextTrack,
-                            onClickExpand = { isPlayerExpanded = true }
+                            onBack = { detailRoute = null },
+                            onPlayTrack = onTrackSelect,
+                            onOpenTrackMenu = { menuTrack = it },
+                            bottomInsetPadding = navReservedHeight
                         )
                     }
-
-                    // Bottom Navigation Bar: Home | Library | Playlists | Search | Settings
-                    NavigationBar(
-                        containerColor = if (themeMode == ThemeMode.AMOLED) Color.Black else MaterialTheme.colorScheme.surface
-                    ) {
-                        NavigationBarItem(
-                            selected = selectedTab == MainTab.HOME,
-                            alwaysShowLabel = false,
-                            onClick = {
-                                selectedTab = MainTab.HOME
-                                isPlayerExpanded = false
-                                showEqualizer = false
-                                selectedAlbumName = null
-                                selectedArtistName = null
-                            },
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Главная") },
-                            label = { Text("Главная", fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) }
+                    is DetailRoute.Artist -> {
+                        val artistTracks = remember(tracks, activeDetail.artistName) {
+                            tracks.filter {
+                                it.artist.ifBlank { "Неизвестный" } == activeDetail.artistName
+                            }.sortedBy { it.title.lowercase() }
+                        }
+                        TrackCollectionDetailView(
+                            title = activeDetail.artistName,
+                            subtitle = "${artistTracks.map { it.album }.distinct().size} альбомов",
+                            tracks = artistTracks,
+                            heroTrack = artistTracks.firstOrNull(),
+                            currentTrack = currentTrack,
+                            onBack = { detailRoute = null },
+                            onPlayTrack = onTrackSelect,
+                            onOpenTrackMenu = { menuTrack = it },
+                            bottomInsetPadding = navReservedHeight
                         )
-
-                        NavigationBarItem(
-                            selected = selectedTab == MainTab.LIBRARY,
-                            alwaysShowLabel = false,
-                            onClick = {
-                                selectedTab = MainTab.LIBRARY
-                                selectedLibraryCategory = null
-                                isPlayerExpanded = false
-                                showEqualizer = false
-                                selectedAlbumName = null
-                                selectedArtistName = null
-                            },
-                            icon = { Icon(Icons.Default.GridView, contentDescription = "Библиотека") },
-                            label = { Text("Библиотека", fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) }
+                    }
+                    is DetailRoute.PlaylistDetail -> {
+                        val pl = playlists.firstOrNull { it.id == activeDetail.playlistId }
+                        val plTracks = remember(pl, tracksById) {
+                            pl?.trackIds?.mapNotNull { tracksById[it] }.orEmpty()
+                        }
+                        TrackCollectionDetailView(
+                            title = pl?.name ?: "Плейлист",
+                            subtitle = null,
+                            tracks = plTracks,
+                            heroTrack = plTracks.firstOrNull(),
+                            currentTrack = currentTrack,
+                            onBack = { detailRoute = null },
+                            onPlayTrack = onTrackSelect,
+                            onOpenTrackMenu = { menuTrack = it },
+                            bottomInsetPadding = navReservedHeight
                         )
-
-                        NavigationBarItem(
-                            selected = selectedTab == MainTab.PLAYLISTS,
-                            alwaysShowLabel = false,
-                            onClick = {
-                                selectedTab = MainTab.PLAYLISTS
-                                isPlayerExpanded = false
-                                showEqualizer = false
-                                selectedAlbumName = null
-                                selectedArtistName = null
-                            },
-                            icon = { Icon(Icons.Default.Favorite, contentDescription = "Избранное") },
-                            label = { Text("Избранное", fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) }
+                    }
+                    is DetailRoute.SectionTracks -> {
+                        val sectionTracks = remember(activeDetail.trackIds, tracksById) {
+                            activeDetail.trackIds.mapNotNull { tracksById[it] }
+                        }
+                        TrackCollectionDetailView(
+                            title = activeDetail.title,
+                            subtitle = null,
+                            tracks = sectionTracks,
+                            heroTrack = sectionTracks.firstOrNull(),
+                            currentTrack = currentTrack,
+                            onBack = { detailRoute = null },
+                            onPlayTrack = onTrackSelect,
+                            onOpenTrackMenu = { menuTrack = it },
+                            bottomInsetPadding = navReservedHeight
                         )
-
-                        NavigationBarItem(
-                            selected = selectedTab == MainTab.SEARCH,
-                            alwaysShowLabel = false,
-                            onClick = {
-                                selectedTab = MainTab.SEARCH
-                                isPlayerExpanded = false
-                                showEqualizer = false
-                                selectedAlbumName = null
-                                selectedArtistName = null
+                    }
+                }
+            } else {
+                AnimatedContent(
+                    targetState = activeTab,
+                    transitionSpec = { fadeIn(tween(140)) togetherWith fadeOut(tween(110)) },
+                    label = "tabSwitch"
+                ) { tab ->
+                    when (tab) {
+                        MainTab.HOME -> HomeScreen(
+                            tracks = tracks,
+                            currentTrack = currentTrack,
+                            isLoading = isLoading,
+                            onPlayTrack = onTrackSelect,
+                            onOpenSectionTracks = { title, list ->
+                                detailRoute = DetailRoute.SectionTracks(title, list.map { it.id })
                             },
-                            icon = { Icon(Icons.Default.Search, contentDescription = "Поиск") },
-                            label = { Text("Поиск", fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) }
+                            onOpenTrackMenu = { menuTrack = it },
+                            bottomInsetPadding = navReservedHeight
                         )
-
-                        NavigationBarItem(
-                            selected = selectedTab == MainTab.SETTINGS || showEqualizer,
-                            alwaysShowLabel = false,
-                            onClick = {
-                                selectedTab = MainTab.SETTINGS
-                                isPlayerExpanded = false
-                                showEqualizer = false
-                                selectedAlbumName = null
-                                selectedArtistName = null
+                        MainTab.LIBRARY -> LibraryScreen(
+                            tracks = tracks,
+                            currentTrack = currentTrack,
+                            selectedCategory = libraryCategory,
+                            onCategoryChange = { libraryCategory = it },
+                            onPlayTrack = onTrackSelect,
+                            onOpenAlbum = { album -> detailRoute = DetailRoute.Album(album) },
+                            onOpenArtist = { artist -> detailRoute = DetailRoute.Artist(artist) },
+                            onOpenPlaylist = { pl -> detailRoute = DetailRoute.PlaylistDetail(pl.id) },
+                            onOpenSectionTracks = { title, list ->
+                                detailRoute = DetailRoute.SectionTracks(title, list.map { it.id })
                             },
-                            icon = { Icon(Icons.Default.Settings, contentDescription = "Настройки") },
-                            label = { Text("Настройки", fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) }
+                            onOpenTrackMenu = { menuTrack = it },
+                            bottomInsetPadding = navReservedHeight
+                        )
+                        MainTab.SEARCH -> SearchScreen(
+                            tracks = tracks,
+                            currentTrack = currentTrack,
+                            onPlayTrack = onTrackSelect,
+                            onOpenAlbum = { album -> detailRoute = DetailRoute.Album(album) },
+                            onOpenArtist = { artist -> detailRoute = DetailRoute.Artist(artist) },
+                            onOpenTrackMenu = { menuTrack = it },
+                            bottomInsetPadding = navReservedHeight
+                        )
+                        MainTab.SETTINGS -> SettingsScreen(
+                            eqController = eqController,
+                            dacInfo = dacInfo,
+                            hiddenCount = hiddenIds.size,
+                            onPickFolder = onPickFolder,
+                            onRescanLibrary = onRescanLibrary,
+                            bottomInsetPadding = navReservedHeight
                         )
                     }
                 }
             }
-        ) { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                saveableStateHolder.SaveableStateProvider(selectedTab) {
-                    when (selectedTab) {
-                        MainTab.HOME -> {
-                            HomeScreen(
-                                tracks = tracks,
-                                currentTrack = currentTrack,
-                                onTrackSelect = onTrackSelect,
-                                onAlbumSelect = { albumName, albumTracks ->
-                                    selectedAlbumName = albumName
-                                    selectedAlbumTracks = albumTracks
-                                },
-                                onArtistSelect = { artistName, artistTracks ->
-                                    selectedArtistName = artistName
-                                    selectedArtistTracks = artistTracks
-                                },
-                                onNavigateToCategory = { category ->
-                                    selectedLibraryCategory = category
-                                    selectedTab = MainTab.LIBRARY
-                                },
-                                onOpenSearch = { selectedTab = MainTab.SEARCH }
-                            )
-                        }
+            }
+            }
 
-                        MainTab.LIBRARY -> {
-                            LibraryScreen(
-                                tracks = tracks,
-                                allTracks = allTracks,
-                                currentTrack = currentTrack,
-                                isLoading = isLoading,
-                                initialCategory = selectedLibraryCategory,
-                                onCategoryChange = { selectedLibraryCategory = it },
-                                onTrackSelect = onTrackSelect,
-                                onAlbumSelect = { albumName, albumTracks ->
-                                    selectedAlbumName = albumName
-                                    selectedAlbumTracks = albumTracks
-                                },
-                                onArtistSelect = { artistName, artistTracks ->
-                                    selectedArtistName = artistName
-                                    selectedArtistTracks = artistTracks
-                                },
-                                onPickFolder = onPickFolder,
-                                onRescanLibrary = onRescanLibrary,
-                                onAddNavidromeServer = onAddNavidromeServer,
-                                onOpenPowerampMenu = { selectedTab = MainTab.SETTINGS },
-                                onOpenSearch = { selectedTab = MainTab.SEARCH }
-                            )
-                        }
+            // Bottom Floating Dock (Mini-Player + Icon-Only Nav Bar) sampling screenBackdrop
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (currentTrack != null) {
+                    FloatingMiniPlayer(
+                        track = currentTrack,
+                        isPlaying = isPlaying,
+                        onExpand = { isPlayerExpanded = true },
+                        onPlayPause = onPlayPauseToggle,
+                        onNext = onNextTrack,
+                        onPrevious = onPreviousTrack
+                    )
+                }
 
-                        MainTab.PLAYLISTS -> {
-                            PlaylistsScreen(
-                                allTracks = tracks,
-                                currentTrack = currentTrack,
-                                onTrackSelect = onTrackSelect
-                            )
-                        }
-
-                        MainTab.SEARCH -> {
-                            SearchScreen(
-                                tracks = tracks,
-                                currentTrack = currentTrack,
-                                onTrackSelect = onTrackSelect,
-                                onBack = { showExitDialog = true }
-                            )
-                        }
-
-                        MainTab.SETTINGS -> {
-                            SettingsScreen(
-                                onBack = { showExitDialog = true },
-                                onPickFolder = onPickFolder,
-                                onOpenAudioChain = { showAudioChainModal = true },
-                                onOpenEqualizer = { showEqualizer = true },
-                                onRescanLibrary = onRescanLibrary
-                            )
+                IconOnlyNavBar(
+                    activeTab = activeTab,
+                    onSelectTab = { next ->
+                        if (next == activeTab) {
+                            detailRoute = null
+                        } else {
+                            detailRoute = null
+                            activeTab = next
                         }
                     }
-                }
-            }
-        }
-
-        // ── Full-Screen Artist Details ──────────────────────────────────────
-        AnimatedVisibility(
-            visible = selectedArtistName != null,
-            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut(),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            if (selectedArtistName != null) {
-                ArtistDetailScreen(
-                    artistName = selectedArtistName!!,
-                    tracks = selectedArtistTracks,
-                    currentTrackId = currentTrack?.id,
-                    onTrackSelect = { tr -> onTrackSelect(tr, selectedArtistTracks) },
-                    onAlbumSelect = { albumName, albumTracks ->
-                        selectedAlbumName = albumName
-                        selectedAlbumTracks = albumTracks
-                    },
-                    onPlayAll = {
-                        selectedArtistTracks.firstOrNull()?.let { onTrackSelect(it, selectedArtistTracks) }
-                    },
-                    onShufflePlay = {
-                        val shuffled = selectedArtistTracks.shuffled(kotlin.random.Random(System.currentTimeMillis()))
-                        shuffled.firstOrNull()?.let {
-                            com.antigravity.audioplayer.service.AudioPlayerService.setShuffle(true)
-                            onTrackSelect(it, shuffled)
-                        }
-                    },
-                    onBack = { selectedArtistName = null }
                 )
             }
-        }
 
-        // ── Full-Screen Album Details ───────────────────────────────────────
+        // Fullscreen Player Overlay
         AnimatedVisibility(
-            visible = selectedAlbumName != null,
-            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut(),
-            modifier = Modifier.fillMaxSize()
+            visible = isPlayerExpanded && currentTrack != null,
+            enter = slideInVertically(tween(240)) { it } + fadeIn(tween(180)),
+            exit = slideOutVertically(tween(220)) { it } + fadeOut(tween(160))
         ) {
-            if (selectedAlbumName != null) {
-                AlbumDetailScreen(
-                    albumName = selectedAlbumName!!,
-                    artistName = selectedAlbumTracks.firstOrNull()?.artist ?: "Various Artists",
-                    tracks = selectedAlbumTracks,
-                    currentTrackId = currentTrack?.id,
-                    onTrackSelect = { tr -> onTrackSelect(tr, selectedAlbumTracks) },
-                    onPlayAll = {
-                        val sorted = selectedAlbumTracks.sortedWith(
-                            compareBy<AudioFileMetadata> { if (it.trackNumber > 0) it.trackNumber else Int.MAX_VALUE }
-                                .thenBy { it.title.lowercase() }
-                        )
-                        sorted.firstOrNull()?.let { onTrackSelect(it, sorted) }
-                    },
-                    onShufflePlay = {
-                        val shuffled = selectedAlbumTracks.shuffled(kotlin.random.Random(System.currentTimeMillis()))
-                        shuffled.firstOrNull()?.let {
-                            com.antigravity.audioplayer.service.AudioPlayerService.setShuffle(true)
-                            onTrackSelect(it, shuffled)
-                        }
-                    },
-                    onBack = { selectedAlbumName = null }
-                )
-            }
-        }
-
-        // ── Full-Screen Player (Overlay directly over Library/Home) ─────────
-        AnimatedVisibility(
-            visible = isPlayerExpanded,
-            enter = slideInVertically(
-                initialOffsetY = { it },
-                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
-            ),
-            exit = slideOutVertically(
-                targetOffsetY = { it },
-                animationSpec = tween(durationMillis = 220, easing = FastOutLinearInEasing)
-            ),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            PlayerScreen(
+            PlayerOverlay(
                 currentTrack = currentTrack,
                 isPlaying = isPlaying,
-                dacInfo = dacInfo,
-                showVisualizer = showVisualizer,
                 isShuffleOn = isShuffleOn,
                 repeatMode = repeatMode,
-                queueTracks = queueTracks,
-                onToggleShuffle = onToggleShuffle,
-                onToggleRepeat = onToggleRepeat,
-                onToggleVisualizer = onToggleVisualizer,
+                isFavorite = currentTrack != null && favoriteIds.contains(currentTrack.id),
+                onCollapse = { isPlayerExpanded = false },
                 onPlayPauseToggle = onPlayPauseToggle,
                 onNextTrack = onNextTrack,
                 onPreviousTrack = onPreviousTrack,
                 onSeekTo = onSeekTo,
-                onTrackSelect = { tr -> onTrackSelect(tr, queueTracks) },
-                onOpenAudioChain = { showAudioChainModal = true },
-                onOpenEqualizer = {
-                    isPlayerExpanded = false
-                    selectedTab = MainTab.SETTINGS
-                    showEqualizer = true
-                },
-                onOpenQueue = { showQueueModal = true },
-                onOpenArtist = { artistName ->
-                    isPlayerExpanded = false
-                    selectedArtistName = artistName
-                    selectedArtistTracks = tracks.filter { it.artist.equals(artistName, ignoreCase = true) }
-                },
-                onCollapsePlayer = {
-                    isPlayerExpanded = false
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        // ── Equalizer Overlay (from Settings) ──────────────────────────────
-        AnimatedVisibility(
-            visible = showEqualizer,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                EqualizerScreen(
-                    eqController = eqController,
-                    onBack = { showEqualizer = false }
-                )
-            }
-        }
-
-        // ── Queue Modal ─────────────────────────────────────────────────────
-        if (showQueueModal) {
-            QueueModalSheet(
-                queueTracks = queueTracks,
-                currentTrackIndex = currentTrackIndex,
-                isShuffleOn = isShuffleOn,
-                repeatMode = repeatMode,
                 onToggleShuffle = onToggleShuffle,
                 onToggleRepeat = onToggleRepeat,
-                onTrackSelect = { index ->
-                    onTrackSelectIndex(index)
-                    showQueueModal = false
+                onToggleFavorite = {
+                    currentTrack?.let { pm.toggleFavorite(it.id) }
                 },
-                onDismiss = { showQueueModal = false }
+                onOpenQueue = { showQueueOverlay = true },
+                onOpenPlaylistPicker = { playlistTargetTrack = currentTrack },
+                onOpenSleepTimer = { showSleepOverlay = true },
+                onOpenTrackMenu = { menuTrack = currentTrack },
+                onGoToArtist = { artist ->
+                    isPlayerExpanded = false
+                    detailRoute = DetailRoute.Artist(artist)
+                }
             )
         }
 
-        // ── Audio Chain Modal (only from player info button or settings) ────
-        if (showAudioChainModal && currentTrack != null) {
-            AudioChainModalSheet(
-                metadata = currentTrack,
-                dacInfo = dacInfo,
-                isEqActive = isEqActive,
-                eqPresetName = eqPresetName,
-                bassBoostVal = bassBoostVal,
-                engineMode = audioEngineMode,
-                onDismiss = { showAudioChainModal = false }
-            )
+        // Clean Glass Overlays (Track options, Playlist picker, Queue, Sleep timer, Info)
+        TrackOptionsOverlay(
+            track = menuTrack,
+            isFavorite = menuTrack != null && favoriteIds.contains(menuTrack!!.id),
+            onDismiss = { menuTrack = null },
+            onPlayNext = { AudioPlayerService.playNext(it) },
+            onAddToQueue = { AudioPlayerService.addToQueue(it) },
+            onToggleFavorite = { pm.toggleFavorite(it.id) },
+            onAddToPlaylist = { track ->
+                menuTrack = null
+                playlistTargetTrack = track
+            },
+            onGoToAlbum = { album ->
+                isPlayerExpanded = false
+                detailRoute = DetailRoute.Album(album)
+            },
+            onGoToArtist = { artist ->
+                isPlayerExpanded = false
+                detailRoute = DetailRoute.Artist(artist)
+            },
+            onShowInfo = { track ->
+                menuTrack = null
+                infoTargetTrack = track
+            },
+            onHideTrack = { prefs.hideTrack(it.id) }
+        )
+
+        PlaylistPickerOverlay(
+            track = playlistTargetTrack,
+            onDismiss = { playlistTargetTrack = null }
+        )
+
+        QueueOverlay(
+            visible = showQueueOverlay,
+            queueTracks = queueTracks,
+            currentIndex = currentTrackIndex,
+            repeatMode = repeatMode,
+            isShuffleOn = isShuffleOn,
+            onDismiss = { showQueueOverlay = false },
+            onPlayIndex = { idx ->
+                AudioPlayerService.playTrackAtIndex(idx, queueTracks, startPlayback = true)
+            },
+            onRemoveIndex = { idx ->
+                AudioPlayerService.removeFromQueue(idx)
+            },
+            onClearUpcoming = { AudioPlayerService.clearUpcomingQueue() },
+            onToggleShuffle = onToggleShuffle,
+            onToggleRepeat = onToggleRepeat
+        )
+
+        SleepTimerOverlay(
+            visible = showSleepOverlay,
+            onDismiss = { showSleepOverlay = false },
+            onTimerExpired = {
+                if (AudioPlayerService.isPlaying.value) {
+                    AudioPlayerService.pause()
+                }
+            }
+        )
+
+        TrackInfoOverlay(
+            track = infoTargetTrack,
+            onDismiss = { infoTargetTrack = null }
+        )
         }
     }
 }
 
+@Composable
+private fun FloatingMiniPlayer(
+    track: AudioFileMetadata,
+    isPlaying: Boolean,
+    onExpand: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit
+) {
+    val tokens = LocalFlacTheme.current
+    val shape = RoundedCornerShape(tokens.radiusMd)
+    val backdrop = LocalScreenBackdrop.current
+    val frostedBg = LocalFrostedBg.current
+    var hAccum by remember { mutableFloatStateOf(0f) }
+    var vAccum by remember { mutableFloatStateOf(0f) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .flacGlassBackdrop(
+                source = backdrop,
+                frostedBg = frostedBg,
+                blurRadius = tokens.config.panelBlurPx.dp,
+                tintColor = tokens.bg1,
+                shape = shape
+            )
+            .border(1.dp, tokens.lineStrong, shape)
+            .pointerInput(track.id) {
+                detectHorizontalDragGestures(
+                    onDragStart = { hAccum = 0f },
+                    onHorizontalDrag = { _, dragAmount -> hAccum += dragAmount },
+                    onDragEnd = {
+                        if (hAccum < -65f) onNext()
+                        else if (hAccum > 65f) onPrevious()
+                        hAccum = 0f
+                    }
+                )
+            }
+            .pointerInput(track.id) {
+                detectVerticalDragGestures(
+                    onDragStart = { vAccum = 0f },
+                    onVerticalDrag = { _, dragAmount -> vAccum += dragAmount },
+                    onDragEnd = {
+                        if (vAccum < -45f) onExpand()
+                        vAccum = 0f
+                    }
+                )
+            }
+            .clickable(onClick = onExpand)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            TrackArtwork(
+                track = track,
+                modifier = Modifier.size(40.dp),
+                cornerRadius = tokens.radiusSm,
+                iconSize = 18.dp
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.title,
+                    color = tokens.fg0,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = track.artist,
+                    color = tokens.fg2,
+                    fontSize = 11.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(tokens.radiusSm))
+                    .background(tokens.accent)
+                    .clickable(onClick = onPlayPause),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = null,
+                    tint = tokens.accentFg,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+            FlacIconButton(
+                icon = Icons.Rounded.SkipNext,
+                contentDescription = "Следующий",
+                onClick = onNext,
+                size = 34.dp,
+                iconSize = 20.dp,
+                tint = tokens.fg1
+            )
+        }
+        MiniIsolatedProgressBar(track = track)
+    }
+}
+
+@Composable
+private fun MiniIsolatedProgressBar(track: AudioFileMetadata) {
+    val tokens = LocalFlacTheme.current
+    val progressMs by AudioPlayerService.progressMs.collectAsState()
+    val serviceDurationMs by AudioPlayerService.durationMs.collectAsState()
+    val duration = (serviceDurationMs.takeIf { it > 0L } ?: track.durationMs).coerceAtLeast(1L)
+    val fraction = (progressMs.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(2.dp)
+            .background(tokens.line)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(fraction)
+                .fillMaxHeight()
+                .background(tokens.accent)
+        )
+    }
+}
+
+@Composable
+private fun IconOnlyNavBar(
+    activeTab: MainTab,
+    onSelectTab: (MainTab) -> Unit
+) {
+    val tokens = LocalFlacTheme.current
+    val shape = RoundedCornerShape(tokens.radiusLg)
+    val backdrop = LocalScreenBackdrop.current
+    val frostedBg = LocalFrostedBg.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .flacGlassBackdrop(
+                source = backdrop,
+                frostedBg = frostedBg,
+                blurRadius = tokens.config.panelBlurPx.dp,
+                tintColor = tokens.bg1,
+                shape = shape
+            )
+            .border(1.dp, tokens.line, shape)
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        MainTab.values().forEach { tab ->
+            val selected = tab == activeTab
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(vertical = 6.dp, horizontal = 4.dp)
+                    .clip(RoundedCornerShape(tokens.radiusMd))
+                    .background(
+                        if (selected) tokens.accent.copy(alpha = 0.14f)
+                        else androidx.compose.ui.graphics.Color.Transparent
+                    )
+                    .clickable { onSelectTab(tab) },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = tab.icon,
+                    contentDescription = tab.label,
+                    tint = if (selected) tokens.accent else tokens.fg2,
+                    modifier = Modifier.size(23.dp)
+                )
+            }
+        }
+    }
+}

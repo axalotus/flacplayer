@@ -15,6 +15,110 @@ enum class ThemeMode {
     LIGHT, DARK, AMOLED
 }
 
+data class FlacThemeConfig(
+    val fontFamily: String = "jakarta",
+    val visualizerEnabled: Boolean = true,
+    val visualizerStyle: String = "bars",
+    val accentColor: String = "#ffffff",
+    val panelColor: String = "#0a0a0a",
+    val panelBrightness: Int = 100,
+    val panelOpacity: Int = 70,
+    val cardOpacity: Int = 68,
+    val panelBlurPx: Int = 20,
+    val borderRadiusPx: Int = 12,
+    val borderOpacity: Int = 10,
+    val lyricsBlurIntensity: Int = 100,
+    val appBgMode: String = "none", // "none" | "cover" | "custom"
+    val appBgColorMode: String = "mono", // "mono" | "color"
+    val appBgCustomPath: String = "",
+    val appBgIsVideo: Boolean = false,
+    val appBgBlurPx: Int = 48,
+    val appBgDimPercent: Int = 68,
+    val fsBgMode: String = "cover", // "none" | "cover" | "custom"
+    val fsBgColorMode: String = "mono", // "mono" | "color"
+    val fsBgCustomPath: String = "",
+    val fsBgIsVideo: Boolean = false,
+    val fsBgBlurPx: Int = 52,
+    val fsBgDimPercent: Int = 64
+) {
+    fun toThemeJson(): JSONObject = JSONObject().apply {
+        put("fontFamily", fontFamily)
+        put("visualizerEnabled", visualizerEnabled)
+        put("visualizerStyle", visualizerStyle)
+        put("accentColor", accentColor)
+        put("panelColor", panelColor)
+        put("panelBrightness", panelBrightness)
+        put("panelOpacity", panelOpacity)
+        put("cardOpacity", cardOpacity)
+        put("panelBlurPx", panelBlurPx)
+        put("borderRadiusPx", borderRadiusPx)
+        put("borderOpacity", borderOpacity)
+        put("lyricsBlurIntensity", lyricsBlurIntensity)
+        put("appBgMode", appBgMode)
+        put("appBgColorMode", appBgColorMode)
+        put("appBgIsVideo", appBgIsVideo)
+        put("appBgBlurPx", appBgBlurPx)
+        put("appBgDimPercent", appBgDimPercent)
+        put("fsBgMode", fsBgMode)
+        put("fsBgColorMode", fsBgColorMode)
+        put("fsBgIsVideo", fsBgIsVideo)
+        put("fsBgBlurPx", fsBgBlurPx)
+        put("fsBgDimPercent", fsBgDimPercent)
+    }
+
+    companion object {
+        fun fromJson(obj: JSONObject, existing: FlacThemeConfig = FlacThemeConfig()): FlacThemeConfig {
+            return existing.copy(
+                fontFamily = obj.optString("fontFamily", existing.fontFamily),
+                visualizerEnabled = obj.optBoolean("visualizerEnabled", existing.visualizerEnabled),
+                visualizerStyle = obj.optString("visualizerStyle", existing.visualizerStyle),
+                accentColor = obj.optString("accentColor", existing.accentColor),
+                panelColor = obj.optString("panelColor", existing.panelColor),
+                panelBrightness = obj.optInt("panelBrightness", existing.panelBrightness).coerceIn(40, 220),
+                panelOpacity = obj.optInt("panelOpacity", existing.panelOpacity).coerceIn(20, 100),
+                cardOpacity = obj.optInt("cardOpacity", existing.cardOpacity).coerceIn(20, 100),
+                panelBlurPx = obj.optInt("panelBlurPx", existing.panelBlurPx).coerceIn(0, 40),
+                borderRadiusPx = obj.optInt("borderRadiusPx", existing.borderRadiusPx).coerceIn(2, 22),
+                borderOpacity = obj.optInt("borderOpacity", existing.borderOpacity).coerceIn(0, 35),
+                lyricsBlurIntensity = obj.optInt("lyricsBlurIntensity", existing.lyricsBlurIntensity).coerceIn(0, 180),
+                appBgMode = obj.optString("appBgMode", existing.appBgMode),
+                appBgColorMode = obj.optString("appBgColorMode", existing.appBgColorMode),
+                appBgCustomPath = obj.optString("appBgCustomPath", existing.appBgCustomPath),
+                appBgIsVideo = obj.optBoolean("appBgIsVideo", existing.appBgIsVideo),
+                appBgBlurPx = obj.optInt("appBgBlurPx", existing.appBgBlurPx).coerceIn(0, 90),
+                appBgDimPercent = obj.optInt("appBgDimPercent", existing.appBgDimPercent).coerceIn(15, 95),
+                fsBgMode = obj.optString("fsBgMode", existing.fsBgMode),
+                fsBgColorMode = obj.optString("fsBgColorMode", existing.fsBgColorMode),
+                fsBgCustomPath = obj.optString("fsBgCustomPath", existing.fsBgCustomPath),
+                fsBgIsVideo = obj.optBoolean("fsBgIsVideo", existing.fsBgIsVideo),
+                fsBgBlurPx = obj.optInt("fsBgBlurPx", existing.fsBgBlurPx).coerceIn(0, 90),
+                fsBgDimPercent = obj.optInt("fsBgDimPercent", existing.fsBgDimPercent).coerceIn(15, 95)
+            )
+        }
+    }
+}
+
+data class ThemePresetSpec(
+    val id: String,
+    val name: String,
+    val accentColor: String,
+    val panelColor: String,
+    val panelBrightness: Int,
+    val panelOpacity: Int,
+    val cardOpacity: Int,
+    val panelBlurPx: Int,
+    val borderRadiusPx: Int,
+    val borderOpacity: Int
+)
+
+val DESKTOP_THEME_PRESETS = listOf(
+    ThemePresetSpec("monochrome", "Monochrome", "#ffffff", "#0a0a0a", 100, 70, 68, 20, 12, 10),
+    ThemePresetSpec("obsidian-crimson", "Crimson Dark", "#ff3b5c", "#140b0e", 110, 84, 80, 18, 14, 12),
+    ThemePresetSpec("nordic-frost", "Nordic Frost", "#7dd3fc", "#0c131d", 115, 82, 78, 20, 14, 13),
+    ThemePresetSpec("amber-studio", "Amber Studio", "#f59e0b", "#141008", 112, 88, 84, 14, 10, 12),
+    ThemePresetSpec("emerald-glass", "Emerald Glass", "#34d399", "#081410", 110, 80, 76, 18, 16, 14)
+)
+
 class LibraryPreferences private constructor(private val context: Context) {
 
     private val prefs = context.getSharedPreferences("vibe_player_prefs", Context.MODE_PRIVATE)
@@ -22,9 +126,9 @@ class LibraryPreferences private constructor(private val context: Context) {
 
     private val _themeMode = MutableStateFlow(
         try {
-            ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.DARK.name) ?: ThemeMode.DARK.name)
+            ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.AMOLED.name) ?: ThemeMode.AMOLED.name)
         } catch (e: Exception) {
-            ThemeMode.DARK
+            ThemeMode.AMOLED
         }
     )
     val themeMode = _themeMode.asStateFlow()
@@ -32,6 +136,81 @@ class LibraryPreferences private constructor(private val context: Context) {
     fun setThemeMode(mode: ThemeMode) {
         prefs.edit().putString("theme_mode", mode.name).apply()
         _themeMode.value = mode
+    }
+
+    // Desktop-unified FlacThemeConfig state
+    private val _themeConfig = MutableStateFlow(loadThemeConfig())
+    val themeConfig = _themeConfig.asStateFlow()
+
+    private fun loadThemeConfig(): FlacThemeConfig {
+        val raw = prefs.getString("desktop_theme_config_json", null) ?: return FlacThemeConfig()
+        return try {
+            FlacThemeConfig.fromJson(JSONObject(raw))
+        } catch (_: Exception) {
+            FlacThemeConfig()
+        }
+    }
+
+    fun updateThemeConfig(transform: (FlacThemeConfig) -> FlacThemeConfig) {
+        val next = transform(_themeConfig.value)
+        _themeConfig.value = next
+        val json = next.toThemeJson().apply {
+            put("appBgCustomPath", next.appBgCustomPath)
+            put("fsBgCustomPath", next.fsBgCustomPath)
+        }
+        prefs.edit().putString("desktop_theme_config_json", json.toString()).apply()
+    }
+
+    fun setThemeConfig(config: FlacThemeConfig) {
+        updateThemeConfig { config }
+    }
+
+    // Optional Quality Badges (hidden by default like Desktop)
+    private val _showQualityBadges = MutableStateFlow(prefs.getBoolean("show_quality_badges", false))
+    val showQualityBadges = _showQualityBadges.asStateFlow()
+
+    fun setShowQualityBadges(show: Boolean) {
+        prefs.edit().putBoolean("show_quality_badges", show).apply()
+        _showQualityBadges.value = show
+    }
+
+    // Per-track Synced Lyrics Offset (ms)
+    private val _lyricsOffsets = MutableStateFlow(loadLyricsOffsets())
+    val lyricsOffsets = _lyricsOffsets.asStateFlow()
+
+    private fun loadLyricsOffsets(): Map<String, Long> {
+        val raw = prefs.getString("per_track_lyrics_offsets", null) ?: return emptyMap()
+        return try {
+            val obj = JSONObject(raw)
+            val map = mutableMapOf<String, Long>()
+            val keys = obj.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                map[k] = obj.optLong(k, 0L)
+            }
+            map
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun getTrackLyricOffsetMs(trackId: String?): Long {
+        if (trackId.isNullOrBlank()) return 0L
+        return _lyricsOffsets.value[trackId] ?: 0L
+    }
+
+    fun setTrackLyricOffsetMs(trackId: String, offsetMs: Long) {
+        if (trackId.isBlank()) return
+        val next = _lyricsOffsets.value.toMutableMap()
+        if (kotlin.math.abs(offsetMs) < 10L) {
+            next.remove(trackId)
+        } else {
+            next[trackId] = offsetMs.coerceIn(-30000L, 30000L)
+        }
+        _lyricsOffsets.value = next
+        val obj = JSONObject()
+        next.forEach { (k, v) -> obj.put(k, v) }
+        prefs.edit().putString("per_track_lyrics_offsets", obj.toString()).apply()
     }
 
     private val _isBlurBackground = MutableStateFlow(prefs.getBoolean("is_blur_background", true))
@@ -250,6 +429,32 @@ class LibraryPreferences private constructor(private val context: Context) {
         val trimmed = current.take(50)
         prefs.edit().putString("recently_played_ids", trimmed.joinToString(",")).apply()
         _recentlyPlayedIds.value = trimmed
+    }
+
+    // Recently Searched Tracks History (Ordered by most recent selected tracks from Search)
+    private val _recentSearchedTrackIds = MutableStateFlow<List<String>>(
+        try {
+            val raw = prefs.getString("recent_searched_track_ids", "") ?: ""
+            if (raw.isNotBlank()) raw.split(",") else emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    )
+    val recentSearchedTrackIds = _recentSearchedTrackIds.asStateFlow()
+
+    fun recordTrackSearched(trackId: String) {
+        if (trackId.isBlank()) return
+        val current = _recentSearchedTrackIds.value.toMutableList()
+        current.remove(trackId)
+        current.add(0, trackId)
+        val trimmed = current.take(24)
+        prefs.edit().putString("recent_searched_track_ids", trimmed.joinToString(",")).apply()
+        _recentSearchedTrackIds.value = trimmed
+    }
+
+    fun clearRecentSearchedTracks() {
+        prefs.edit().remove("recent_searched_track_ids").apply()
+        _recentSearchedTrackIds.value = emptyList()
     }
 
     // Hidden Tracks Management

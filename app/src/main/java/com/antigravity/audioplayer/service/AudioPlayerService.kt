@@ -165,6 +165,68 @@ object AudioPlayerService {
         playTrackAtIndex(index, newQueue, startPlayback = true)
     }
 
+    fun playNext(track: AudioFileMetadata) {
+        val current = _activeQueue.value.toMutableList()
+        if (current.isEmpty() || _currentTrack.value == null) {
+            playTrack(track, listOf(track))
+            return
+        }
+        val insertIndex = (_currentTrackIndex.value + 1).coerceIn(0, current.size)
+        val existingIdx = current.indexOfFirst { it.id == track.id }
+        if (existingIdx >= 0 && existingIdx != _currentTrackIndex.value) {
+            current.removeAt(existingIdx)
+            val adjusted = if (existingIdx < insertIndex) insertIndex - 1 else insertIndex
+            current.add(adjusted.coerceIn(0, current.size), track)
+            if (existingIdx < _currentTrackIndex.value) {
+                _currentTrackIndex.value = (_currentTrackIndex.value - 1).coerceAtLeast(0)
+            }
+        } else if (existingIdx < 0) {
+            current.add(insertIndex, track)
+        }
+        _activeQueue.value = current
+    }
+
+    fun addToQueue(track: AudioFileMetadata) {
+        val current = _activeQueue.value.toMutableList()
+        if (current.isEmpty() || _currentTrack.value == null) {
+            playTrack(track, listOf(track))
+            return
+        }
+        if (current.none { it.id == track.id }) {
+            current.add(track)
+            _activeQueue.value = current
+        }
+    }
+
+    fun removeFromQueue(index: Int) {
+        val current = _activeQueue.value.toMutableList()
+        if (index !in current.indices) return
+        val curIdx = _currentTrackIndex.value
+        if (index == curIdx) {
+            if (current.size == 1) {
+                pause()
+                _activeQueue.value = emptyList()
+                _currentTrackIndex.value = 0
+                return
+            }
+            current.removeAt(index)
+            val nextIdx = index.coerceAtMost(current.lastIndex)
+            playTrackAtIndex(nextIdx, current, startPlayback = _isPlaying.value)
+        } else {
+            current.removeAt(index)
+            _activeQueue.value = current
+            if (index < curIdx) {
+                _currentTrackIndex.value = (curIdx - 1).coerceAtLeast(0)
+            }
+        }
+    }
+
+    fun clearUpcomingQueue() {
+        val current = _currentTrack.value ?: return
+        _activeQueue.value = listOf(current)
+        _currentTrackIndex.value = 0
+    }
+
     fun playTrackAtIndex(index: Int, queue: List<AudioFileMetadata>? = null, startPlayback: Boolean = true) {
         val q = queue ?: _activeQueue.value
         if (index !in q.indices) return

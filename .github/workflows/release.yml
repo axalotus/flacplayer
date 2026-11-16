@@ -1,4 +1,4 @@
-name: Build and Release APK
+name: Build and Release All Platforms
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,15 +33,72 @@ jobs:
 
       - name: Prepare APK Artifacts
         run: |
-          cp app/build/outputs/apk/release/app-release.apk FlacPlayer-${{ github.ref_name }}-release.apk
-          cp app/build/outputs/apk/debug/app-debug.apk FlacPlayer-${{ github.ref_name }}-debug.apk
+          mkdir -p artifacts
+          cp app/build/outputs/apk/release/app-release.apk artifacts/FlacPlayer-${{ github.ref_name }}-release.apk
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/FlacPlayer-${{ github.ref_name }}-debug.apk
 
-      - name: Create Release and Upload APKs
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: artifacts/*.apk
+
+  build-desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install Desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build Windows Portable & Linux Packages (.deb, AppImage, tar.gz)
+        working-directory: desktop
+        run: ./node_modules/.bin/electron-builder --win portable --linux AppImage deb tar.gz
+
+      - name: Collect Desktop Artifacts
+        run: |
+          mkdir -p desktop-artifacts
+          cp desktop/dist/*.exe desktop-artifacts/
+          cp desktop/dist/*.deb desktop-artifacts/
+          cp desktop/dist/*.AppImage desktop-artifacts/
+          cp desktop/dist/*.tar.gz desktop-artifacts/
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-builds
+          path: desktop-artifacts/*
+
+  publish-release:
+    needs: [build-android, build-desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Android APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apks
+          path: release-files
+
+      - name: Download Desktop Builds
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-builds
+          path: release-files
+
+      - name: Create GitHub Release and Upload All Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            FlacPlayer-${{ github.ref_name }}-release.apk
-            FlacPlayer-${{ github.ref_name }}-debug.apk
+            release-files/*
           tag_name: ${{ github.ref_name }}
           name: FlacPlayer ${{ github.ref_name }}
           draft: false

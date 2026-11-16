@@ -1,14 +1,15 @@
 {
   "name": "flacplayer-desktop",
-  "version": "1.20.0",
+  "version": "1.0.0",
   "description": "FlacPlayer — Monochrome Hi-Res Lossless Audio Player",
+  "homepage": "https://github.com/axalotus/flacplayer",
   "main": "main.js",
   "author": "Antigravity AI",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "dist:linux": "electron-builder --linux AppImage",
-    "dist:win": "electron-builder --win portable nsis"
+    "dist:linux": "electron-builder --linux AppImage deb tar.gz",
+    "dist:win": "electron-builder --win portable"
   },
   "build": {
     "appId": "com.antigravity.flacplayer.desktop",
@@ -23,21 +24,24 @@
       "assets/**/*"
     ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage",
+        "deb",
+        "tar.gz"
+      ],
       "icon": "assets/icon.png",
-      "category": "AudioVideo;Audio;Player"
+      "category": "AudioVideo;Audio;Player",
+      "maintainer": "FlacPlayer <axalotus@github.com>",
+      "artifactName": "FlacPlayer-${version}-Linux-${arch}.${ext}"
     },
     "win": {
-      "target": ["portable", "nsis"],
+      "target": [
+        "portable"
+      ],
       "icon": "assets/icon.png"
     },
     "portable": {
-      "artifactName": "FlacPlayer-${version}-Windows-x64.exe"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "artifactName": "FlacPlayer-${version}-Setup.exe"
+      "artifactName": "FlacPlayer-${version}-Windows-x64-Portable.exe"
     }
   },
   "dependencies": {

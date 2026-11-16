@@ -1,6 +1,6 @@
 # FlacPlayer — Hi-Res Lossless Audio Player (Android & Desktop)
 
-![Version](https://img.shields.io/badge/Version-v1.20-00B4D8?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v1.0-00B4D8?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platforms-Android%20%7C%20Linux%20%7C%20Windows-06D6A0?style=for-the-badge)
 ![Engine](https://img.shields.io/badge/Audio-C%2B%2B17%20Oboe%20%7C%20Electron%20WebAudio-FFB703?style=for-the-badge)
 ![100% AI Generated](https://img.shields.io/badge/100%25%20AI%20Written-Google%20Antigravity-9B5DE5?style=for-the-badge)

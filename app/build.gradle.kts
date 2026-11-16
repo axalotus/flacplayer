@@ -11,8 +11,8 @@ android {
         applicationId = "com.antigravity.audioplayer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 21
-        versionName = "1.20"
+        versionCode = 1
+        versionName = "1.0"
 
         externalNativeBuild {
             cmake {

@@ -106,6 +106,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        @Suppress("DEPRECATION")
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        @Suppress("DEPRECATION")
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
         dacDetector = DacDetector.getInstance(applicationContext)
 
         AudioPlayerService.init(applicationContext)
@@ -132,8 +141,9 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val appPrefs = remember { LibraryPreferences.getInstance(context) }
             val themeMode by appPrefs.themeMode.collectAsState()
+            val themeConfig by appPrefs.themeConfig.collectAsState()
 
-            AntigravityPlayerTheme(themeMode = themeMode) {
+            AntigravityPlayerTheme(themeMode = themeMode, themeConfig = themeConfig) {
                 val tracks by repository.tracksFlow.collectAsState(initial = emptyList())
                 val isLoading by repository.isLoadingFlow.collectAsState(initial = true)
                 val hiddenTrackIds by appPrefs.hiddenTrackIds.collectAsState()
@@ -149,7 +159,6 @@ class MainActivity : ComponentActivity() {
                 val isShuffleOn by AudioPlayerService.isShuffleOn.collectAsState()
                 val repeatMode by AudioPlayerService.repeatMode.collectAsState()
                 val dacInfo by dacDetector.activeDeviceFlow.collectAsState()
-                var showVisualizer by remember { mutableStateOf(true) }
 
                 LaunchedEffect(tracks) {
                     AudioPlayerService.updateAllLibraryTracks(tracks)
@@ -167,17 +176,12 @@ class MainActivity : ComponentActivity() {
                     currentTrackIndex = currentTrackIndex,
                     isPlaying = isPlaying,
                     dacInfo = dacInfo,
-                    showVisualizer = showVisualizer,
                     isShuffleOn = isShuffleOn,
                     repeatMode = repeatMode,
                     isLoading = isLoading,
                     onToggleShuffle = { AudioPlayerService.toggleShuffle() },
                     onToggleRepeat = { AudioPlayerService.toggleRepeat() },
-                    onToggleVisualizer = { showVisualizer = !showVisualizer },
                     eqController = equalizerController,
-                    onTrackSelectIndex = { index ->
-                        AudioPlayerService.playTrackAtIndex(index)
-                    },
                     onTrackSelect = { selected, contextQueue ->
                         AudioPlayerService.playTrack(selected, contextQueue)
                     },
@@ -204,27 +208,6 @@ class MainActivity : ComponentActivity() {
                                 "Библиотека обновлена: найдено $count треков",
                                 android.widget.Toast.LENGTH_SHORT
                             ).show()
-                        }
-                    },
-                    onAddNavidromeServer = { serverUrl, user ->
-                        lifecycleScopeLaunch {
-                            repository.addNavidromeTrack(
-                                applicationContext,
-                                AudioFileMetadata(
-                                    id = "navidrome_${System.currentTimeMillis()}",
-                                    title = "Cloud Stream ($user)",
-                                    artist = "Navidrome Hi-Res Server",
-                                    album = "Navidrome Stream API Ready",
-                                    durationMs = 420000,
-                                    uri = android.net.Uri.parse("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"),
-                                    format = AudioFormat.FLAC,
-                                    sampleRateHz = 96000,
-                                    bitDepth = 24,
-                                    bitrateKbps = 2400,
-                                    isStream = true,
-                                    streamServerUrl = serverUrl
-                                )
-                            )
                         }
                     }
                 )
