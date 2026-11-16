@@ -80,26 +80,6 @@ class LibraryPreferences private constructor(private val context: Context) {
         _isEmbeddedCoversEnabled.value = value
     }
 
-    // Manual bottom offset for Player controls (0dp to 80dp, default 0 = original layout)
-    private val _playerControlsBottomOffsetDp = MutableStateFlow(prefs.getInt("player_controls_bottom_offset_dp", 0))
-    val playerControlsBottomOffsetDp = _playerControlsBottomOffsetDp.asStateFlow()
-
-    fun setPlayerControlsBottomOffsetDp(offsetDp: Int) {
-        val clamped = offsetDp.coerceIn(0, 80)
-        prefs.edit().putInt("player_controls_bottom_offset_dp", clamped).apply()
-        _playerControlsBottomOffsetDp.value = clamped
-    }
-
-    // Manual spacing between Start/Stop controls and bottom action buttons (0dp to 64dp, default 8dp)
-    private val _playerSecondaryControlsSpacingDp = MutableStateFlow(prefs.getInt("player_secondary_controls_spacing_dp", 8))
-    val playerSecondaryControlsSpacingDp = _playerSecondaryControlsSpacingDp.asStateFlow()
-
-    fun setPlayerSecondaryControlsSpacingDp(spacingDp: Int) {
-        val clamped = spacingDp.coerceIn(0, 64)
-        prefs.edit().putInt("player_secondary_controls_spacing_dp", clamped).apply()
-        _playerSecondaryControlsSpacingDp.value = clamped
-    }
-
     // Crossfade duration in seconds (0 = disabled, 1..10s)
     private val _crossfadeSeconds = MutableStateFlow(prefs.getInt("crossfade_seconds", 0).coerceIn(0, 10))
     val crossfadeSeconds = _crossfadeSeconds.asStateFlow()

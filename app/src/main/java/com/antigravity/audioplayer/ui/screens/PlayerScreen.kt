@@ -325,8 +325,6 @@ fun PlayerScreen(
             }
         } else {
             val totalDurationMs = currentTrack.durationMs.coerceAtLeast(1L)
-            val playerControlsBottomOffsetDp by prefs.playerControlsBottomOffsetDp.collectAsState()
-            val playerSecondaryControlsSpacingDp by prefs.playerSecondaryControlsSpacingDp.collectAsState()
 
             Column(
                 modifier = Modifier
@@ -679,8 +677,8 @@ fun PlayerScreen(
                         }
                     }
 
-                    // Manually adjustable spacing between Start/Stop and bottom buttons (0..64dp, default 8dp)
-                    Spacer(modifier = Modifier.height(playerSecondaryControlsSpacingDp.dp))
+                    // Fixed 30dp spacing between Start/Stop and bottom action buttons
+                    Spacer(modifier = Modifier.height(30.dp))
 
                     // Bottom Action Buttons Row (Always visible, spread across bottom)
                     Row(
@@ -773,8 +771,8 @@ fun PlayerScreen(
                         }
                     }
 
-                    // Default is 0dp (original layout), manually adjustable in Settings (0..80dp)
-                    Spacer(modifier = Modifier.height((2 + playerControlsBottomOffsetDp).dp))
+                    // Fixed 0dp bottom offset
+                    Spacer(modifier = Modifier.height(2.dp))
                 }
             }
         }
