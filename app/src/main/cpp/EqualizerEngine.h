@@ -4,6 +4,7 @@
 #include "BiquadFilter.h"
 #include <vector>
 #include <mutex>
+#include <atomic>
 
 class EqualizerEngine {
 public:
@@ -26,18 +27,29 @@ public:
     void reset();
 
 private:
-    std::mutex mLock;
+    struct EqCoeffsSnapshot {
+        bool enabled = true;
+        float sampleRate = 44100.0f;
+        int channels = 2;
+        bool hasActiveFilter = false;
+        BiquadCoeffs bassCoeff;
+        BiquadCoeffs bandCoeffs[NUM_BANDS];
+    };
+
+    std::mutex mConfigLock;
+    std::mutex mSnapshotLock;
+    std::atomic<bool> mResetRequested{false};
     
-    bool mEnabled = false;
+    bool mEnabled = true;
     float mSampleRate = 44100.0f;
     int mChannels = 2;
     
     float mBandGains[NUM_BANDS];
     float mBassBoostStrength = 0.0f;
+
+    EqCoeffsSnapshot mPublishedSnapshot;
     
-    // Filters: one for each channel, for each band
-    // Outer vector: Channels (e.g. 2 for stereo)
-    // Inner vector: Bands (e.g. 10 bands + 1 for bass boost)
+    // Filter delay states owned exclusively by the audio processing thread
     std::vector<std::vector<BiquadFilter>> mFilters;
     std::vector<BiquadFilter> mBassFilters;
 

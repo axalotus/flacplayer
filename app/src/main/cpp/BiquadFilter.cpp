@@ -4,16 +4,12 @@ BiquadFilter::BiquadFilter() : b0(1), b1(0), b2(0), a1(0), a2(0), x1(0), x2(0), 
 
 BiquadFilter::~BiquadFilter() {}
 
-void BiquadFilter::setParameters(FilterType type, float sampleRate, float frequency, float q, float gainDb) {
+BiquadCoeffs BiquadFilter::computeCoefficients(FilterType type, float sampleRate, float frequency, float q, float gainDb) {
+    BiquadCoeffs result;
     // Bypass filter if parameters are invalid, gain is ~0dB, or frequency is near/above Nyquist
     if (sampleRate <= 0.0f || frequency <= 0.0f || q <= 0.0f ||
-        frequency >= sampleRate * 0.45f || std::abs(gainDb) < 0.005f) {
-        this->b0 = 1.0f;
-        this->b1 = 0.0f;
-        this->b2 = 0.0f;
-        this->a1 = 0.0f;
-        this->a2 = 0.0f;
-        return;
+        frequency >= sampleRate * 0.45f || std::abs(gainDb) < 0.01f) {
+        return result;
     }
 
     float A = std::pow(10.0f, gainDb / 40.0f);
@@ -21,12 +17,7 @@ void BiquadFilter::setParameters(FilterType type, float sampleRate, float freque
     float cosW0 = std::cos(w0);
     float sinW0 = std::sin(w0);
     if (sinW0 <= 0.0f) {
-        this->b0 = 1.0f;
-        this->b1 = 0.0f;
-        this->b2 = 0.0f;
-        this->a1 = 0.0f;
-        this->a2 = 0.0f;
-        return;
+        return result;
     }
     float alpha = sinW0 / (2.0f * q);
     
@@ -64,12 +55,7 @@ void BiquadFilter::setParameters(FilterType type, float sampleRate, float freque
     }
 
     if (std::abs(a0) < 1e-6f) {
-        this->b0 = 1.0f;
-        this->b1 = 0.0f;
-        this->b2 = 0.0f;
-        this->a1 = 0.0f;
-        this->a2 = 0.0f;
-        return;
+        return result;
     }
 
     float normB0 = localB0 / a0;
@@ -80,20 +66,28 @@ void BiquadFilter::setParameters(FilterType type, float sampleRate, float freque
 
     // Jury stability check: poles must lie strictly inside the unit circle
     if (std::abs(normA2) >= 0.999f || std::abs(normA1) >= (1.0f + normA2 - 0.001f)) {
-        this->b0 = 1.0f;
-        this->b1 = 0.0f;
-        this->b2 = 0.0f;
-        this->a1 = 0.0f;
-        this->a2 = 0.0f;
-        reset();
-        return;
+        return result;
     }
 
-    this->b0 = normB0;
-    this->b1 = normB1;
-    this->b2 = normB2;
-    this->a1 = normA1;
-    this->a2 = normA2;
+    result.b0 = normB0;
+    result.b1 = normB1;
+    result.b2 = normB2;
+    result.a1 = normA1;
+    result.a2 = normA2;
+    result.active = true;
+    return result;
+}
+
+void BiquadFilter::setCoefficients(const BiquadCoeffs& coeffs) {
+    this->b0 = coeffs.b0;
+    this->b1 = coeffs.b1;
+    this->b2 = coeffs.b2;
+    this->a1 = coeffs.a1;
+    this->a2 = coeffs.a2;
+}
+
+void BiquadFilter::setParameters(FilterType type, float sampleRate, float frequency, float q, float gainDb) {
+    setCoefficients(computeCoefficients(type, sampleRate, frequency, q, gainDb));
 }
 
 void BiquadFilter::reset() {

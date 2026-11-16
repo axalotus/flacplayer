@@ -20,6 +20,18 @@
 
 static constexpr size_t RESAMPLE_CHUNK_FRAMES = 512;
 
+static size_t mp3ReadCallback(void* buf, size_t size, void* userData) {
+    FILE* f = static_cast<FILE*>(userData);
+    if (!f || !buf || size == 0) return 0;
+    return std::fread(buf, 1, size, f);
+}
+
+static int mp3SeekCallback(uint64_t position, void* userData) {
+    FILE* f = static_cast<FILE*>(userData);
+    if (!f) return -1;
+    return fseeko(f, static_cast<off_t>(position), SEEK_SET);
+}
+
 AudioDecoder::AudioDecoder() {
     mMp3 = new mp3dec_ex_t();
     memset(mMp3, 0, sizeof(mp3dec_ex_t));
@@ -115,19 +127,28 @@ bool AudioDecoder::openFile(const std::string& filePath) {
         return true;
     }
 
-    // Try MP3 last (ID3v2 or raw MPEG)
-    int mp3Flags = MP3D_SEEK_TO_SAMPLE | MP3D_ALLOW_MONO_STEREO_TRANSITION;
-    if (mp3dec_ex_open(mMp3, filePath.c_str(), mp3Flags) == 0 && mMp3->info.hz > 0 && mMp3->info.channels > 0) {
-        mFormat = AudioFormatType::MP3;
-        mSourceSampleRate = static_cast<uint32_t>(mMp3->info.hz);
-        mSourceChannels = static_cast<uint32_t>(mMp3->info.channels);
-        mSourceTotalFrames = mMp3->samples / (mSourceChannels > 0 ? mSourceChannels : 1);
-        configureOutputFormat();
-        LOGD("Opened MP3: %s (SrcSR: %u->%u, SrcCh: %u->%u, Frames: %llu)",
-             filePath.c_str(), mSourceSampleRate, mSampleRate, mSourceChannels, mChannels, (unsigned long long)mTotalFrames);
-        return true;
-    } else {
+    // Try MP3 last (ID3v2 or raw MPEG) via streaming 128KB IO buffer (avoids whole-file mmap failure on 32-bit/large files)
+    FILE* mp3File = std::fopen(filePath.c_str(), "rb");
+    if (mp3File) {
+        mMp3Io.read = mp3ReadCallback;
+        mMp3Io.read_data = mp3File;
+        mMp3Io.seek = mp3SeekCallback;
+        mMp3Io.seek_data = mp3File;
+
+        int mp3Flags = MP3D_SEEK_TO_SAMPLE | MP3D_ALLOW_MONO_STEREO_TRANSITION;
+        if (mp3dec_ex_open_cb(mMp3, &mMp3Io, mp3Flags) == 0 && mMp3->info.hz > 0 && mMp3->info.channels > 0) {
+            mMp3File = mp3File;
+            mFormat = AudioFormatType::MP3;
+            mSourceSampleRate = static_cast<uint32_t>(mMp3->info.hz);
+            mSourceChannels = static_cast<uint32_t>(mMp3->info.channels);
+            mSourceTotalFrames = mMp3->samples / (mSourceChannels > 0 ? mSourceChannels : 1);
+            configureOutputFormat();
+            LOGD("Opened MP3: %s (SrcSR: %u->%u, SrcCh: %u->%u, Frames: %llu)",
+                 filePath.c_str(), mSourceSampleRate, mSampleRate, mSourceChannels, mChannels, (unsigned long long)mTotalFrames);
+            return true;
+        }
         mp3dec_ex_close(mMp3);
+        std::fclose(mp3File);
     }
 
     LOGE("Failed to open file as FLAC, WAV, or MP3: %s", filePath.c_str());
@@ -188,34 +209,35 @@ bool AudioDecoder::openFd(int fd) {
         }
     }
 
-    // 3. Try MP3 last
+    // 3. Try MP3 last via streaming 128KB IO callbacks (avoids whole-file mmap failure on 32-bit/large files)
     int mp3Fd = dup(fd);
     if (mp3Fd >= 0) {
-        struct stat st;
-        if (fstat(mp3Fd, &st) == 0 && st.st_size > 0) {
-            void* mapped = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, mp3Fd, 0);
-            if (mapped != MAP_FAILED) {
-                int mp3Flags = MP3D_SEEK_TO_SAMPLE | MP3D_ALLOW_MONO_STEREO_TRANSITION;
-                if (mp3dec_ex_open_buf(mMp3, (const uint8_t*)mapped, (size_t)st.st_size, mp3Flags) == 0 &&
-                    mMp3->info.hz > 0 && mMp3->info.channels > 0) {
-                    mMp3->file.buffer = (const uint8_t*)mapped;
-                    mMp3->file.size = (size_t)st.st_size;
-                    mMp3->is_file = 1; // triggers munmap in mp3dec_ex_close
-                    mFormat = AudioFormatType::MP3;
-                    mSourceSampleRate = static_cast<uint32_t>(mMp3->info.hz);
-                    mSourceChannels = static_cast<uint32_t>(mMp3->info.channels);
-                    mSourceTotalFrames = mMp3->samples / (mSourceChannels > 0 ? mSourceChannels : 1);
-                    configureOutputFormat();
-                    LOGD("Opened MP3 via FD %d: SrcSR: %u->%u, SrcCh: %u->%u, Frames: %llu",
-                         fd, mSourceSampleRate, mSampleRate, mSourceChannels, mChannels, (unsigned long long)mTotalFrames);
-                    ::close(mp3Fd);
-                    return true;
-                }
-                mp3dec_ex_close(mMp3);
-                munmap(mapped, st.st_size);
+        lseek(mp3Fd, 0, SEEK_SET);
+        FILE* mp3File = fdopen(mp3Fd, "rb");
+        if (mp3File) {
+            mMp3Io.read = mp3ReadCallback;
+            mMp3Io.read_data = mp3File;
+            mMp3Io.seek = mp3SeekCallback;
+            mMp3Io.seek_data = mp3File;
+
+            int mp3Flags = MP3D_SEEK_TO_SAMPLE | MP3D_ALLOW_MONO_STEREO_TRANSITION;
+            if (mp3dec_ex_open_cb(mMp3, &mMp3Io, mp3Flags) == 0 &&
+                mMp3->info.hz > 0 && mMp3->info.channels > 0) {
+                mMp3File = mp3File;
+                mFormat = AudioFormatType::MP3;
+                mSourceSampleRate = static_cast<uint32_t>(mMp3->info.hz);
+                mSourceChannels = static_cast<uint32_t>(mMp3->info.channels);
+                mSourceTotalFrames = mMp3->samples / (mSourceChannels > 0 ? mSourceChannels : 1);
+                configureOutputFormat();
+                LOGD("Opened MP3 via FD %d: SrcSR: %u->%u, SrcCh: %u->%u, Frames: %llu",
+                     fd, mSourceSampleRate, mSampleRate, mSourceChannels, mChannels, (unsigned long long)mTotalFrames);
+                return true;
             }
+            mp3dec_ex_close(mMp3);
+            std::fclose(mp3File);
+        } else {
+            ::close(mp3Fd);
         }
-        ::close(mp3Fd);
     }
 
     LOGE("Failed to open FD %d as FLAC, WAV, or MP3", fd);
@@ -230,6 +252,10 @@ void AudioDecoder::close() {
         drwav_uninit(mWav);
     } else if (mFormat == AudioFormatType::MP3) {
         mp3dec_ex_close(mMp3);
+    }
+    if (mMp3File) {
+        std::fclose(mMp3File);
+        mMp3File = nullptr;
     }
     mFormat = AudioFormatType::UNKNOWN;
     mSourceSampleRate = 0;

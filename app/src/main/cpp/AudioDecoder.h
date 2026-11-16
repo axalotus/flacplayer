@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstdint>
+#include <cstdio>
 #include <vector>
 
 #include "dr_flac.h"
@@ -45,6 +46,8 @@ private:
     
     drflac* mFlac = nullptr;
     mp3dec_ex_t* mMp3 = nullptr;
+    FILE* mMp3File = nullptr;
+    mp3dec_io_t mMp3Io{};
     drwav* mWav = nullptr;
 
     uint32_t mSourceSampleRate = 0;

@@ -9,11 +9,22 @@ enum class FilterType {
     HIGH_SHELF
 };
 
+struct BiquadCoeffs {
+    float b0 = 1.0f;
+    float b1 = 0.0f;
+    float b2 = 0.0f;
+    float a1 = 0.0f;
+    float a2 = 0.0f;
+    bool active = false;
+};
+
 class BiquadFilter {
 public:
     BiquadFilter();
     ~BiquadFilter();
 
+    static BiquadCoeffs computeCoefficients(FilterType type, float sampleRate, float frequency, float q, float gainDb);
+    void setCoefficients(const BiquadCoeffs& coeffs);
     void setParameters(FilterType type, float sampleRate, float frequency, float q, float gainDb);
     float process(float inSample);
     void reset();

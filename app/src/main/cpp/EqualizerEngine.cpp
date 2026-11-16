@@ -24,120 +24,152 @@ EqualizerEngine::EqualizerEngine() {
 EqualizerEngine::~EqualizerEngine() {}
 
 void EqualizerEngine::init(float sampleRate, int channels) {
-    std::lock_guard<std::mutex> lock(mLock);
-    if (sampleRate > 0.0f) mSampleRate = sampleRate;
-    if (channels > 0) mChannels = channels;
-    
-    mFilters.resize(mChannels);
-    for (int ch = 0; ch < mChannels; ++ch) {
-        mFilters[ch].resize(NUM_BANDS);
+    bool formatChanged = false;
+    {
+        std::lock_guard<std::mutex> lock(mConfigLock);
+        if (sampleRate > 0.0f && sampleRate != mSampleRate) {
+            mSampleRate = sampleRate;
+            formatChanged = true;
+        }
+        if (channels > 0 && channels != mChannels) {
+            mChannels = channels;
+            formatChanged = true;
+        }
+        updateFilters();
     }
-    mBassFilters.resize(mChannels);
-    
-    updateFilters();
+    if (formatChanged) {
+        mResetRequested.store(true, std::memory_order_release);
+    }
 }
 
 void EqualizerEngine::setEnabled(bool enabled) {
-    std::lock_guard<std::mutex> lock(mLock);
+    std::lock_guard<std::mutex> lock(mConfigLock);
     mEnabled = enabled;
+    updateFilters();
 }
 
 void EqualizerEngine::setBandGain(int bandIndex, float gainDb) {
     if (bandIndex < 0 || bandIndex >= NUM_BANDS) return;
     
-    std::lock_guard<std::mutex> lock(mLock);
+    std::lock_guard<std::mutex> lock(mConfigLock);
     mBandGains[bandIndex] = gainDb;
     updateFilters();
 }
 
 void EqualizerEngine::setBassBoost(float strength) {
-    std::lock_guard<std::mutex> lock(mLock);
+    std::lock_guard<std::mutex> lock(mConfigLock);
     mBassBoostStrength = strength;
     updateFilters();
 }
 
 void EqualizerEngine::updateFilters() {
     if (mSampleRate <= 0.0f || mChannels <= 0) return;
-    if (mFilters.size() < static_cast<size_t>(mChannels) || mBassFilters.size() < static_cast<size_t>(mChannels)) return;
-    
-    for (int ch = 0; ch < mChannels; ++ch) {
-        if (mFilters[ch].size() < static_cast<size_t>(NUM_BANDS)) continue;
 
-        // Bass boost filter (Low Shelf at 80Hz)
-        // Gain from 0 to +12dB depending on strength (0.0 to 1.0)
-        float bassGainDb = mBassBoostStrength * 12.0f;
-        mBassFilters[ch].setParameters(FilterType::LOW_SHELF, mSampleRate, 80.0f, 0.707f, bassGainDb);
-        
-        // 10-band EQ
-        for (int b = 0; b < NUM_BANDS; ++b) {
-            float freq = BAND_FREQUENCIES[b];
-            float gain = mBandGains[b];
-            
-            FilterType type = FilterType::PEAKING_EQ;
-            if (b == 0) type = FilterType::LOW_SHELF;
-            else if (b == NUM_BANDS - 1) type = FilterType::HIGH_SHELF;
-            
-            mFilters[ch][b].setParameters(type, mSampleRate, freq, 1.414f, gain);
+    EqCoeffsSnapshot nextSnap;
+    nextSnap.enabled = mEnabled;
+    nextSnap.sampleRate = mSampleRate;
+    nextSnap.channels = mChannels;
+    nextSnap.hasActiveFilter = false;
+
+    float bassGainDb = (mBassBoostStrength > 0.01f) ? (mBassBoostStrength * 12.0f) : 0.0f;
+    nextSnap.bassCoeff = BiquadFilter::computeCoefficients(
+        FilterType::LOW_SHELF, mSampleRate, 80.0f, 0.707f, bassGainDb
+    );
+    if (nextSnap.bassCoeff.active) {
+        nextSnap.hasActiveFilter = true;
+    }
+
+    for (int b = 0; b < NUM_BANDS; ++b) {
+        float freq = BAND_FREQUENCIES[b];
+        float gain = mBandGains[b];
+
+        FilterType type = FilterType::PEAKING_EQ;
+        if (b == 0) type = FilterType::LOW_SHELF;
+        else if (b == NUM_BANDS - 1) type = FilterType::HIGH_SHELF;
+
+        nextSnap.bandCoeffs[b] = BiquadFilter::computeCoefficients(
+            type, mSampleRate, freq, 1.414f, gain
+        );
+        if (nextSnap.bandCoeffs[b].active) {
+            nextSnap.hasActiveFilter = true;
         }
+    }
+
+    // Publish precomputed coefficients (~220 bytes copy, no trig math inside lock)
+    {
+        std::lock_guard<std::mutex> snapLock(mSnapshotLock);
+        mPublishedSnapshot = nextSnap;
     }
 }
 
 void EqualizerEngine::processBuffer(float* buffer, int32_t numSamples) {
-    if (!mEnabled || buffer == nullptr || numSamples <= 0 || mChannels <= 0) return;
-    if (mFilters.size() < static_cast<size_t>(mChannels) || mBassFilters.size() < static_cast<size_t>(mChannels)) return;
-    
-    if (!mLock.try_lock()) {
-        return; 
+    if (buffer == nullptr || numSamples <= 0) return;
+
+    EqCoeffsSnapshot snap;
+    {
+        std::lock_guard<std::mutex> snapLock(mSnapshotLock);
+        snap = mPublishedSnapshot;
     }
 
-    bool hasActiveFilter = (mBassBoostStrength > 0.01f);
-    if (!hasActiveFilter) {
-        for (int b = 0; b < NUM_BANDS; ++b) {
-            if (std::abs(mBandGains[b]) > 0.01f && BAND_FREQUENCIES[b] < mSampleRate * 0.45f) {
-                hasActiveFilter = true;
-                break;
-            }
-        }
-    }
-    if (!hasActiveFilter) {
-        mLock.unlock();
-        return;
-    }
-    
-    int frames = numSamples / mChannels;
-    
-    for (int i = 0; i < frames; ++i) {
-        for (int ch = 0; ch < mChannels; ++ch) {
-            int index = i * mChannels + ch;
-            float sample = buffer[index];
-            
-            // Apply Bass Boost first
-            if (mBassBoostStrength > 0.01f) {
-                sample = mBassFilters[ch].process(sample);
-            }
-            
-            // Apply 10-band EQ (only bands strictly below Nyquist)
-            for (int b = 0; b < NUM_BANDS; ++b) {
-                if (std::abs(mBandGains[b]) > 0.01f && BAND_FREQUENCIES[b] < mSampleRate * 0.45f) {
-                    sample = mFilters[ch][b].process(sample);
-                }
-            }
-            
-            buffer[index] = sample;
-        }
-    }
-    
-    mLock.unlock();
-}
+    int channels = snap.channels;
+    if (channels <= 0) return;
 
-void EqualizerEngine::reset() {
-    std::lock_guard<std::mutex> lock(mLock);
-    for (auto& chFilters : mFilters) {
-        for (auto& filter : chFilters) {
+    // Ensure audio-thread filter delay arrays match channel count
+    if (mFilters.size() != static_cast<size_t>(channels) ||
+        mBassFilters.size() != static_cast<size_t>(channels)) {
+        mFilters.resize(channels);
+        for (int ch = 0; ch < channels; ++ch) {
+            mFilters[ch].resize(NUM_BANDS);
+        }
+        mBassFilters.resize(channels);
+    }
+
+    if (mResetRequested.exchange(false, std::memory_order_acq_rel)) {
+        for (auto& chFilters : mFilters) {
+            for (auto& filter : chFilters) {
+                filter.reset();
+            }
+        }
+        for (auto& filter : mBassFilters) {
             filter.reset();
         }
     }
-    for (auto& filter : mBassFilters) {
-        filter.reset();
+
+    if (!snap.enabled || !snap.hasActiveFilter) {
+        return;
     }
+
+    for (int ch = 0; ch < channels; ++ch) {
+        mBassFilters[ch].setCoefficients(snap.bassCoeff);
+        for (int b = 0; b < NUM_BANDS; ++b) {
+            mFilters[ch][b].setCoefficients(snap.bandCoeffs[b]);
+        }
+    }
+
+    int frames = numSamples / channels;
+
+    for (int i = 0; i < frames; ++i) {
+        for (int ch = 0; ch < channels; ++ch) {
+            int index = i * channels + ch;
+            float sample = buffer[index];
+
+            // Apply Bass Boost first
+            if (snap.bassCoeff.active) {
+                sample = mBassFilters[ch].process(sample);
+            }
+
+            // Apply 10-band EQ (only active bands strictly below Nyquist)
+            for (int b = 0; b < NUM_BANDS; ++b) {
+                if (snap.bandCoeffs[b].active) {
+                    sample = mFilters[ch][b].process(sample);
+                }
+            }
+
+            buffer[index] = sample;
+        }
+    }
+}
+
+void EqualizerEngine::reset() {
+    mResetRequested.store(true, std::memory_order_release);
 }
