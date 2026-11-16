@@ -29,11 +29,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -483,38 +488,74 @@ fun LyricsView(
 
                         LazyColumn(
                             state = listState,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    compositingStrategy = CompositingStrategy.Offscreen
+                                }
+                                .drawWithContent {
+                                    drawContent()
+                                    drawRect(
+                                        brush = Brush.verticalGradient(
+                                            0.0f to Color.Transparent,
+                                            0.08f to Color.Black,
+                                            0.92f to Color.Black,
+                                            1.0f to Color.Transparent
+                                        ),
+                                        blendMode = BlendMode.DstIn
+                                    )
+                                },
                             contentPadding = PaddingValues(top = topPadding, bottom = bottomPadding),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             itemsIndexed(lines, key = { idx, line -> "line_${idx}_${line.timestampMs}" }) { index, line ->
                                 val isActive = index == activeIndex
 
-                                // Distance to active line (used for progressive opacity)
+                                // Distance to active line (used for progressive blur, scale, and opacity)
                                 val distance = if (isAutoScrollActive && activeIndex >= 0) {
                                     abs(index - activeIndex)
                                 } else {
                                     0
                                 }
 
+                                val targetBlur = when {
+                                    !isAutoScrollActive -> 0.dp
+                                    distance == 0 -> 0.dp
+                                    distance == 1 -> 1.8.dp
+                                    distance == 2 -> 3.8.dp
+                                    distance == 3 -> 6.0.dp
+                                    else -> (6.0f + (distance - 3) * 1.6f).coerceAtMost(10.5f).dp
+                                }
+
                                 val targetAlpha = when {
-                                    !isAutoScrollActive -> if (isActive) 1.0f else 0.72f
+                                    !isAutoScrollActive -> if (isActive) 1.0f else 0.75f
                                     distance == 0 -> 1.0f
-                                    distance == 1 -> 0.45f
-                                    distance == 2 -> 0.28f
-                                    else -> 0.15f
+                                    distance == 1 -> 0.62f
+                                    distance == 2 -> 0.42f
+                                    distance == 3 -> 0.28f
+                                    else -> (0.28f - (distance - 3) * 0.05f).coerceAtLeast(0.12f)
                                 }
 
                                 val targetScale = when {
-                                    !isAutoScrollActive -> 1.0f
-                                    distance == 0 -> 1.03f
-                                    else -> 1.0f
+                                    !isAutoScrollActive -> if (isActive) 1.02f else 1.0f
+                                    distance == 0 -> 1.04f
+                                    distance == 1 -> 0.98f
+                                    distance == 2 -> 0.95f
+                                    else -> 0.92f
                                 }
 
                                 val colorAnim by animateColorAsState(
-                                    targetValue = if (isActive) Color.White else Color.White.copy(alpha = 0.75f),
+                                    targetValue = if (isActive) Color.White else Color.White.copy(alpha = 0.85f),
                                     animationSpec = tween(durationMillis = 260),
                                     label = "lyricColor"
+                                )
+                                val blurAnim by animateDpAsState(
+                                    targetValue = targetBlur,
+                                    animationSpec = tween(
+                                        durationMillis = 350,
+                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                    ),
+                                    label = "lyricBlur"
                                 )
                                 val scaleAnimState = animateFloatAsState(
                                     targetValue = targetScale,
@@ -543,6 +584,16 @@ fun LyricsView(
                                             alpha = alphaAnimState.value
                                             transformOrigin = TransformOrigin(0f, 0.5f)
                                         }
+                                        .then(
+                                            if (blurAnim > 0.1.dp) {
+                                                Modifier.blur(
+                                                    radius = blurAnim,
+                                                    edgeTreatment = BlurredEdgeTreatment.Unbounded
+                                                )
+                                            } else {
+                                                Modifier
+                                            }
+                                        )
                                         .clickable {
                                             userInteracting = false
                                             onSeekTo(line.timestampMs)
@@ -555,7 +606,7 @@ fun LyricsView(
                                     Text(
                                         text = line.text,
                                         fontSize = if (isActive) 18.sp else 16.sp,
-                                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
                                         color = colorAnim,
                                         textAlign = TextAlign.Start,
                                         lineHeight = if (isActive) 24.sp else 22.sp
