@@ -48,7 +48,7 @@ jobs:
           name: android-apks
           path: artifacts/*.apk
 
-  build-desktop:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -65,26 +65,58 @@ jobs:
         working-directory: desktop
         run: npm ci
 
-      - name: Build Windows Portable & Linux Packages (.deb, AppImage, tar.gz)
+      - name: Build Linux Packages (.deb, AppImage, tar.gz)
         working-directory: desktop
-        run: ./node_modules/.bin/electron-builder --win portable --linux AppImage deb tar.gz
+        run: ./node_modules/.bin/electron-builder --linux AppImage deb tar.gz
 
-      - name: Collect Desktop Artifacts
+      - name: Collect Linux Artifacts
         run: |
-          mkdir -p desktop-artifacts
-          cp desktop/dist/*.exe desktop-artifacts/
-          cp desktop/dist/*.deb desktop-artifacts/
-          cp desktop/dist/*.AppImage desktop-artifacts/
-          cp desktop/dist/*.tar.gz desktop-artifacts/
+          mkdir -p linux-artifacts
+          cp desktop/dist/*.deb linux-artifacts/
+          cp desktop/dist/*.AppImage linux-artifacts/
+          cp desktop/dist/*.tar.gz linux-artifacts/
 
-      - name: Upload Desktop Artifacts
+      - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-builds
-          path: desktop-artifacts/*
+          name: linux-builds
+          path: linux-artifacts/*
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install Desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build Windows Portable & Setup Installer (.exe)
+        working-directory: desktop
+        run: npx electron-builder --win portable nsis
+
+      - name: Collect Windows Artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path windows-artifacts | Out-Null
+          Copy-Item desktop/dist/*.exe windows-artifacts/
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-builds
+          path: windows-artifacts/*
 
   publish-release:
-    needs: [build-android, build-desktop]
+    needs: [build-android, build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Download Android APKs
@@ -93,10 +125,16 @@ jobs:
           name: android-apks
           path: release-files
 
-      - name: Download Desktop Builds
+      - name: Download Linux Builds
         uses: actions/download-artifact@v4
         with:
-          name: desktop-builds
+          name: linux-builds
+          path: release-files
+
+      - name: Download Windows Builds
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-builds
           path: release-files
 
       - name: Create GitHub Release and Upload All Assets

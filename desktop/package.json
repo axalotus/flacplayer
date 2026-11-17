@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dist:linux": "electron-builder --linux AppImage deb tar.gz",
-    "dist:win": "electron-builder --win portable"
+    "dist:win": "electron-builder --win portable nsis"
   },
   "build": {
     "appId": "com.antigravity.flacplayer.desktop",
@@ -36,12 +36,22 @@
     },
     "win": {
       "target": [
-        "portable"
+        "portable",
+        "nsis"
       ],
       "icon": "assets/icon.png"
     },
     "portable": {
       "artifactName": "FlacPlayer-${version}-Windows-x64-Portable.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FlacPlayer",
+      "artifactName": "FlacPlayer-${version}-Windows-x64-Setup.exe"
     }
   },
   "dependencies": {
