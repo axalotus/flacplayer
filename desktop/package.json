@@ -2,7 +2,7 @@
   "name": "zuna-desktop",
   "version": "1.1.0",
   "description": "Zuna — Monochrome Hi-Res Lossless Audio Player",
-  "homepage": "https://github.com/axalotus/zuna-player",
+  "homepage": "https://github.com/debilxxx/Zuna-player",
   "main": "main.js",
   "author": "Antigravity AI",
   "license": "MIT",
@@ -37,7 +37,7 @@
       ],
       "icon": "assets/icon.png",
       "category": "AudioVideo;Audio;Player",
-      "maintainer": "Zuna <axalotus@github.com>",
+      "maintainer": "Zuna <debilxxx@github.com>",
       "artifactName": "Zuna-${version}-Linux-${arch}.${ext}"
     },
     "win": {

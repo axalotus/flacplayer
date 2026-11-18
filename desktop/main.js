@@ -647,7 +647,7 @@ function fetchJsonHttps(url) {
       url,
       {
         headers: {
-          "User-Agent": "Zuna-Desktop/1.1.0 (https://github.com/axalotus/zuna-player)",
+          "User-Agent": "Zuna-Desktop/1.1.0 (https://github.com/debilxxx/Zuna-player)",
           Accept: "application/json",
         },
         timeout: 7000,
@@ -683,7 +683,7 @@ function fetchBinaryHttps(url, redirectsLeft = 3) {
       url,
       {
         headers: {
-          "User-Agent": "Zuna-Desktop/1.1.0 (https://github.com/axalotus/zuna-player)",
+          "User-Agent": "Zuna-Desktop/1.1.0 (https://github.com/debilxxx/Zuna-player)",
         },
         timeout: 7000,
       },

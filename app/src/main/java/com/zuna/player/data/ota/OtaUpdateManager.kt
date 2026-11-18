@@ -57,7 +57,7 @@ object OtaUpdateManager {
         val token = prefs.otaGithubToken.value.trim()
 
         if (repo.isBlank() || !repo.contains("/")) {
-            val err = OtaStatus.Error("Укажите репозиторий в формате владелец/название (например, axalotus/zuna-player)")
+            val err = OtaStatus.Error("Укажите репозиторий в формате владелец/название (например, debilxxx/Zuna-player)")
             _status.value = err
             return@withContext err
         }

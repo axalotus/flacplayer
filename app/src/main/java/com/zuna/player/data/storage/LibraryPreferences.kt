@@ -448,10 +448,12 @@ class LibraryPreferences private constructor(private val context: Context) {
 
     // OTA Update Settings
     private val _otaGithubRepo = MutableStateFlow(
-        (prefs.getString("ota_github_repo", "axalotus/zuna-player") ?: "axalotus/zuna-player").let { saved ->
-            if (saved == "axalotus/flacplayer") {
-                prefs.edit().putString("ota_github_repo", "axalotus/zuna-player").apply()
-                "axalotus/zuna-player"
+        (prefs.getString("ota_github_repo", "debilxxx/Zuna-player") ?: "debilxxx/Zuna-player").let { saved ->
+            if (saved.equals("axalotus/flacplayer", ignoreCase = true) ||
+                saved.equals("axalotus/zuna-player", ignoreCase = true)
+            ) {
+                prefs.edit().putString("ota_github_repo", "debilxxx/Zuna-player").apply()
+                "debilxxx/Zuna-player"
             } else saved
         }
     )

@@ -321,7 +321,7 @@ object LrclibLyricsProvider {
             connection.connectTimeout = 5_000
             connection.readTimeout = 6_000
             connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "Zuna/1.1.0 (Android; +https://github.com/axalotus/zuna-player)")
+            connection.setRequestProperty("User-Agent", "Zuna/1.1.0 (Android; +https://github.com/debilxxx/Zuna-player)")
             connection.setRequestProperty("Accept", "application/json")
 
             val code = connection.responseCode
