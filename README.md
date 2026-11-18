@@ -4,6 +4,18 @@
 
 Готовые сборки (`.apk`, `.exe`, `AppImage` / `.deb`): [Releases](https://github.com/axalotus/zuna-player/releases)
 
+## Скриншоты
+
+### Desktop
+| Обзор и текст | Полноэкранный плеер |
+| :---: | :---: |
+| ![Zuna Desktop Home](docs/screenshots/desktop-home.png) | ![Zuna Desktop Player](docs/screenshots/desktop-player.png) |
+
+### Android
+| Обзор | Плеер | Текст и задержка |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/android-home.jpg" width="260" /> | <img src="docs/screenshots/android-player.jpg" width="260" /> | <img src="docs/screenshots/android-lyrics.jpg" width="260" /> |
+
 ## Аудиотракт и форматы
 
 ### Android (`app/`)
