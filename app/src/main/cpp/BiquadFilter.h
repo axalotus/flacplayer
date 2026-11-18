@@ -10,11 +10,11 @@ enum class FilterType {
 };
 
 struct BiquadCoeffs {
-    float b0 = 1.0f;
-    float b1 = 0.0f;
-    float b2 = 0.0f;
-    float a1 = 0.0f;
-    float a2 = 0.0f;
+    double b0 = 1.0;
+    double b1 = 0.0;
+    double b2 = 0.0;
+    double a1 = 0.0;
+    double a2 = 0.0;
     bool active = false;
 };
 
@@ -30,8 +30,8 @@ public:
     void reset();
 
 private:
-    float b0, b1, b2, a1, a2;
-    float x1, x2, y1, y2;
+    double b0, b1, b2, a1, a2;
+    double x1, x2, y1, y2;
 };
 
 #endif //AUDIOPLAYER_BIQUADFILTER_H

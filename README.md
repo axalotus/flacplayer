@@ -1,53 +1,55 @@
-# FlacPlayer — Hi-Res Lossless Audio Player (Android & Desktop)
+# Zuna — Hi-Res Lossless Audio Player (Android & Desktop)
 
-![Version](https://img.shields.io/badge/Version-v1.0-00B4D8?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v1.1-00B4D8?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platforms-Android%20%7C%20Linux%20%7C%20Windows-06D6A0?style=for-the-badge)
-![Engine](https://img.shields.io/badge/Audio-C%2B%2B17%20Oboe%20%7C%20Electron%20WebAudio-FFB703?style=for-the-badge)
+![Engine](https://img.shields.io/badge/Audio-C%2B%2B17%20Oboe%20%7C%20miniaudio-FFB703?style=for-the-badge)
 ![100% AI Generated](https://img.shields.io/badge/100%25%20AI%20Written-Google%20Antigravity-9B5DE5?style=for-the-badge)
 
-**FlacPlayer** — аудиофильский монорепозиторий, объединяющий мобильный клиент для **Android** (собственный C++17 / NDK DSP-движок на базе Google Oboe + Jetpack Compose) и десктопный клиент для **Linux / Windows** (`desktop/` на базе Electron + bit-transparent WebAudio-тракт с настраиваемым интерфейсом и `.flactheme` темами).
+**Zuna** (`zuna-player`) — монохромный аудиофильский монорепозиторий, объединяющий мобильный клиент для **Android** (собственный C++17 / NDK DSP-движок на базе Google Oboe + Jetpack Compose) и десктопный клиент для **Linux / Windows** (`desktop/` на базе Electron + нативного C++17 аддона на `miniaudio` / FFmpeg).
 
 > **Дисклеймер: 100% AI-Generated Code**  
-> **Абсолютно весь код в этом репозитории написан нейросетью (Google Antigravity AI)** под руководством человека-архитектора в диалоговом режиме: нативный C++17 аудиодвижок, кольцевой буфер `RingBuffer`, 10-полосный каскадный биквадратный эквалайзер, ресемплер, парсеры заголовков FLAC/WAV/MP3, синхронизированная система караоке-лирики, OTA-апдейтер, интерфейс на Jetpack Compose и весь десктоп-клиент на Electron.
+> Весь код в этом репозитории написан нейросетью **Google Antigravity AI** под руководством человека-архитектора в диалоговом режиме: нативные C++17 аудиодвижки, кольцевые буферы `RingBuffer`, 10-полосные каскадные биквадратные эквалайзеры, декодеры форматов, синхронизированная караоке-лирика, OTA-апдейтер, система тем `.zunatheme`, интерфейс на Jetpack Compose и весь десктоп-клиент на Electron.
 
 ---
 
-## FlacPlayer Desktop (`desktop/`) — Linux & Windows
+## Zuna Desktop (`desktop/`) — Linux & Windows
 
-Кроссплатформенный десктопный клиент на Electron с GPU-ускоренным интерфейсом, гибкой кастомизацией и чистым аудиовыводом.
+Кроссплатформенный десктопный клиент на Electron с GPU-ускоренным интерфейсом, нативным C++17 аудиотрактом и гибкой кастомизацией.
 
 ### Возможности Desktop-версии:
-- **Bit-Transparent аудио-тракт и 10-полосный EQ:** при выключенном или плоском эквалайзере поток идёт напрямую (`sourceNode -> envelopeNode`) без фазовых искажений биквадратных фильтров; при включении активируются `Preamp`, `Sub-Bass 80 Hz` и 10 полос с кривой АЧХ в реальном времени. Поддерживаются выбор устройства вывода (ЦАП), Crossfade и ReplayGain.
-- **Синхронизированные тексты песен (`.lrc` / теги / LRCLIB):**
-  - Автоопределение кодировок UTF-8 / UTF-16 / Windows-1251 для локальных `.lrc`/`.txt`.
-  - Плавный `requestAnimationFrame` скролл с дистанционным блюром строк.
-  - Индивидуальная задержка текста (`-0.5s` / `-0.1s` / `+0.1s` / `+0.5s`) с сохранением отдельно для каждого трека.
-- **Система тем и экспорт в `.flactheme`:**
-  - Полная настройка акцентного цвета, цвета/яркости/прозрачности/блюра панелей, скруглений, рамок, шрифта и стиля визуализатора.
-  - Раздельные фоны для главного окна и полноэкранного плеера (чёрный, размытая обложка или собственное фото/GIF/видео) с отдельными режимами Ч/Б или цветного оригинала, размытия и затемнения.
-  - Упаковка всей темы вместе с прикреплёнными фонами в один ZIP-файл **`.flactheme`** (экспорт, импорт кнопкой и drag-and-drop файла прямо в окно плеера).
-- **Быстрый интерфейс и системная интеграция:**
-  - Кэшируемые `220px` миниатюры обложек и изоляция GPU-слоёв для плавного скролла больших коллекций.
-  - Компактная левая панель-рейл, сворачиваемая/масштабируемая правая панель (Текст / Очередь), выезжающий полноэкранный плеер и интеграция MPRIS / MediaSession (`MediaMetadata` + обложка + управление с клавиатуры и системных виджетов).
+- **Нативный C++17 движок (`miniaudio` + FFmpeg) и WebAudio fallback:**
+  - Поддержка **FLAC, WAV, MP3, ALAC, AAC/M4A, Ogg Vorbis, Opus, AIFF/AIFC**.
+  - **Эксклюзивный захват ЦАП:** `ALSA Direct Exclusive` (с временной приостановкой PipeWire-sink и аппаратным регулятором громкости) на Linux и `WASAPI Exclusive / Shared` на Windows, без программного ресемплинга.
+  - **Bit-Transparent тракт и 10-полосный EQ:** при выключенном или плоском эквалайзере звук идёт в обход IIR-фильтров; при включении работают `Preamp`, `Sub-Bass 80 Hz`, 10 полос с живым графиком АЧХ, а также `Gapless`, `Crossfade` и `ReplayGain`.
+- **Полный стоп и системная интеграция:**
+  - Кнопка полного стопа на мини-плеере и полноэкранной сцене: останавливает поток ЦАП, сбрасывает позицию на `0:00` и выставляет `Stopped` в медиаконтролах.
+  - Нативный **MPRIS2 D-Bus сервис** на Linux (`org.mpris.MediaPlayer2.zuna`) для Noctalia/KDE/GNOME (обложка, метаданные, прогресс, перемотка, Play/Pause/Stop/Next/Prev, Loop/Shuffle, громкость).
+- **Энергосбережение без влияния на звук:**
+  - Режимы **Standard**, **Balanced**, **Автоматически при низком заряде (≤ 20%)** и **Battery Saver** + ручные переключатели («Снижение нагрузки»): отключение тяжёлого blur, уменьшение анимаций, статичный фон вместо видео, отключение визуализатора, ограничение частоты обновления UI и миниатюры обложек.
+  - Автоматическая пауза фонового видео при переходе в полноэкранный режим или скрытии окна.
+- **Тексты песен и темы `.zunatheme` / `.flactheme`:**
+  - Автоопределение кодировок UTF-8 / UTF-16 / Windows-1251 для `.lrc`/`.txt`, поиск в тегах и **LRCLIB**, послоговый караоке-рендеринг и индивидуальный сдвиг тайминга по каждому треку.
+  - Экспорт/импорт тем вместе с прикреплёнными фонами в ZIP-пакет **`.zunatheme`** (поддерживается импорт старых **`.flactheme`**).
 
 ### Запуск и сборка Desktop:
 ```bash
 cd desktop
-npm install
+npm install            # Установит зависимости и соберёт zuna_native.node через node-gyp
 npm start              # Запуск в режиме разработки
-npm run dist:linux     # Сборка AppImage для Linux
-npm run dist:win       # Сборка portable / NSIS инсталлятора для Windows
+npm run dist:linux     # Сборка AppImage / deb / tar.gz для Linux
+npm run dist:win       # Сборка Portable / NSIS Setup для Windows (запускать на Windows)
 ```
 
 ---
 
-## FlacPlayer Mobile (`app/`) — Android
+## Zuna Mobile (`app/`) — Android
 
 ### Ключевые возможности Android-версии:
-- **Нативный C++17 / NDK Аудиодвижок (Google Oboe):** вывод через `AAudio` (`LowLatency`) / `OpenSL ES` / `Hi-Res Direct`, прямое декодирование `dr_flac` (вплоть до 32-bit / 192 kHz), `dr_wav`, `minimp3_ex`, событийный `RingBuffer`, Gapless, Crossfade и ReplayGain.
-- **10-полосный параметрический Biquad Эквалайзер + Bass Boost 80 Hz** с проверкой устойчивости полюсов и lock-free снимками коэффициентов.
-- **Синхронизированные тексты песен** (SYLT / USLT / FLAC LYRICS / локальные `.lrc` / LRCLIB API) с караоке-режимом и прогрессивным блюром.
-- **Встроенный OTA-апдейтер** через GitHub Releases API.
+- **Нативный C++17 / NDK Аудиодвижок (Google Oboe):** вывод через `AAudio` (`LowLatency`) / `OpenSL ES` / `Hi-Res Direct` для **FLAC, WAV, MP3, ALAC, AAC/M4A, Ogg Vorbis, Opus, AIFF**, событийный `RingBuffer`, `Gapless`, `Crossfade`, `ReplayGain` и кнопка полного стопа (`STATE_STOPPED`, освобождение аудиопотока и сброс на `0:00`).
+- **10-полосный параметрический Biquad Эквалайзер + Bass Boost 80 Hz** с контролем устойчивости полюсов и lock-free снимками коэффициентов.
+- **Энергосбережение (Android):** интеграция с системным `PowerManager.isPowerSaveMode` и уровнем батареи `≤ 20%`, профили `Standard` / `Balanced` / `Авто` / `Battery Saver` и ручные переключатели без какого-либо вмешательства в аудиотракт.
+- **Синхронизированные тексты и темы:** SYLT / USLT / FLAC LYRICS / `.lrc` / LRCLIB API с караоке-подсветкой, а также совместимость тем `.zunatheme` / `.flactheme` с Desktop.
+- **Встроенный OTA-апдейтер** через GitHub Releases API (`axalotus/zuna-player`).
 
 ### Сборка релизного APK:
 ```bash
@@ -60,17 +62,19 @@ npm run dist:win       # Сборка portable / NSIS инсталлятора �
 ## Архитектура репозитория
 
 ```text
-flacplayer/
-├── desktop/                         # Десктоп-клиент (Linux & Windows, Electron)
-│   ├── main.js                      # Главный процесс, сканер медиатеки, кэш превью, .flactheme ZIP, LRCLIB
+zuna-player/
+├── desktop/                         # Десктоп-клиент (Linux & Windows, Electron + C++17)
+│   ├── main.js                      # Главный процесс, сканер, кэш обложек, .zunatheme ZIP, LRCLIB
 │   ├── preload.js                   # ContextBridge IPC API
+│   ├── binding.gyp                  # Сборка нативного N-API аддона zuna_native.node
+│   ├── native/                      # C++17 движок (miniaudio, FFmpeg, ALAC, EQ, Linux MPRIS2)
 │   ├── package.json                 # Конфигурация Electron и electron-builder
 │   ├── assets/                      # Иконка приложения
-│   └── renderer/                    # WebAudio DSP-тракт, интерфейс, темизация, визуализатор
+│   └── renderer/                    # Интерфейс, WebAudio fallback, темизация, визуализатор
 └── app/src/main/
     ├── cpp/                         # Нативный C++17 аудиодвижок (NDK + CMake + Oboe)
-    └── java/com/antigravity/audioplayer/
-        ├── audio/                   # NativeAudioEngine, DacDetector, EqualizerController
+    └── java/com/zuna/player/
+        ├── audio/                   # NativeAudioEngine, DacDetector, EqualizerController, Notification
         ├── data/                    # AudioRepository, LyricsRepository, LRCLIB, OTA, Preferences
         ├── service/                 # AudioPlayerService & Foreground MusicPlaybackService
         └── ui/                      # Экраны и компоненты на Jetpack Compose
@@ -79,4 +83,4 @@ flacplayer/
 ---
 
 ## Лицензия
-Проект распространяется свободно в образовательных и энтузиастских целях. Сторонние декодеры (`dr_flac`, `dr_wav`, `minimp3`) и `Google Oboe` распространяются под своими оригинальными лицензиями (Public Domain / Unlicense / Apache 2.0).
+Проект распространяется свободно в образовательных и энтузиастских целях. Сторонние декодеры (`miniaudio`, `dr_flac`, `dr_wav`, `minimp3`, `FFmpeg`) и `Google Oboe` распространяются под своими оригинальными лицензиями.

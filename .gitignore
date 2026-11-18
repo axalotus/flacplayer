@@ -18,5 +18,6 @@ logcat*.txt
 crash*.txt
 backtrace.txt
 desktop/node_modules/
+desktop/build/
 desktop/dist/
 desktop/*.log

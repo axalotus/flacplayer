@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlacPlayer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <title>Zuna</title>
+  <link rel="stylesheet" href="fonts/fonts.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="font-jakarta">
@@ -22,8 +20,8 @@
       <!-- LEFT SIDEBAR (TOGGLES TO 68PX ICON RAIL MODE ON LOGO CLICK OR NARROW WINDOW) -->
       <aside id="left-sidebar" class="sidebar">
         <div id="brand-toggle" class="brand" title="Нажмите для переключения компактного режима">
-          <img src="../assets/icon.png" class="brand-logo-img" alt="FlacPlayer" />
-          <span class="brand-name nav-text">FlacPlayer</span>
+          <img src="../assets/icon.png" class="brand-logo-img" alt="Zuna" />
+          <span class="brand-name nav-text">Zuna</span>
           <svg class="collapse-chevron nav-text" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
@@ -125,6 +123,11 @@
       <main class="workspace">
         <header class="topbar">
           <div class="topbar-left">
+            <button id="btn-nav-back" class="icon-square-btn top-back-btn hidden" title="Назад">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
             <div class="search-field">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -136,6 +139,20 @@
           </div>
 
           <div class="topbar-right">
+            <button id="btn-topbar-rescan" class="mono-btn" title="Пересканировать медиатеку">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span class="top-btn-label">Обновить</span>
+            </button>
+            <button id="btn-sleep-timer" class="mono-btn" title="Таймер сна">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+              <span id="sleep-timer-badge" class="top-btn-label">Сон</span>
+            </button>
             <button id="btn-toggle-dock" class="mono-btn" title="Показать / скрыть боковую панель">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9">
                 <rect x="3" y="3" width="18" height="18" rx="2"></rect>
@@ -168,7 +185,7 @@
             <img id="dock-cover-fallback" src="../assets/icon.png" class="dock-fallback-logo" alt="" />
           </div>
           <div class="dock-np-meta">
-            <div id="dock-np-title" class="dock-np-title">FlacPlayer</div>
+            <div id="dock-np-title" class="dock-np-title">Zuna</div>
             <div id="dock-np-artist" class="dock-np-artist">Выберите трек</div>
             <div id="dock-np-specs" class="dock-np-specs hidden"></div>
           </div>
@@ -204,9 +221,14 @@
           <div id="lyrics-container" class="lyrics-container">
             <div class="empty-note">Запустите трек для синхронизации текста</div>
           </div>
+          <button id="btn-dock-lyrics-resume" class="mono-btn tiny lyrics-resume-btn hidden" title="Вернуться к текущей строке">К текущей строке</button>
         </div>
 
         <div id="dock-queue-pane" class="dock-pane hidden">
+          <div class="queue-toolbar">
+            <span id="queue-count-label" class="lyrics-status-tag">ОЧЕРЕДЬ: 0</span>
+            <button id="btn-clear-queue" class="mono-btn tiny" title="Очистить очередь">Очистить</button>
+          </div>
           <div id="queue-container" class="queue-container"></div>
         </div>
       </aside>
@@ -253,6 +275,11 @@
           <button id="btn-play-pause" class="play-circle-btn" title="Старт / Пауза (Space)">
             <svg id="svg-play-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
               <polygon points="6 4 20 12 6 20 6 4"></polygon>
+            </svg>
+          </button>
+          <button id="btn-stop" class="transport-icon-btn" title="Полный стоп">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+              <rect x="5" y="5" width="14" height="14" rx="2.5"></rect>
             </svg>
           </button>
           <button id="btn-next" class="transport-icon-btn" title="Следующий трек">
@@ -303,7 +330,7 @@
 
     <div class="fs-header">
       <!-- Top-left: ONLY the clean logo, no text or frame! -->
-      <img src="../assets/icon.png" class="fs-clean-logo" alt="FlacPlayer" />
+      <img src="../assets/icon.png" class="fs-clean-logo" alt="Zuna" />
 
       <!-- Top-right: Clean Downward Arrow Button that glides down with the drawer -->
       <button id="btn-close-fs" class="fs-chevron-btn" title="Свернуть в мини-плеер (Esc)">
@@ -323,6 +350,7 @@
           <div id="fs-title" class="fs-title">Нет активного трека</div>
           <div id="fs-artist" class="fs-artist">—</div>
           <div id="fs-album" class="fs-album"></div>
+          <div id="fs-quality-tag" class="format-tag hidden" style="margin-top:8px;"></div>
         </div>
       </div>
 
@@ -338,6 +366,7 @@
           </div>
         </div>
         <div id="fs-lyrics-container" class="lyrics-container fs-mode"></div>
+        <button id="btn-fs-lyrics-resume" class="mono-btn lyrics-resume-btn fs hidden" title="Вернуться к текущей строке">К текущей строке</button>
       </div>
     </div>
 
@@ -353,6 +382,24 @@
           <button id="btn-fs-fav" class="transport-icon-btn" title="Избранное">
             <svg id="svg-fs-fav" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
+          <button id="btn-fs-playlist" class="transport-icon-btn" title="Добавить в плейлист">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+          <button id="btn-fs-sleep" class="transport-icon-btn" title="Таймер сна">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          <button id="btn-fs-info" class="transport-icon-btn" title="Свойства трека">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
           </button>
         </div>
@@ -377,6 +424,11 @@
           <button id="btn-fs-play" class="play-circle-btn large">
             <svg id="svg-fs-play-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
               <polygon points="6 4 20 12 6 20 6 4"></polygon>
+            </svg>
+          </button>
+          <button id="btn-fs-stop" class="transport-icon-btn" title="Полный стоп">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
+              <rect x="5" y="5" width="14" height="14" rx="2.5"></rect>
             </svg>
           </button>
           <button id="btn-fs-next" class="transport-icon-btn">
@@ -410,6 +462,9 @@
   <!-- FLOATING PLAYLIST PICKER POPOVER MENU -->
   <div id="playlist-popover" class="playlist-popover hidden"></div>
 
+  <!-- TRACK CONTEXT ACTION POPOVER -->
+  <div id="track-menu-popover" class="playlist-popover hidden"></div>
+
   <!-- MODAL FOR NEW PLAYLIST -->
   <div id="playlist-modal" class="modal-mask hidden">
     <div class="modal-box">
@@ -421,6 +476,52 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL FOR SLEEP TIMER -->
+  <div id="sleep-modal" class="modal-mask hidden">
+    <div class="modal-box">
+      <div class="modal-title">Таймер сна</div>
+      <div id="sleep-status-text" class="view-subtitle">Таймер отключён</div>
+      <div class="sleep-presets-grid">
+        <button class="mono-btn sleep-min-btn" data-sleep-min="15">15 мин</button>
+        <button class="mono-btn sleep-min-btn" data-sleep-min="30">30 мин</button>
+        <button class="mono-btn sleep-min-btn" data-sleep-min="45">45 мин</button>
+        <button class="mono-btn sleep-min-btn" data-sleep-min="60">60 мин</button>
+        <button class="mono-btn sleep-min-btn" data-sleep-min="90">90 мин</button>
+        <button id="btn-sleep-end-track" class="mono-btn">До конца трека</button>
+      </div>
+      <div class="modal-btns">
+        <button id="btn-sleep-off" class="mono-btn">Выключить</button>
+        <button id="btn-close-sleep" class="mono-btn solid">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FOR TRACK INFO -->
+  <div id="track-info-modal" class="modal-mask hidden">
+    <div class="modal-box" style="width:420px;max-width:92vw;">
+      <div class="modal-title">Свойства аудиофайла</div>
+      <div id="track-info-body" class="info-kv-list"></div>
+      <div class="modal-btns">
+        <button id="btn-close-track-info" class="mono-btn solid">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FOR EXPORT THEME NAME -->
+  <div id="export-theme-modal" class="modal-mask hidden">
+    <div class="modal-box">
+      <div class="modal-title">Экспорт темы (.zunatheme)</div>
+      <input id="export-theme-name" type="text" placeholder="Название темы..." value="ZunaTheme" class="mono-input" />
+      <div class="modal-btns">
+        <button id="btn-cancel-export-theme" class="mono-btn">Отмена</button>
+        <button id="btn-confirm-export-theme" class="mono-btn solid">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-banner" class="toast-bar hidden"></div>
 
   <script src="app.js"></script>
 </body>

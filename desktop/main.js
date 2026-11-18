@@ -1,24 +1,52 @@
-const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, globalShortcut, nativeImage } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, globalShortcut, nativeImage } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
 const https = require("https");
 const zlib = require("zlib");
+const { pathToFileURL } = require("url");
 
 app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
-let mainWindow = null;
-let tray = null;
-let isQuitting = false;
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
 
-const AUDIO_EXTENSIONS = new Set([".flac", ".wav", ".mp3", ".ogg", ".m4a", ".aac"]);
+let mainWindow = null;
+
+const AUDIO_EXTENSIONS = new Set([
+  ".flac",
+  ".wav",
+  ".mp3",
+  ".ogg",
+  ".oga",
+  ".opus",
+  ".m4a",
+  ".mp4",
+  ".aac",
+  ".alac",
+  ".aiff",
+  ".aif",
+  ".aifc",
+  ".caf",
+]);
 const lyricsMemoryCache = new Map();
 
 function getUserDataDir() {
-  const dir = path.join(app.getPath("userData"), "flacplayer-state");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const userDataRoot = app.getPath("userData");
+  const dir = path.join(userDataRoot, "zuna-state");
+  const legacyDir = path.join(userDataRoot, "flacplayer-state");
+  if (!fs.existsSync(dir)) {
+    if (fs.existsSync(legacyDir)) {
+      try {
+        fs.cpSync(legacyDir, dir, { recursive: true });
+      } catch (_) {}
+    }
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  }
   return dir;
 }
 
@@ -36,6 +64,12 @@ function getThumbsCacheDir() {
 
 function getThemesAssetsDir() {
   const dir = path.join(getUserDataDir(), "themes-assets");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function getOnlineCoversCacheDir() {
+  const dir = path.join(getUserDataDir(), "online-covers");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -72,6 +106,11 @@ const DEFAULT_STATE = {
   recentlyPlayedIds: [],
   lyricsOffsets: {},
   playlists: [],
+  lastPlayback: {
+    trackId: null,
+    positionSec: 0,
+    queueIds: [],
+  },
   eqConfig: {
     enabled: false,
     preampDb: 0,
@@ -83,7 +122,6 @@ const DEFAULT_STATE = {
     crossfadeSeconds: 0,
     replayGainEnabled: false,
     gaplessEnabled: true,
-    closeToTray: true,
     compactMode: false,
     showTrackNumbers: true,
     showQualityBadges: false,
@@ -102,22 +140,63 @@ const DEFAULT_STATE = {
     lyricsBlurIntensity: 100,
     appBgMode: "none", // "none" | "cover" | "custom"
     appBgColorMode: "mono", // "mono" | "color"
+    appBgSolidColor: "#000000",
     appBgCustomPath: "",
     appBgIsVideo: false,
     appBgBlurPx: 48,
     appBgDimPercent: 68,
     fsBgMode: "cover", // "none" | "cover" | "custom"
     fsBgColorMode: "mono", // "mono" | "color"
+    fsBgSolidColor: "#000000",
     fsBgCustomPath: "",
     fsBgIsVideo: false,
     fsBgBlurPx: 52,
     fsBgDimPercent: 64,
     volume: 0.85,
     outputDeviceId: "default",
+    exclusiveMode: false,
+    onlineLyricsEnabled: true,
+    onlineCoversEnabled: true,
+    hiddenTrackIds: [],
+    hideDuplicates: false,
+    forceVisibleDuplicateIds: [],
     rightDockWidth: 350,
     rightDockOpen: true,
+    powerSaverMode: "standard", // "standard" | "balanced" | "auto" | "battery_saver"
+    powerDisableBlur: false,
+    powerReduceAnimations: false,
+    powerDisableDynamicBg: false,
+    powerDisableVisualizer: false,
+    powerLimitUiRefresh: false,
+    powerUseThumbCovers: false,
   },
 };
+
+let nativeEngine = null;
+function loadNativeAddon() {
+  if (nativeEngine) return nativeEngine;
+  const candidates = [
+    path.join(__dirname, "build", "Release", "zuna_native.node"),
+    process.resourcesPath
+      ? path.join(process.resourcesPath, "app.asar.unpacked", "build", "Release", "zuna_native.node")
+      : "",
+    path.join(__dirname, "build", "Release", "flacplayer_native.node"),
+    process.resourcesPath
+      ? path.join(process.resourcesPath, "app.asar.unpacked", "build", "Release", "flacplayer_native.node")
+      : "",
+  ].filter(Boolean);
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        nativeEngine = require(p);
+        break;
+      }
+    } catch (err) {
+      console.error("Failed to load native engine from", p, err);
+    }
+  }
+  return nativeEngine;
+}
 
 let appState = loadPersistedState();
 
@@ -129,6 +208,7 @@ function loadPersistedState() {
       return {
         ...DEFAULT_STATE,
         ...parsed,
+        lastPlayback: { ...DEFAULT_STATE.lastPlayback, ...(parsed.lastPlayback || {}) },
         lyricsOffsets: { ...(parsed.lyricsOffsets || {}) },
         eqConfig: { ...DEFAULT_STATE.eqConfig, ...(parsed.eqConfig || {}) },
         settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) },
@@ -140,9 +220,50 @@ function loadPersistedState() {
   return structuredClone(DEFAULT_STATE);
 }
 
-function savePersistedState() {
+let saveStateTimer = null;
+let saveStateDirty = false;
+let saveStateInFlight = false;
+
+async function writePersistedStateAsync() {
+  if (saveStateInFlight || !saveStateDirty) return;
+  saveStateInFlight = true;
   try {
-    fs.writeFileSync(getStateFilePath(), JSON.stringify(appState, null, 2), "utf-8");
+    while (saveStateDirty) {
+      saveStateDirty = false;
+      await fs.promises.writeFile(getStateFilePath(), JSON.stringify(appState), "utf-8");
+    }
+  } catch (e) {
+    console.error("Failed to save state:", e);
+  } finally {
+    saveStateInFlight = false;
+  }
+}
+
+function savePersistedState(immediate = false) {
+  saveStateDirty = true;
+  if (saveStateTimer) {
+    clearTimeout(saveStateTimer);
+    saveStateTimer = null;
+  }
+  if (immediate) {
+    flushPersistedStateSync();
+    return;
+  }
+  saveStateTimer = setTimeout(() => {
+    saveStateTimer = null;
+    writePersistedStateAsync();
+  }, 220);
+}
+
+function flushPersistedStateSync() {
+  if (saveStateTimer) {
+    clearTimeout(saveStateTimer);
+    saveStateTimer = null;
+  }
+  if (!saveStateDirty) return;
+  saveStateDirty = false;
+  try {
+    fs.writeFileSync(getStateFilePath(), JSON.stringify(appState), "utf-8");
   } catch (e) {
     console.error("Failed to save state:", e);
   }
@@ -229,12 +350,40 @@ async function scanAllFolders() {
   const seen = new Set();
   const tracks = [];
   const coversDir = getCoversCacheDir();
+  const existingByPath = new Map();
+  for (const prev of appState.tracks || []) {
+    if (prev && prev.path) existingByPath.set(prev.path, prev);
+  }
 
   for (const folder of appState.folders) {
     const files = walkAudioFiles(folder);
     for (const filePath of files) {
       if (seen.has(filePath)) continue;
       seen.add(filePath);
+
+      let mtimeMs = 0;
+      let dateAdded = 0;
+      try {
+        const st = fs.statSync(filePath);
+        mtimeMs = Math.round(st.mtimeMs || 0);
+        dateAdded = Math.round(st.mtimeMs || st.ctimeMs || Date.now());
+      } catch (_) {}
+
+      const cached = existingByPath.get(filePath);
+      if (
+        cached &&
+        mtimeMs > 0 &&
+        cached.mtimeMs === mtimeMs &&
+        (!cached.coverPath || fs.existsSync(cached.coverPath))
+      ) {
+        const thumbPath = cached.coverPath
+          ? cached.thumbPath && fs.existsSync(cached.thumbPath)
+            ? cached.thumbPath
+            : ensureThumbForCover(cached.coverPath)
+          : null;
+        tracks.push({ ...cached, thumbPath });
+        continue;
+      }
 
       const ext = path.extname(filePath).slice(1).toUpperCase();
       const fallbackTitle = path.basename(filePath, path.extname(filePath));
@@ -248,12 +397,7 @@ async function scanAllFolders() {
       let bitrateKbps = 0;
       let channels = 2;
       let coverPath = null;
-      let dateAdded = 0;
-
-      try {
-        const st = fs.statSync(filePath);
-        dateAdded = Math.round(st.mtimeMs || st.ctimeMs || Date.now());
-      } catch (_) {}
+      let detectedFormat = ext === "AIF" || ext === "AIFC" ? "AIFF" : ext === "OGA" ? "OGG" : ext;
 
       try {
         const meta = await mm.parseFile(filePath, { duration: true, skipCovers: false });
@@ -267,6 +411,13 @@ async function scanAllFolders() {
         if (meta.format.bitsPerSample) bitDepth = meta.format.bitsPerSample;
         if (meta.format.bitrate) bitrateKbps = Math.round(meta.format.bitrate / 1000);
         if (meta.format.numberOfChannels) channels = meta.format.numberOfChannels;
+        const codecLow = String(meta.format.codec || "").toLowerCase();
+        if (codecLow.includes("alac")) detectedFormat = "ALAC";
+        else if (codecLow.includes("opus")) detectedFormat = "OPUS";
+        else if (codecLow.includes("vorbis")) detectedFormat = "OGG";
+        else if (codecLow.includes("aac")) detectedFormat = "AAC";
+        else if (codecLow.includes("flac")) detectedFormat = "FLAC";
+        else if (ext === "AIFF" || ext === "AIF" || ext === "AIFC") detectedFormat = "AIFF";
 
         const pic = meta.common.picture && meta.common.picture[0];
         if (pic && pic.data && pic.data.length > 0) {
@@ -296,7 +447,7 @@ async function scanAllFolders() {
         album,
         trackNumber,
         durationMs,
-        format: ext,
+        format: detectedFormat,
         sampleRateHz,
         bitDepth,
         bitrateKbps,
@@ -304,6 +455,7 @@ async function scanAllFolders() {
         coverPath,
         thumbPath,
         dateAdded,
+        mtimeMs,
       });
     }
   }
@@ -325,7 +477,7 @@ async function scanAllFolders() {
 }
 
 function parseLrcTimestamp(tag) {
-  const match = /^(\d{1,3}):(\d{1,2})(?:[.,](\d{1,3}))?$/.exec(tag.trim());
+  const match = /^(\d{1,3}):(\d{1,2})(?:[.,:](\d{1,3}))?$/.exec(tag.trim());
   if (!match) return null;
   const min = parseInt(match[1], 10);
   const sec = parseInt(match[2], 10);
@@ -339,15 +491,71 @@ function parseLrcTimestamp(tag) {
   return min * 60000 + sec * 1000 + ms;
 }
 
+function parseEnhancedLineSegments(rawBody, fallbackStartMs) {
+  const wordRe = /<(\d{1,3}:\d{1,2}(?:[.,:]\d{1,3})?)>/g;
+  const segments = [];
+  let plainOut = "";
+  let trailingEndMs = null;
+  let lastCursor = 0;
+  let curTs = fallbackStartMs;
+  let match;
+  let foundTag = false;
+
+  while ((match = wordRe.exec(rawBody)) !== null) {
+    foundTag = true;
+    const textSlice = rawBody.slice(lastCursor, match.index);
+    if (textSlice.length > 0) {
+      plainOut += textSlice;
+      if (textSlice.trim().length > 0) {
+        segments.push({ text: textSlice, timestampMs: curTs, endMs: 0 });
+      } else if (segments.length > 0) {
+        segments[segments.length - 1].text += textSlice;
+      }
+    }
+    const parsed = parseLrcTimestamp(match[1]);
+    if (parsed !== null) curTs = parsed;
+    lastCursor = wordRe.lastIndex;
+  }
+
+  if (!foundTag) {
+    return { cleanText: rawBody.trim(), words: [], trailingEndMs: null };
+  }
+
+  const tailSlice = rawBody.slice(lastCursor);
+  if (tailSlice.length > 0) {
+    plainOut += tailSlice;
+    if (tailSlice.trim().length > 0) {
+      segments.push({ text: tailSlice, timestampMs: curTs, endMs: 0 });
+    } else if (segments.length > 0) {
+      segments[segments.length - 1].text += tailSlice;
+    }
+  } else if (segments.length > 0 && curTs > segments[segments.length - 1].timestampMs) {
+    trailingEndMs = curTs;
+  }
+
+  return {
+    cleanText: plainOut.trim(),
+    words: segments,
+    trailingEndMs,
+  };
+}
+
 function parseLyricsRawText(rawInput, sourceLabel) {
   const raw = sanitizeCorruptedLyricsString(rawInput);
   if (!raw || !raw.trim()) return null;
   const syncedLines = [];
   const plainLines = [];
+  let offsetMs = 0;
 
   for (const rawLine of raw.split(/\r?\n/)) {
-    let rest = rawLine.trim();
+    let rest = rawLine.replace(/^\uFEFF/, "").trim();
     if (!rest) continue;
+
+    const offsetMatch = /^\[offset:\s*([+-]?\d+)\]$/i.exec(rest);
+    if (offsetMatch) {
+      offsetMs = parseInt(offsetMatch[1], 10) || 0;
+      continue;
+    }
 
     const timestamps = [];
     while (rest.startsWith("[")) {
@@ -364,21 +572,56 @@ function parseLyricsRawText(rawInput, sourceLabel) {
       }
     }
 
-    const clean = rest.trim();
+    const rawBody = rest.trimStart();
     if (timestamps.length > 0) {
-      const text = clean || "· · ·";
+      const firstTs = timestamps[0];
+      const parsed = parseEnhancedLineSegments(rawBody, firstTs);
+      const text = parsed.cleanText || "· · ·";
       for (const ts of timestamps) {
-        syncedLines.push({ timestampMs: ts, text });
+        const delta = ts - firstTs;
+        const shiftedWords = parsed.words.map((w) => ({
+          text: w.text,
+          timestampMs: Math.max(0, w.timestampMs + delta + offsetMs),
+          endMs: 0,
+        }));
+        syncedLines.push({
+          timestampMs: Math.max(0, ts + offsetMs),
+          text,
+          words: shiftedWords,
+          _trailingEndMs: parsed.trailingEndMs !== null ? Math.max(0, parsed.trailingEndMs + delta + offsetMs) : null,
+        });
       }
-    } else if (clean && !rawLine.trim().startsWith("[")) {
-      plainLines.push(clean);
+    } else if (rawBody.trim() && !rawLine.trim().startsWith("[")) {
+      plainLines.push(rawBody.replace(/<\d{1,3}:\d{1,2}(?:[.,:]\d{1,3})?>/g, "").trim());
     }
   }
 
   if (syncedLines.length > 0) {
     syncedLines.sort((a, b) => a.timestampMs - b.timestampMs);
+    let hasWordSync = false;
+    for (let i = 0; i < syncedLines.length; i++) {
+      const line = syncedLines[i];
+      const nextLine = i + 1 < syncedLines.length ? syncedLines[i + 1] : null;
+      if (line.words && line.words.length > 0) {
+        hasWordSync = true;
+        for (let k = 0; k < line.words.length; k++) {
+          const w = line.words[k];
+          if (k + 1 < line.words.length) {
+            w.endMs = Math.max(w.timestampMs + 60, line.words[k + 1].timestampMs);
+          } else if (line._trailingEndMs !== null && line._trailingEndMs > w.timestampMs) {
+            w.endMs = line._trailingEndMs;
+          } else if (nextLine && nextLine.timestampMs > w.timestampMs) {
+            w.endMs = Math.min(nextLine.timestampMs, w.timestampMs + 6000);
+          } else {
+            w.endMs = w.timestampMs + Math.max(500, w.text.trim().length * 160);
+          }
+        }
+      }
+      delete line._trailingEndMs;
+    }
     return {
       isSynced: true,
+      hasWordSync,
       isInstrumental: false,
       source: sourceLabel,
       lines: syncedLines,
@@ -388,9 +631,10 @@ function parseLyricsRawText(rawInput, sourceLabel) {
   if (plainLines.length > 0) {
     return {
       isSynced: false,
+      hasWordSync: false,
       isInstrumental: false,
       source: sourceLabel,
-      lines: plainLines.map((t) => ({ timestampMs: 0, text: t })),
+      lines: plainLines.map((t) => ({ timestampMs: 0, text: t, words: [] })),
     };
   }
 
@@ -403,7 +647,7 @@ function fetchJsonHttps(url) {
       url,
       {
         headers: {
-          "User-Agent": "FlacPlayer-Desktop/1.20 (https://github.com/axalotus/flacplayer)",
+          "User-Agent": "Zuna-Desktop/1.1.0 (https://github.com/axalotus/zuna-player)",
           Accept: "application/json",
         },
         timeout: 7000,
@@ -431,6 +675,186 @@ function fetchJsonHttps(url) {
       resolve(null);
     });
   });
+}
+
+function fetchBinaryHttps(url, redirectsLeft = 3) {
+  return new Promise((resolve) => {
+    const req = https.get(
+      url,
+      {
+        headers: {
+          "User-Agent": "Zuna-Desktop/1.1.0 (https://github.com/axalotus/zuna-player)",
+        },
+        timeout: 7000,
+      },
+      (res) => {
+        if (
+          res.statusCode >= 300 &&
+          res.statusCode < 400 &&
+          res.headers.location &&
+          redirectsLeft > 0
+        ) {
+          res.resume();
+          const nextUrl = res.headers.location.startsWith("http")
+            ? res.headers.location
+            : new URL(res.headers.location, url).toString();
+          fetchBinaryHttps(nextUrl, redirectsLeft - 1).then(resolve);
+          return;
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          resolve(null);
+          return;
+        }
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          const buf = Buffer.concat(chunks);
+          resolve(buf.length >= 1024 ? buf : null);
+        });
+      }
+    );
+    req.on("error", () => resolve(null));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(null);
+    });
+  });
+}
+
+const onlineCoverNotFoundSet = new Set();
+const onlineCoverInFlight = new Map();
+
+function buildOnlineCoverCacheKey(artist, title, album) {
+  const a = normalizeQueryString(artist || "").toLowerCase();
+  const t = normalizeQueryString(title || "").toLowerCase();
+  const al = normalizeQueryString(album || "").toLowerCase();
+  const badAlbum = !al || al === "без альбома" || al === "unknown album" || al === "неизвестный";
+  return `${a}::${t || (!badAlbum ? al : "")}`;
+}
+
+function isValidImageBuffer(buf) {
+  if (!buf || buf.length < 1024) return false;
+  const isJpg = buf[0] === 0xff && buf[1] === 0xd8;
+  const isPng = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  const isWebp = buf.length > 12 && buf.slice(0, 4).toString("ascii") === "RIFF" && buf.slice(8, 12).toString("ascii") === "WEBP";
+  return isJpg || isPng || isWebp;
+}
+
+async function resolveOnlineCoverForTrack(payload) {
+  if (!payload || appState.settings.onlineCoversEnabled === false) return null;
+  const targetTrack = (appState.tracks || []).find((t) => t.id === payload.id);
+  if (targetTrack?.coverPath && fs.existsSync(targetTrack.coverPath)) return null;
+  if (payload.coverPath && fs.existsSync(payload.coverPath)) return null;
+
+  const title = (payload.title || targetTrack?.title || "").trim();
+  const artist = (payload.artist || targetTrack?.artist || "").trim();
+  const album = (payload.album || targetTrack?.album || "").trim();
+  if (!title && !album) return null;
+
+  const cacheKey = buildOnlineCoverCacheKey(artist, title, album);
+  if (!cacheKey || cacheKey === "::") return null;
+
+  const hash = crypto.createHash("sha1").update(cacheKey).digest("hex");
+  const coverDir = getOnlineCoversCacheDir();
+  const cachedFile = path.join(coverDir, `${hash}.jpg`);
+
+  if (fs.existsSync(cachedFile)) {
+    const thumb = ensureThumbForCover(cachedFile);
+    if (targetTrack) {
+      targetTrack.onlineCoverPath = cachedFile;
+      targetTrack.onlineThumbPath = thumb;
+    }
+    return { trackId: payload.id, onlineCoverPath: cachedFile, onlineThumbPath: thumb };
+  }
+
+  if (onlineCoverNotFoundSet.has(cacheKey)) return null;
+  if (onlineCoverInFlight.has(cacheKey)) {
+    const res = await onlineCoverInFlight.get(cacheKey);
+    if (!res) return null;
+    if (targetTrack) {
+      targetTrack.onlineCoverPath = res.onlineCoverPath;
+      targetTrack.onlineThumbPath = res.onlineThumbPath;
+    }
+    return { trackId: payload.id, onlineCoverPath: res.onlineCoverPath, onlineThumbPath: res.onlineThumbPath };
+  }
+
+  const job = (async () => {
+    try {
+      const cleanTitle = normalizeQueryString(title) || title;
+      const cleanArtist =
+        artist && !/неизвест|unknown/i.test(artist) ? normalizeQueryString(artist) || artist : "";
+      const cleanAlbum =
+        album && !/без альбома|unknown/i.test(album) ? normalizeQueryString(album) || album : "";
+
+      const queries = [];
+      if (cleanArtist && cleanTitle) queries.push(`${cleanArtist} ${cleanTitle}`);
+      if (cleanArtist && cleanAlbum && cleanAlbum !== cleanTitle) queries.push(`${cleanArtist} ${cleanAlbum}`);
+      if (cleanTitle) queries.push(cleanTitle);
+
+      let artUrl = null;
+      for (const q of queries) {
+        if (appState.settings.onlineCoversEnabled === false) return null;
+        const data = await fetchJsonHttps(
+          `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=5`
+        );
+        const list = Array.isArray(data?.results) ? data.results : [];
+        const matched =
+          list.find((r) => {
+            const rArt = (r.artistName || "").toLowerCase();
+            return !cleanArtist || rArt.includes(cleanArtist.toLowerCase()) || cleanArtist.toLowerCase().includes(rArt);
+          }) || list[0];
+        if (matched?.artworkUrl100) {
+          artUrl = matched.artworkUrl100.replace(/100x100bb/i, "600x600bb");
+          break;
+        }
+      }
+
+      if (!artUrl) {
+        for (const q of queries.slice(0, 2)) {
+          if (appState.settings.onlineCoversEnabled === false) return null;
+          const dz = await fetchJsonHttps(
+            `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=3`
+          );
+          const list = Array.isArray(dz?.data) ? dz.data : [];
+          const hit = list.find((r) => r?.album?.cover_xl || r?.album?.cover_big || r?.album?.cover_medium);
+          if (hit) {
+            artUrl = hit.album.cover_xl || hit.album.cover_big || hit.album.cover_medium;
+            break;
+          }
+        }
+      }
+
+      if (!artUrl) {
+        onlineCoverNotFoundSet.add(cacheKey);
+        return null;
+      }
+
+      const imgBuf = await fetchBinaryHttps(artUrl);
+      if (!isValidImageBuffer(imgBuf)) {
+        onlineCoverNotFoundSet.add(cacheKey);
+        return null;
+      }
+
+      fs.writeFileSync(cachedFile, imgBuf);
+      const thumb = ensureThumbForCover(cachedFile);
+      return { onlineCoverPath: cachedFile, onlineThumbPath: thumb };
+    } catch (_) {
+      return null;
+    } finally {
+      onlineCoverInFlight.delete(cacheKey);
+    }
+  })();
+
+  onlineCoverInFlight.set(cacheKey, job);
+  const resolved = await job;
+  if (!resolved) return null;
+  if (targetTrack && appState.settings.onlineCoversEnabled !== false) {
+    targetTrack.onlineCoverPath = resolved.onlineCoverPath;
+    targetTrack.onlineThumbPath = resolved.onlineThumbPath;
+    savePersistedState();
+  }
+  return { trackId: payload.id, onlineCoverPath: resolved.onlineCoverPath, onlineThumbPath: resolved.onlineThumbPath };
 }
 
 function normalizeQueryString(str) {
@@ -498,7 +922,7 @@ async function loadLyricsForTrack({ path: filePath, title, artist, album, durati
     }
   } catch (_) {}
 
-  if (title && title.trim()) {
+  if (appState.settings.onlineLyricsEnabled !== false && title && title.trim()) {
     const durSec = Math.max(1, Math.round((durationMs || 0) / 1000));
     const cleanTitle = normalizeQueryString(title) || title;
     const cleanArtist = normalizeQueryString(artist || "") || artist || "";
@@ -518,14 +942,14 @@ async function loadLyricsForTrack({ path: filePath, title, artist, album, durati
       const direct = await fetchJsonHttps(getUrl);
       if (direct) {
         if (direct.syncedLyrics && !direct.syncedLyrics.includes("\uFFFD")) {
-          const parsed = parseLyricsRawText(direct.syncedLyrics, "LRCLIB SYNCED");
+          const parsed = parseLyricsRawText(direct.syncedLyrics, "LRCLIB");
           if (parsed) {
             lyricsMemoryCache.set(normKey, parsed);
             return parsed;
           }
         }
         if (direct.plainLyrics && !fallbackPlain) {
-          fallbackPlain = parseLyricsRawText(direct.plainLyrics, "LRCLIB TEXT");
+          fallbackPlain = parseLyricsRawText(direct.plainLyrics, "LRCLIB");
         }
       }
 
@@ -546,14 +970,14 @@ async function loadLyricsForTrack({ path: filePath, title, artist, album, durati
               Math.abs((b.duration || durSec) - durSec)
             );
           });
-          const parsed = parseLyricsRawText(syncedItems[0].syncedLyrics, "LRCLIB SYNCED");
+          const parsed = parseLyricsRawText(syncedItems[0].syncedLyrics, "LRCLIB");
           if (parsed) {
             lyricsMemoryCache.set(normKey, parsed);
             return parsed;
           }
         }
         if (!fallbackPlain && list[0].plainLyrics) {
-          fallbackPlain = parseLyricsRawText(list[0].plainLyrics, "LRCLIB TEXT");
+          fallbackPlain = parseLyricsRawText(list[0].plainLyrics, "LRCLIB");
         }
       }
     }
@@ -574,7 +998,7 @@ function createMainWindow() {
     minWidth: 740,
     minHeight: 560,
     backgroundColor: "#000000",
-    title: "FlacPlayer",
+    title: "Zuna",
     icon: path.join(__dirname, "assets", "icon.png"),
     autoHideMenuBar: true,
     webPreferences: {
@@ -588,62 +1012,9 @@ function createMainWindow() {
 
   mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
-
-  mainWindow.on("close", (e) => {
-    if (!isQuitting && appState.settings.closeToTray) {
-      e.preventDefault();
-      mainWindow.hide();
-    }
-  });
 }
 
-function setupTrayAndShortcuts() {
-  try {
-    const iconPath = path.join(__dirname, "assets", "icon.png");
-    const trayImg = nativeImage.createFromPath(iconPath).resize({ width: 22, height: 22 });
-    tray = new Tray(trayImg);
-    const contextMenu = Menu.buildFromTemplate([
-      {
-        label: "Открыть FlacPlayer",
-        click: () => {
-          if (mainWindow) {
-            mainWindow.show();
-            mainWindow.focus();
-          }
-        },
-      },
-      { type: "separator" },
-      {
-        label: "Старт / Пауза",
-        click: () => mainWindow?.webContents.send("media-action", "toggle"),
-      },
-      {
-        label: "Следующий трек",
-        click: () => mainWindow?.webContents.send("media-action", "next"),
-      },
-      {
-        label: "Предыдущий трек",
-        click: () => mainWindow?.webContents.send("media-action", "prev"),
-      },
-      { type: "separator" },
-      {
-        label: "Выход",
-        click: () => {
-          isQuitting = true;
-          app.quit();
-        },
-      },
-    ]);
-    tray.setToolTip("FlacPlayer");
-    tray.setContextMenu(contextMenu);
-    tray.on("click", () => {
-      if (mainWindow) {
-        if (mainWindow.isVisible()) mainWindow.focus();
-        else mainWindow.show();
-      }
-    });
-  } catch (_) {}
-
+function setupMediaShortcuts() {
   try {
     globalShortcut.register("MediaPlayPause", () =>
       mainWindow?.webContents.send("media-action", "toggle")
@@ -657,13 +1028,73 @@ function setupTrayAndShortcuts() {
   } catch (_) {}
 }
 
-app.whenReady().then(() => {
-  createMainWindow();
-  setupTrayAndShortcuts();
+function handleMprisAction(action) {
+  if (!action || !action.type) return;
+  if (action.type === "raise") {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    return;
+  }
+  if (action.type === "quit") {
+    app.quit();
+    return;
+  }
+  mainWindow?.webContents.send("media-action", action);
+}
+
+if (gotSingleInstanceLock) {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  app.whenReady().then(() => {
+    const eng = loadNativeAddon();
+    if (eng) {
+      try {
+        eng.setUserVolume(appState.settings.volume ?? 0.85);
+        eng.setReplayGainEnabled(Boolean(appState.settings.replayGainEnabled));
+        eng.setGaplessEnabled(appState.settings.gaplessEnabled !== false);
+        eng.setExclusiveMode(Boolean(appState.settings.exclusiveMode));
+        if (appState.settings.outputDeviceId && appState.settings.outputDeviceId !== "default") {
+          eng.setOutputDevice(appState.settings.outputDeviceId);
+        }
+        eng.updateEq(appState.eqConfig);
+        if (typeof eng.mprisInit === "function") {
+          eng.mprisInit(handleMprisAction);
+        }
+      } catch (_) {}
+    }
+    createMainWindow();
+    setupMediaShortcuts();
+  });
+}
+
+app.on("window-all-closed", () => {
+  app.quit();
 });
 
 app.on("before-quit", () => {
-  isQuitting = true;
+  if (nativeEngine) {
+    try {
+      const st = nativeEngine.getStatus();
+      if (st && st.positionSec > 0 && appState.lastPlayback?.trackId) {
+        appState.lastPlayback.positionSec = st.positionSec;
+        saveStateDirty = true;
+      }
+      if (typeof nativeEngine.mprisShutdown === "function") {
+        nativeEngine.mprisShutdown();
+      }
+      nativeEngine.stop();
+    } catch (_) {}
+  }
+  flushPersistedStateSync();
   globalShortcut.unregisterAll();
 });
 
@@ -754,6 +1185,18 @@ function buildThemeZipBuffer(entries) {
   return Buffer.concat([...localParts, centralBuf, eocd]);
 }
 
+const MAX_THEME_ZIP_ENTRY_BYTES = 150 * 1024 * 1024;
+const SAFE_THEME_ASSET_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".mp4", ".webm", ".mov", ".mkv"]);
+
+function sanitizeZipEntryName(rawName) {
+  const normalized = String(rawName || "").replace(/\\/g, "/").replace(/^\/+/, "");
+  const parts = normalized.split("/").filter(Boolean);
+  if (!parts.length || parts.some((p) => p === "." || p === ".." || p.includes("\0"))) {
+    throw new Error(`Недопустимое имя файла в теме: ${rawName}`);
+  }
+  return parts.join("/");
+}
+
 function parseThemeZipBuffer(buf) {
   let eocdOffset = -1;
   const minOff = Math.max(0, buf.length - 65558);
@@ -766,28 +1209,45 @@ function parseThemeZipBuffer(buf) {
   if (eocdOffset < 0) throw new Error("Неверный формат файла темы (.flactheme)");
 
   const totalEntries = buf.readUInt16LE(eocdOffset + 10);
+  if (totalEntries > 64) throw new Error("Слишком много файлов внутри темы");
   let cdOffset = buf.readUInt32LE(eocdOffset + 16);
   const files = new Map();
 
   for (let i = 0; i < totalEntries; i++) {
-    if (buf.readUInt32LE(cdOffset) !== 0x02014b50) break;
+    if (cdOffset + 46 > buf.length || buf.readUInt32LE(cdOffset) !== 0x02014b50) break;
     const method = buf.readUInt16LE(cdOffset + 10);
     const compSize = buf.readUInt32LE(cdOffset + 20);
+    const uncompSize = buf.readUInt32LE(cdOffset + 24);
     const nameLen = buf.readUInt16LE(cdOffset + 28);
     const extraLen = buf.readUInt16LE(cdOffset + 30);
     const commentLen = buf.readUInt16LE(cdOffset + 32);
     const lfhOffset = buf.readUInt32LE(cdOffset + 42);
-    const name = buf.subarray(cdOffset + 46, cdOffset + 46 + nameLen).toString("utf-8");
+    if (uncompSize > MAX_THEME_ZIP_ENTRY_BYTES) {
+      throw new Error("Файл внутри темы слишком большой");
+    }
+    if (cdOffset + 46 + nameLen > buf.length || lfhOffset + 30 > buf.length) {
+      throw new Error("Повреждённый архив темы");
+    }
+    const name = sanitizeZipEntryName(
+      buf.subarray(cdOffset + 46, cdOffset + 46 + nameLen).toString("utf-8")
+    );
 
     const lfhNameLen = buf.readUInt16LE(lfhOffset + 26);
     const lfhExtraLen = buf.readUInt16LE(lfhOffset + 28);
     const dataStart = lfhOffset + 30 + lfhNameLen + lfhExtraLen;
+    if (dataStart + compSize > buf.length) {
+      throw new Error("Повреждённый архив темы");
+    }
     const compData = buf.subarray(dataStart, dataStart + compSize);
 
     let rawData;
-    if (method === 0) rawData = Buffer.from(compData);
-    else if (method === 8) rawData = zlib.inflateRawSync(compData);
-    else throw new Error(`Unsupported ZIP method: ${method}`);
+    if (method === 0) {
+      rawData = Buffer.from(compData);
+    } else if (method === 8) {
+      rawData = zlib.inflateRawSync(compData, { maxOutputLength: MAX_THEME_ZIP_ENTRY_BYTES });
+    } else {
+      throw new Error(`Unsupported ZIP method: ${method}`);
+    }
 
     files.set(name, rawData);
     cdOffset += 46 + nameLen + extraLen + commentLen;
@@ -810,11 +1270,13 @@ const THEME_SETTING_KEYS = [
   "lyricsBlurIntensity",
   "appBgMode",
   "appBgColorMode",
+  "appBgSolidColor",
   "appBgIsVideo",
   "appBgBlurPx",
   "appBgDimPercent",
   "fsBgMode",
   "fsBgColorMode",
+  "fsBgSolidColor",
   "fsBgIsVideo",
   "fsBgBlurPx",
   "fsBgDimPercent",
@@ -833,11 +1295,11 @@ ipcMain.handle("get-initial-state", () => {
 });
 
 ipcMain.handle("export-theme", async (_, themeName) => {
-  const safeBase = (themeName || "MyFlacTheme").trim().replace(/[^\p{L}\p{N}_\- ]/gu, "") || "FlacTheme";
+  const safeBase = (themeName || "MyZunaTheme").trim().replace(/[^\p{L}\p{N}_\- ]/gu, "") || "ZunaTheme";
   const res = await dialog.showSaveDialog(mainWindow, {
-    title: "Экспорт файла темы (.flactheme)",
-    defaultPath: `${safeBase}.flactheme`,
-    filters: [{ name: "FlacPlayer Theme", extensions: ["flactheme"] }],
+    title: "Экспорт файла темы (.zunatheme)",
+    defaultPath: `${safeBase}.zunatheme`,
+    filters: [{ name: "Zuna Theme", extensions: ["zunatheme", "flactheme"] }],
   });
   if (res.canceled || !res.filePath) return { canceled: true };
 
@@ -895,8 +1357,8 @@ ipcMain.handle("import-theme", async (_, optionalPath) => {
   let filePath = optionalPath;
   if (!filePath) {
     const res = await dialog.showOpenDialog(mainWindow, {
-      title: "Импорт темы (.flactheme)",
-      filters: [{ name: "FlacPlayer Theme", extensions: ["flactheme", "json"] }],
+      title: "Импорт темы (.zunatheme / .flactheme)",
+      filters: [{ name: "Zuna Theme", extensions: ["zunatheme", "flactheme", "json"] }],
       properties: ["openFile"],
     });
     if (res.canceled || !res.filePaths.length) return { canceled: true };
@@ -928,10 +1390,13 @@ ipcMain.handle("import-theme", async (_, optionalPath) => {
     }
 
     const extractAsset = (slotKey, pathProp, isVideoProp) => {
-      const zipName = parsed.assets && parsed.assets[slotKey];
-      if (!zipName || !zipFiles || !zipFiles.has(zipName)) return;
+      const rawZipName = parsed.assets && parsed.assets[slotKey];
+      if (!rawZipName || !zipFiles) return;
+      const zipName = sanitizeZipEntryName(rawZipName);
+      if (!zipFiles.has(zipName)) return;
       const data = zipFiles.get(zipName);
-      const ext = path.extname(zipName).toLowerCase() || ".bin";
+      const extRaw = path.extname(zipName).toLowerCase();
+      const ext = SAFE_THEME_ASSET_EXTS.has(extRaw) ? extRaw : ".png";
       const hash = crypto.createHash("sha1").update(data).digest("hex");
       const outPath = path.join(assetsDir, `${hash}${ext}`);
       if (!fs.existsSync(outPath)) {
@@ -979,6 +1444,10 @@ ipcMain.handle("remove-folder", async (_, folder) => {
 
 ipcMain.handle("load-lyrics", async (_, payload) => {
   return await loadLyricsForTrack(payload);
+});
+
+ipcMain.handle("fetch-online-cover", async (_, payload) => {
+  return await resolveOnlineCoverForTrack(payload);
 });
 
 ipcMain.handle("get-cover-data-url", async (_, coverPath) => {
@@ -1085,8 +1554,18 @@ ipcMain.handle("add-track-to-playlist", (_, { playlistId, trackId }) => {
   return appState.playlists;
 });
 
+ipcMain.handle("remove-track-from-playlist", (_, { playlistId, trackId }) => {
+  const pl = appState.playlists.find((p) => p.id === playlistId);
+  if (pl) {
+    pl.trackIds = pl.trackIds.filter((id) => id !== trackId);
+    savePersistedState();
+  }
+  return appState.playlists;
+});
+
 ipcMain.handle("save-eq-config", (_, eqConfig) => {
   appState.eqConfig = eqConfig;
+  if (nativeEngine) nativeEngine.updateEq(eqConfig);
   savePersistedState();
   return appState.eqConfig;
 });
@@ -1095,4 +1574,139 @@ ipcMain.handle("save-settings", (_, settings) => {
   appState.settings = settings;
   savePersistedState();
   return appState.settings;
+});
+
+ipcMain.handle("native-is-available", () => Boolean(loadNativeAddon()));
+ipcMain.handle("native-get-devices", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.getDevices() : [];
+});
+ipcMain.handle("native-set-device", (_, deviceId) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.setOutputDevice(deviceId || "default") : false;
+});
+ipcMain.handle("native-set-exclusive", (_, enabled) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.setExclusiveMode(Boolean(enabled)) : false;
+});
+ipcMain.handle("native-load-file", (_, filePath) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.loadFile(String(filePath || "")) : false;
+});
+ipcMain.handle("native-preload-next", (_, filePath) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.preloadNextFile(String(filePath || "")) : false;
+});
+ipcMain.handle("native-start", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.start() : false;
+});
+ipcMain.handle("native-pause", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.pause() : true;
+});
+ipcMain.handle("native-stop", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.stop() : true;
+});
+ipcMain.handle("native-seek-seconds", (_, sec) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.seekToSeconds(Number(sec) || 0) : false;
+});
+ipcMain.handle("native-set-volume", (_, vol) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.setUserVolume(Number(vol)) : true;
+});
+ipcMain.handle("native-begin-pause-fade", (_, ms) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.beginPauseFade(ms || 110) : true;
+});
+ipcMain.handle("native-cancel-pause-fade", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.cancelPauseFade() : true;
+});
+ipcMain.handle("native-start-crossfade", (_, ms) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.startCrossfade(ms || 3000) : false;
+});
+ipcMain.handle("native-cancel-crossfade", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.cancelCrossfade() : true;
+});
+ipcMain.handle("native-promote-preloaded", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.promotePreloadedTrack() : false;
+});
+ipcMain.handle("native-set-replay-gain", (_, enabled) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.setReplayGainEnabled(Boolean(enabled)) : true;
+});
+ipcMain.handle("native-set-gapless", (_, enabled) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.setGaplessEnabled(Boolean(enabled)) : true;
+});
+ipcMain.handle("native-update-eq", (_, eqConfig) => {
+  const eng = loadNativeAddon();
+  return eng ? eng.updateEq(eqConfig) : true;
+});
+ipcMain.handle("native-get-status", () => {
+  const eng = loadNativeAddon();
+  return eng ? eng.getStatus() : null;
+});
+
+function updateLastPlaybackPayload(payload) {
+  if (!payload || typeof payload !== "object") return;
+  appState.lastPlayback = {
+    trackId: payload.trackId || null,
+    positionSec: Math.max(0, Number(payload.positionSec) || 0),
+    queueIds: Array.isArray(payload.queueIds) ? payload.queueIds.slice(0, 5000) : [],
+  };
+}
+
+ipcMain.on("save-playback-state", (_, payload) => {
+  updateLastPlaybackPayload(payload);
+  savePersistedState(false);
+});
+
+ipcMain.on("save-playback-state-now", (e, payload) => {
+  updateLastPlaybackPayload(payload);
+  savePersistedState(true);
+  e.returnValue = true;
+});
+
+ipcMain.on("mpris-update", (_, payload) => {
+  const eng = loadNativeAddon();
+  if (!eng || typeof eng.mprisUpdate !== "function" || !payload || typeof payload !== "object") return;
+  let artUrl = "";
+  if (payload.coverPath && typeof payload.coverPath === "string") {
+    try {
+      if (fs.existsSync(payload.coverPath)) {
+        artUrl = pathToFileURL(payload.coverPath).href;
+      }
+    } catch (_) {}
+  }
+  let trackUrl = "";
+  if (payload.filePath && typeof payload.filePath === "string") {
+    try {
+      trackUrl = pathToFileURL(payload.filePath).href;
+    } catch (_) {}
+  }
+  try {
+    eng.mprisUpdate({
+      hasTrack: Boolean(payload.hasTrack),
+      trackId: String(payload.trackId || ""),
+      title: String(payload.title || ""),
+      artist: String(payload.artist || ""),
+      album: String(payload.album || ""),
+      artUrl,
+      trackUrl,
+      durationSec: Math.max(0, Number(payload.durationSec) || 0),
+      positionSec: Math.max(0, Number(payload.positionSec) || 0),
+      playbackStatus: String(payload.playbackStatus || "Stopped"),
+      loopStatus: String(payload.loopStatus || "None"),
+      shuffle: Boolean(payload.shuffle),
+      volume: Math.max(0, Math.min(1, Number(payload.volume ?? 0.85))),
+      seeked: Boolean(payload.seeked),
+    });
+  } catch (_) {}
 });

@@ -5,14 +5,14 @@ plugins {
 }
 
 android {
-    namespace = "com.antigravity.audioplayer"
+    namespace = "com.zuna.player"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.antigravity.audioplayer"
+        applicationId = "com.zuna.player"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         externalNativeBuild {
             cmake {

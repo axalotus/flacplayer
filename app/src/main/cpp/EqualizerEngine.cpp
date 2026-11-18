@@ -1,4 +1,6 @@
 #include "EqualizerEngine.h"
+#include <algorithm>
+#include <cmath>
 
 constexpr float EqualizerEngine::BAND_FREQUENCIES[NUM_BANDS];
 
@@ -12,11 +14,11 @@ EqualizerEngine::EqualizerEngine() {
         mBandGains[i] = 0.0f;
     }
 
-    mFilters.resize(mChannels);
-    for (int ch = 0; ch < mChannels; ++ch) {
+    mFilters.resize(MAX_CHANNELS);
+    for (int ch = 0; ch < MAX_CHANNELS; ++ch) {
         mFilters[ch].resize(NUM_BANDS);
     }
-    mBassFilters.resize(mChannels);
+    mBassFilters.resize(MAX_CHANNELS);
 
     updateFilters();
 }
@@ -71,7 +73,7 @@ void EqualizerEngine::updateFilters() {
     nextSnap.channels = mChannels;
     nextSnap.hasActiveFilter = false;
 
-    float bassGainDb = (mBassBoostStrength > 0.01f) ? (mBassBoostStrength * 12.0f) : 0.0f;
+    float bassGainDb = (mBassBoostStrength > 0.01f) ? (mBassBoostStrength * 8.0f) : 0.0f;
     nextSnap.bassCoeff = BiquadFilter::computeCoefficients(
         FilterType::LOW_SHELF, mSampleRate, 80.0f, 0.707f, bassGainDb
     );
@@ -79,50 +81,59 @@ void EqualizerEngine::updateFilters() {
         nextSnap.hasActiveFilter = true;
     }
 
+    float maxSingleBandDb = 0.0f;
     for (int b = 0; b < NUM_BANDS; ++b) {
         float freq = BAND_FREQUENCIES[b];
         float gain = mBandGains[b];
+        if (gain > maxSingleBandDb) maxSingleBandDb = gain;
 
         FilterType type = FilterType::PEAKING_EQ;
-        if (b == 0) type = FilterType::LOW_SHELF;
-        else if (b == NUM_BANDS - 1) type = FilterType::HIGH_SHELF;
+        float q = 1.414f;
+        if (b == 0) {
+            type = FilterType::LOW_SHELF;
+            q = 0.7071f;
+        } else if (b == NUM_BANDS - 1) {
+            type = FilterType::HIGH_SHELF;
+            q = 0.7071f;
+        }
 
         nextSnap.bandCoeffs[b] = BiquadFilter::computeCoefficients(
-            type, mSampleRate, freq, 1.414f, gain
+            type, mSampleRate, freq, q, gain
         );
         if (nextSnap.bandCoeffs[b].active) {
             nextSnap.hasActiveFilter = true;
         }
     }
 
-    // Publish precomputed coefficients (~220 bytes copy, no trig math inside lock)
-    {
-        std::lock_guard<std::mutex> snapLock(mSnapshotLock);
-        mPublishedSnapshot = nextSnap;
-    }
+    // Gentle automatic headroom reduction when heavy positive bass/EQ boost is active,
+    // keeping boosted bass dynamic and clean without slamming into digital 0 dBFS.
+    float lowSumDb = std::max(0.0f, mBandGains[0]) +
+                     std::max(0.0f, mBandGains[1]) * 0.65f +
+                     std::max(0.0f, bassGainDb) * 0.85f;
+    float peakBoostDb = std::max(lowSumDb, maxSingleBandDb);
+    float headroomDb = (peakBoostDb > 2.5f) ? -std::min(12.0f, (peakBoostDb - 2.5f) * 0.55f) : 0.0f;
+    nextSnap.preampLinear = (headroomDb < -0.02f) ? std::pow(10.0f, headroomDb / 20.0f) : 1.0f;
+
+    // Publish precomputed coefficients lock-free into triple buffer
+    mSnapshots[mWriterSlot] = nextSnap;
+    uint32_t newMiddle = static_cast<uint32_t>(mWriterSlot) | TRIPLE_DIRTY_BIT;
+    uint32_t prevMiddle = mMiddleState.exchange(newMiddle, std::memory_order_acq_rel);
+    mWriterSlot = static_cast<int>(prevMiddle & 0xFFu);
 }
 
 void EqualizerEngine::processBuffer(float* buffer, int32_t numSamples) {
     if (buffer == nullptr || numSamples <= 0) return;
 
-    EqCoeffsSnapshot snap;
-    {
-        std::lock_guard<std::mutex> snapLock(mSnapshotLock);
-        snap = mPublishedSnapshot;
+    // Wait-free swap for latest snapshot if writer published an update
+    uint32_t middle = mMiddleState.load(std::memory_order_relaxed);
+    if (middle & TRIPLE_DIRTY_BIT) {
+        uint32_t prev = mMiddleState.exchange(static_cast<uint32_t>(mReaderSlot), std::memory_order_acq_rel);
+        mReaderSlot = static_cast<int>(prev & 0xFFu);
     }
+    const EqCoeffsSnapshot& snap = mSnapshots[mReaderSlot];
 
-    int channels = snap.channels;
+    int channels = std::clamp(snap.channels, 0, MAX_CHANNELS);
     if (channels <= 0) return;
-
-    // Ensure audio-thread filter delay arrays match channel count
-    if (mFilters.size() != static_cast<size_t>(channels) ||
-        mBassFilters.size() != static_cast<size_t>(channels)) {
-        mFilters.resize(channels);
-        for (int ch = 0; ch < channels; ++ch) {
-            mFilters[ch].resize(NUM_BANDS);
-        }
-        mBassFilters.resize(channels);
-    }
 
     if (mResetRequested.exchange(false, std::memory_order_acq_rel)) {
         for (auto& chFilters : mFilters) {
@@ -147,11 +158,12 @@ void EqualizerEngine::processBuffer(float* buffer, int32_t numSamples) {
     }
 
     int frames = numSamples / channels;
+    float preamp = snap.preampLinear;
 
     for (int i = 0; i < frames; ++i) {
         for (int ch = 0; ch < channels; ++ch) {
             int index = i * channels + ch;
-            float sample = buffer[index];
+            float sample = buffer[index] * preamp;
 
             // Apply Bass Boost first
             if (snap.bassCoeff.active) {

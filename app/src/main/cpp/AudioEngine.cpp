@@ -1,5 +1,7 @@
 #include "AudioEngine.h"
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <android/log.h>
 #include <sys/resource.h>
 
@@ -13,15 +15,31 @@
 const int32_t RING_BUFFER_CAPACITY = 384000;
 const int32_t PREBUFFER_SIZE = 16384;
 
-AudioEngine::AudioEngine() : mPreBuffer(PREBUFFER_SIZE) {
+AudioEngine::AudioEngine()
+    : mPreBuffer(PREBUFFER_SIZE),
+      mNextPreBuffer(PREBUFFER_SIZE * 2),
+      mNextMixBuffer(PREBUFFER_SIZE) {
     mDecoder = std::make_unique<AudioDecoder>();
     mRingBuffer = std::make_unique<RingBuffer<float>>(RING_BUFFER_CAPACITY);
+    mNextDecoder = std::make_unique<AudioDecoder>();
+    mNextRingBuffer = std::make_unique<RingBuffer<float>>(RING_BUFFER_CAPACITY);
     mEqualizer = std::make_unique<EqualizerEngine>();
+    mRecoveryThread = std::thread(&AudioEngine::recoveryLoop, this);
     LOG_OBOE_I("AudioEngine created");
 }
 
 AudioEngine::~AudioEngine() {
     stop();
+    {
+        std::lock_guard<std::mutex> lock(mRecoveryMutex);
+        mRecoveryShutdown = true;
+        mRecoveryPending = false;
+        mPendingRecoveryStream = nullptr;
+    }
+    mRecoveryCv.notify_all();
+    if (mRecoveryThread.joinable()) {
+        mRecoveryThread.join();
+    }
     LOG_OBOE_I("AudioEngine destroyed");
 }
 
@@ -31,6 +49,62 @@ void AudioEngine::stopDecodeThread() {
     if (mDecodeThread.joinable()) {
         mDecodeThread.join();
     }
+}
+
+void AudioEngine::stopNextDecodeThread() {
+    mNextDecodeThreadRunning.store(false, std::memory_order_release);
+    mNextDecodeCv.notify_all();
+    if (mNextDecodeThread.joinable()) {
+        mNextDecodeThread.join();
+    }
+}
+
+void AudioEngine::resetNextDeckLocked() {
+    mCrossfadeActive.store(false, std::memory_order_release);
+    mCrossfadeCompleted.store(false, std::memory_order_release);
+    mNextIsActive.store(false, std::memory_order_release);
+    mNextPreloaded.store(false, std::memory_order_release);
+    stopNextDecodeThread();
+    beginBufferReset();
+    if (mNextRingBuffer) {
+        mNextRingBuffer->clear();
+    }
+    mNextPlayedSampleCount.store(0, std::memory_order_release);
+    mNextOutputSampleRate.store(0, std::memory_order_release);
+    mNextTrackReplayGainLinear.store(1.0f, std::memory_order_release);
+    mNextDecoderReachedEof.store(false, std::memory_order_release);
+    mNextEof.store(false, std::memory_order_release);
+    mCrossfadeDurationFrames.store(0, std::memory_order_release);
+    mCrossfadeElapsedFrames = 0;
+    endBufferReset();
+    if (mNextDecoder) {
+        mNextDecoder->close();
+    }
+}
+
+float AudioEngine::estimatePrebufferReplayGain(const float* buffer, int32_t totalSamples) {
+    if (!buffer || totalSamples <= 0) return 1.0f;
+    double sumSq = 0.0;
+    float peak = 0.0f;
+    int32_t nonSilentCount = 0;
+    for (int32_t i = 0; i < totalSamples; ++i) {
+        float absVal = std::fabs(buffer[i]);
+        if (absVal > 0.001f) {
+            sumSq += (double)absVal * (double)absVal;
+            nonSilentCount++;
+        }
+        if (absVal > peak) peak = absVal;
+    }
+    if (nonSilentCount <= 256) return 1.0f;
+
+    float rms = (float)std::sqrt(sumSq / (double)nonSilentCount);
+    // Target reference RMS ~0.18f (-15 dBFS), clamped to [-6 dB .. +6 dB] (0.5f .. 2.0f) and headroom-limited by peak
+    float desiredGain = (rms > 0.005f) ? (0.18f / rms) : 1.0f;
+    desiredGain = std::clamp(desiredGain, 0.5f, 2.0f);
+    if (peak * desiredGain > 0.98f && peak > 0.01f) {
+        desiredGain = 0.98f / peak;
+    }
+    return desiredGain;
 }
 
 void AudioEngine::beginBufferReset() {
@@ -45,58 +119,46 @@ void AudioEngine::endBufferReset() {
     mIsResettingBuffer.store(false, std::memory_order_release);
 }
 
+void AudioEngine::syncDecoderSampleRateToStreamLocked() {
+    if (!mStream || !mDecoder) return;
+    int32_t hwSr = mStream->getSampleRate();
+    uint32_t decSr = mDecoder->getSampleRate();
+    if (hwSr > 0 && decSr > 0 && static_cast<uint32_t>(hwSr) != decSr) {
+        int64_t prevFrame = getCurrentFrame();
+        uint32_t targetSr = static_cast<uint32_t>(hwSr);
+        mDecoder->reconfigureOutputSampleRate(targetSr);
+        mOutputSampleRate.store(targetSr, std::memory_order_release);
+        uint32_t ch = mDecoder->getChannels() > 0 ? mDecoder->getChannels() : 2u;
+        int64_t scaledFrame = (prevFrame * static_cast<int64_t>(targetSr)) / static_cast<int64_t>(decSr);
+        if (scaledFrame < 0) scaledFrame = 0;
+        mPlayedSampleCount.store(static_cast<uint64_t>(scaledFrame) * ch, std::memory_order_release);
+        // If stream rate changed underneath (e.g. device switch), invalidate preloaded Deck B at old rate
+        if (mNextPreloaded.load(std::memory_order_acquire) ||
+            mNextIsActive.load(std::memory_order_acquire) ||
+            mCrossfadeActive.load(std::memory_order_acquire) ||
+            mCrossfadeCompleted.load(std::memory_order_acquire)) {
+            resetNextDeckLocked();
+        }
+        LOG_OBOE_I("syncDecoderSampleRateToStreamLocked: Matched decoder %u Hz -> hardware %u Hz", decSr, targetSr);
+    }
+}
+
 bool AudioEngine::initStreamAfterLoad() {
     int sampleRate = mDecoder->getSampleRate();
     int channels = mDecoder->getChannels();
-    LOG_OBOE_I("initStreamAfterLoad: Successfully opened. SampleRate: %d, Channels: %d, TotalFrames: %lld",
+    mOutputSampleRate.store((sampleRate > 0) ? (uint32_t)sampleRate : 0u, std::memory_order_release);
+    LOG_OBOE_I("initStreamAfterLoad: Opened file. SampleRate: %d, Channels: %d, TotalFrames: %lld",
                sampleRate, channels, (long long)mDecoder->getTotalFrames());
 
-    // Pre-decode initial frames into RingBuffer so buffer is never dry on startup
-    uint32_t ch = (channels > 0) ? (uint32_t)channels : 2u;
-    uint64_t framesToRead = PREBUFFER_SIZE / ch;
-    uint64_t framesDecoded = mDecoder->decodeFrames(mPreBuffer.data(), framesToRead);
-    if (framesDecoded > 0) {
-        int32_t totalSamples = (int32_t)(framesDecoded * ch);
-        mRingBuffer->write(mPreBuffer.data(), totalSamples);
-
-        // Estimate initial ReplayGain loudness from pre-buffered samples
-        double sumSq = 0.0;
-        float peak = 0.0f;
-        int32_t nonSilentCount = 0;
-        for (int32_t i = 0; i < totalSamples; ++i) {
-            float absVal = std::fabs(mPreBuffer[i]);
-            if (absVal > 0.001f) {
-                sumSq += (double)absVal * (double)absVal;
-                nonSilentCount++;
-            }
-            if (absVal > peak) peak = absVal;
-        }
-        if (nonSilentCount > 256) {
-            float rms = (float)std::sqrt(sumSq / (double)nonSilentCount);
-            // Target reference RMS ~0.18f (-15 dBFS), clamped to [-6 dB .. +6 dB] (0.5f .. 2.0f) and headroom-limited by peak
-            float desiredGain = (rms > 0.005f) ? (0.18f / rms) : 1.0f;
-            if (desiredGain > 2.0f) desiredGain = 2.0f;
-            if (desiredGain < 0.5f) desiredGain = 0.5f;
-            if (peak * desiredGain > 0.98f && peak > 0.01f) {
-                desiredGain = 0.98f / peak;
-            }
-            mTrackReplayGainLinear.store(desiredGain, std::memory_order_release);
-        } else {
-            mTrackReplayGainLinear.store(1.0f, std::memory_order_release);
-        }
-        LOG_OBOE_D("initStreamAfterLoad: Pre-buffered %lld frames into RingBuffer (ReplayGain linear=%.2f)",
-                   (long long)framesDecoded, mTrackReplayGainLinear.load());
-    } else {
-        mTrackReplayGainLinear.store(1.0f, std::memory_order_release);
-    }
-
-    // Check if existing Oboe stream can be reused (always reuse when Gapless is enabled and format matches)
+    // Open or reuse Oboe stream first so we can verify actual hardware sample rate before pre-buffering
     bool gapless = mGaplessEnabled.load(std::memory_order_acquire);
+    bool rateCompatible = mStream && (mStream->getSampleRate() == sampleRate ||
+                                      (mLastRequestedSampleRate > 0 && mLastRequestedSampleRate == sampleRate));
     bool needNewStream = (!mStream ||
                           !gapless ||
                           mStream->getState() == oboe::StreamState::Closed ||
                           mStream->getState() == oboe::StreamState::Disconnected ||
-                          mStream->getSampleRate() != sampleRate ||
+                          !rateCompatible ||
                           mStream->getChannelCount() != channels);
 
     if (needNewStream) {
@@ -110,6 +172,26 @@ bool AudioEngine::initStreamAfterLoad() {
         LOG_OBOE_I("initStreamAfterLoad: Gapless reuse of existing Oboe stream (Current State: %s)", oboe::convertToText(mStream->getState()));
     }
 
+    syncDecoderSampleRateToStreamLocked();
+
+    // Pre-decode initial frames into RingBuffer at confirmed stream sample rate
+    uint32_t ch = (channels > 0) ? (uint32_t)channels : 2u;
+    uint64_t framesToRead = PREBUFFER_SIZE / ch;
+    uint64_t framesDecoded = mDecoder->decodeFrames(mPreBuffer.data(), framesToRead);
+    if (framesDecoded > 0) {
+        int32_t totalSamples = (int32_t)(framesDecoded * ch);
+        mRingBuffer->write(mPreBuffer.data(), totalSamples);
+        float rgLinear = mDecoder->hasReplayGain()
+                             ? mDecoder->getReplayGainLinear()
+                             : estimatePrebufferReplayGain(mPreBuffer.data(), totalSamples);
+        mTrackReplayGainLinear.store(rgLinear, std::memory_order_release);
+        LOG_OBOE_D("initStreamAfterLoad: Pre-buffered %lld frames (ReplayGain %.2f, fromTag=%d)",
+                   (long long)framesDecoded, rgLinear, (int)mDecoder->hasReplayGain());
+    } else {
+        float rgLinear = mDecoder->hasReplayGain() ? mDecoder->getReplayGainLinear() : 1.0f;
+        mTrackReplayGainLinear.store(rgLinear, std::memory_order_release);
+    }
+
     return true;
 }
 
@@ -119,11 +201,17 @@ bool AudioEngine::loadFd(int fd) {
 
     mIsPlaying.store(false, std::memory_order_release);
     stopDecodeThread();
+    resetNextDeckLocked();
 
     beginBufferReset();
     mIsEof = false;
     mDecoderReachedEof = false;
     mPlayedSampleCount.store(0, std::memory_order_release);
+    mOutputSampleRate.store(0, std::memory_order_release);
+    mVolumeRampCoeff.store(0.0015f, std::memory_order_release);
+    mTargetVolume.store(1.0f, std::memory_order_release);
+    mCurrentVolume = 1.0f;
+    mLimiterGain = 1.0f;
     mRingBuffer->clear();
     if (mEqualizer) {
         mEqualizer->reset();
@@ -154,11 +242,17 @@ bool AudioEngine::loadFile(const std::string& filePath) {
 
     mIsPlaying.store(false, std::memory_order_release);
     stopDecodeThread();
+    resetNextDeckLocked();
 
     beginBufferReset();
     mIsEof = false;
     mDecoderReachedEof = false;
     mPlayedSampleCount.store(0, std::memory_order_release);
+    mOutputSampleRate.store(0, std::memory_order_release);
+    mVolumeRampCoeff.store(0.0015f, std::memory_order_release);
+    mTargetVolume.store(1.0f, std::memory_order_release);
+    mCurrentVolume = 1.0f;
+    mLimiterGain = 1.0f;
     mRingBuffer->clear();
     if (mEqualizer) {
         mEqualizer->reset();
@@ -191,6 +285,13 @@ int64_t AudioEngine::seekTo(int64_t targetFrame) {
     bool wasRunning = mDecodeThreadRunning.load(std::memory_order_acquire);
     if (wasRunning) {
         stopDecodeThread();
+    }
+
+    // Cancel any active/completed crossfade when seeking inside primary track
+    if (mCrossfadeActive.load(std::memory_order_acquire) ||
+        mCrossfadeCompleted.load(std::memory_order_acquire) ||
+        mNextIsActive.load(std::memory_order_acquire)) {
+        resetNextDeckLocked();
     }
 
     // Fence off onAudioReady so clear(), EQ reset, and pre-buffering happen atomically with respect to audio callback
@@ -241,6 +342,10 @@ int64_t AudioEngine::getTotalFrames() const {
     return mDecoder->getTotalFrames();
 }
 
+uint32_t AudioEngine::getSampleRate() const {
+    return mOutputSampleRate.load(std::memory_order_acquire);
+}
+
 bool AudioEngine::start() {
     std::lock_guard<std::mutex> lock(mLock);
     const char* curStateStr = mStream ? oboe::convertToText(mStream->getState()) : "null";
@@ -258,6 +363,12 @@ bool AudioEngine::start() {
             LOG_OBOE_E("start(): openStream failed!");
             return false;
         }
+        syncDecoderSampleRateToStreamLocked();
+        beginBufferReset();
+        int64_t currentFrame = getCurrentFrame();
+        mDecoder->seek(currentFrame);
+        mRingBuffer->clear();
+        endBufferReset();
     }
 
     oboe::StreamState state = mStream->getState();
@@ -268,6 +379,7 @@ bool AudioEngine::start() {
             LOG_OBOE_W("start(): requestStart failed (%s), attempting full stream reopen...", oboe::convertToText(result));
             closeStream();
             if (openStream(mDecoder->getChannels(), mDecoder->getSampleRate())) {
+                syncDecoderSampleRateToStreamLocked();
                 beginBufferReset();
                 int64_t currentFrame = getCurrentFrame();
                 mDecoder->seek(currentFrame);
@@ -284,13 +396,21 @@ bool AudioEngine::start() {
     }
 
     mIsPlaying.store(true, std::memory_order_release);
+    mVolumeRampCoeff.store(0.0015f, std::memory_order_release);
+    mTargetVolume.store(1.0f, std::memory_order_release);
     mIsEof = false;
     mDecoderReachedEof = false;
 
-    // Safely start decode thread
+    // Safely start decode thread(s)
     stopDecodeThread();
     mDecodeThreadRunning.store(true, std::memory_order_release);
     mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
+
+    if (mNextIsActive.load(std::memory_order_acquire) && mNextDecoder && mNextDecoder->getSampleRate() > 0) {
+        stopNextDecodeThread();
+        mNextDecodeThreadRunning.store(true, std::memory_order_release);
+        mNextDecodeThread = std::thread(&AudioEngine::nextDecodeLoop, this);
+    }
 
     LOG_OBOE_I("start(): AudioEngine playback active and running");
     return true;
@@ -307,6 +427,9 @@ void AudioEngine::pause() {
 
     mIsPlaying.store(false, std::memory_order_release);
     stopDecodeThread();
+    stopNextDecodeThread();
+    mVolumeRampCoeff.store(0.0015f, std::memory_order_release);
+    mTargetVolume.store(1.0f, std::memory_order_release);
 }
 
 void AudioEngine::stop() {
@@ -315,6 +438,9 @@ void AudioEngine::stop() {
 
     mIsPlaying.store(false, std::memory_order_release);
     stopDecodeThread();
+    resetNextDeckLocked();
+    mVolumeRampCoeff.store(0.0015f, std::memory_order_release);
+    mTargetVolume.store(1.0f, std::memory_order_release);
 
     if (!mStream) return;
 
@@ -324,52 +450,67 @@ void AudioEngine::stop() {
     closeStream();
 }
 
-void AudioEngine::decodeLoop() {
+void AudioEngine::runDecodeLoop(
+    AudioDecoder* decoder,
+    RingBuffer<float>* ringBuffer,
+    std::atomic<bool>& runningFlag,
+    std::atomic<bool>& eofFlag,
+    std::mutex& cvMutex,
+    std::condition_variable& cv
+) {
     LOG_OBOE_D("Decode thread started");
     setpriority(PRIO_PROCESS, 0, -8); // Boost decode thread priority to prevent underruns
     const int32_t BUFFER_SIZE = 8192;
     const int32_t MIN_WRITE_CHUNK = 2048;
     std::vector<float> tempBuffer(BUFFER_SIZE);
 
-    while (mDecodeThreadRunning.load(std::memory_order_acquire)) {
-        if (mDecoderReachedEof.load(std::memory_order_acquire)) {
-            std::unique_lock<std::mutex> lock(mDecodeCvMutex);
-            mDecodeCv.wait_for(lock, std::chrono::milliseconds(100), [this]() {
-                return !mDecodeThreadRunning.load(std::memory_order_acquire) ||
-                       !mDecoderReachedEof.load(std::memory_order_acquire);
+    while (runningFlag.load(std::memory_order_acquire)) {
+        if (eofFlag.load(std::memory_order_acquire)) {
+            std::unique_lock<std::mutex> lock(cvMutex);
+            cv.wait_for(lock, std::chrono::milliseconds(100), [&]() {
+                return !runningFlag.load(std::memory_order_acquire) ||
+                       !eofFlag.load(std::memory_order_acquire);
             });
             continue;
         }
 
-        int32_t availableWrite = mRingBuffer->getAvailableWrite();
+        int32_t availableWrite = ringBuffer->getAvailableWrite();
         if (availableWrite >= MIN_WRITE_CHUNK) {
-            uint32_t ch = mDecoder->getChannels();
+            uint32_t ch = decoder->getChannels();
             if (ch == 0) ch = 2;
             int32_t samplesToDecode = std::min<int32_t>(availableWrite, BUFFER_SIZE);
             uint64_t framesToRead = (uint64_t)(samplesToDecode / ch);
             if (framesToRead == 0) framesToRead = 1;
 
-            uint64_t framesDecoded = mDecoder->decodeFrames(tempBuffer.data(), framesToRead);
+            uint64_t framesDecoded = decoder->decodeFrames(tempBuffer.data(), framesToRead);
 
             if (framesDecoded > 0) {
-                mRingBuffer->write(tempBuffer.data(), framesDecoded * ch);
+                ringBuffer->write(tempBuffer.data(), framesDecoded * ch);
             } else {
                 // End of file reached by decoder
-                if (!mDecoderReachedEof.load(std::memory_order_acquire)) {
+                if (!eofFlag.load(std::memory_order_acquire)) {
                     LOG_OBOE_I("decodeLoop: Decoder reached EOF");
-                    mDecoderReachedEof.store(true, std::memory_order_release);
+                    eofFlag.store(true, std::memory_order_release);
                 }
             }
         } else {
             // Ring buffer is nearly full; wait until onAudioReady consumes frames or thread stops
-            std::unique_lock<std::mutex> lock(mDecodeCvMutex);
-            mDecodeCv.wait_for(lock, std::chrono::milliseconds(4), [this, MIN_WRITE_CHUNK]() {
-                return !mDecodeThreadRunning.load(std::memory_order_acquire) ||
-                       mRingBuffer->getAvailableWrite() >= MIN_WRITE_CHUNK;
+            std::unique_lock<std::mutex> lock(cvMutex);
+            cv.wait_for(lock, std::chrono::milliseconds(4), [&]() {
+                return !runningFlag.load(std::memory_order_acquire) ||
+                       ringBuffer->getAvailableWrite() >= MIN_WRITE_CHUNK;
             });
         }
     }
     LOG_OBOE_D("Decode thread finished");
+}
+
+void AudioEngine::decodeLoop() {
+    runDecodeLoop(mDecoder.get(), mRingBuffer.get(), mDecodeThreadRunning, mDecoderReachedEof, mDecodeCvMutex, mDecodeCv);
+}
+
+void AudioEngine::nextDecodeLoop() {
+    runDecodeLoop(mNextDecoder.get(), mNextRingBuffer.get(), mNextDecodeThreadRunning, mNextDecoderReachedEof, mNextDecodeCvMutex, mNextDecodeCv);
 }
 
 bool AudioEngine::openStream(int channelCount, int sampleRate) {
@@ -402,14 +543,18 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
     }
 
     if (!wantsAAudio || mAudioMode == 1) {
-        builder.setAudioApi(oboe::AudioApi::OpenSLES);
-        builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
+        builder.setSharingMode(oboe::SharingMode::Shared)
+               ->setAudioApi(oboe::AudioApi::OpenSLES)
+               ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
     } else {
         builder.setAudioApi(oboe::AudioApi::AAudio);
         if (mAudioMode == 2) {
-            builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::None);
+            // Hi-Res Direct: attempt Exclusive direct hardware bypass without OS SRC
+            builder.setSharingMode(oboe::SharingMode::Exclusive)
+                   ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::None);
         } else {
-            builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
+            builder.setSharingMode(oboe::SharingMode::Shared)
+                   ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
         }
     }
     builder.setSampleRate(sampleRate);
@@ -420,10 +565,17 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
     }
 
     oboe::Result result = builder.openStream(mStream);
+    if (result != oboe::Result::OK && wantsAAudio && mAudioMode == 2) {
+        LOG_OBOE_W("openStream: AAudio Exclusive failed (%s), retrying AAudio Shared...", oboe::convertToText(result));
+        builder.setSharingMode(oboe::SharingMode::Shared)
+               ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Best);
+        result = builder.openStream(mStream);
+    }
     if (result != oboe::Result::OK && wantsAAudio) {
         LOG_OBOE_W("openStream: AAudio openStream failed (%s), retrying with OpenSL ES...", oboe::convertToText(result));
-        builder.setAudioApi(oboe::AudioApi::OpenSLES);
-        builder.setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
+        builder.setSharingMode(oboe::SharingMode::Shared)
+               ->setAudioApi(oboe::AudioApi::OpenSLES)
+               ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium);
         result = builder.openStream(mStream);
     }
 
@@ -450,6 +602,7 @@ bool AudioEngine::openStream(int channelCount, int sampleRate) {
     int32_t actualSr = mStream->getSampleRate() > 0 ? mStream->getSampleRate() : sampleRate;
     int32_t actualCh = mStream->getChannelCount() > 0 ? mStream->getChannelCount() : channelCount;
     mEqualizer->init((float)actualSr, actualCh);
+    mLastRequestedSampleRate = sampleRate;
 
     LOG_OBOE_I("openStream: Stream opened successfully: Mode=%d, API=%s, SampleRate=%d, Channels=%d, BufferFrames=%d",
                mAudioMode, oboe::convertToText(mStream->getAudioApi()), mStream->getSampleRate(), mStream->getChannelCount(),
@@ -463,6 +616,7 @@ void AudioEngine::closeStream() {
         mStream->close();
         mStream.reset();
     }
+    mLastRequestedSampleRate = 0;
 }
 
 oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
@@ -487,79 +641,191 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream
         return oboe::DataCallbackResult::Continue;
     }
 
-    int32_t samplesRead = mRingBuffer->read(floatData, totalSamples);
+    bool rgEnabled = mReplayGainEnabled.load(std::memory_order_relaxed);
+    float rgA = rgEnabled ? mTrackReplayGainLinear.load(std::memory_order_relaxed) : 1.0f;
+    float rgB = rgEnabled ? mNextTrackReplayGainLinear.load(std::memory_order_relaxed) : 1.0f;
+    float postRgGain = 1.0f;
 
-    // Wake up decode thread immediately if space opened up in RingBuffer
-    if (samplesRead > 0 && mRingBuffer->getAvailableWrite() >= 8192) {
-        mDecodeCv.notify_one();
-    }
+    bool crossfadeDone = mCrossfadeCompleted.load(std::memory_order_acquire);
+    bool crossfadeNow = !crossfadeDone &&
+                        mCrossfadeActive.load(std::memory_order_acquire) &&
+                        mNextIsActive.load(std::memory_order_acquire) &&
+                        mNextRingBuffer;
 
-    // Track actual samples played for accurate position
-    if (samplesRead > 0) {
-        mPlayedSampleCount.fetch_add((uint64_t)samplesRead, std::memory_order_relaxed);
-    }
-
-    // Fill the rest with silence if we had an underrun
-    if (samplesRead < totalSamples) {
+    if (crossfadeDone && mNextIsActive.load(std::memory_order_acquire) && mNextRingBuffer) {
+        // Crossfade has finished fading Deck A out; keep Deck B playing seamlessly until promotion
+        int32_t samplesRead = mNextRingBuffer->read(floatData, totalSamples);
+        if (samplesRead > 0 && mNextRingBuffer->getAvailableWrite() >= 8192) {
+            mNextDecodeCv.notify_one();
+        }
+        if (samplesRead > 0) {
+            mNextPlayedSampleCount.fetch_add((uint64_t)samplesRead, std::memory_order_relaxed);
+        }
         for (int32_t i = samplesRead; i < totalSamples; ++i) {
             floatData[i] = 0.0f;
         }
-
-        // Only set EOF if decoder finished reading AND ring buffer is completely drained AND we played frames
-        if (mDecoderReachedEof.load(std::memory_order_acquire) &&
+        if (samplesRead < totalSamples &&
+            mNextDecoderReachedEof.load(std::memory_order_acquire) &&
+            mNextRingBuffer->getAvailableRead() == 0 &&
+            mNextPlayedSampleCount.load(std::memory_order_relaxed) > 0) {
+            mNextEof.store(true, std::memory_order_release);
+        }
+        if (mEqualizer && samplesRead > 0) {
+            mEqualizer->processBuffer(floatData, samplesRead);
+        }
+        postRgGain = rgB;
+    } else if (crossfadeNow) {
+        // Simultaneous dual-deck equal-power crossfade mix
+        int32_t samplesA = mRingBuffer->read(floatData, totalSamples);
+        if (samplesA > 0 && mRingBuffer->getAvailableWrite() >= 8192) {
+            mDecodeCv.notify_one();
+        }
+        if (samplesA > 0) {
+            mPlayedSampleCount.fetch_add((uint64_t)samplesA, std::memory_order_relaxed);
+        }
+        for (int32_t i = samplesA; i < totalSamples; ++i) {
+            floatData[i] = 0.0f;
+        }
+        if (samplesA < totalSamples &&
+            mDecoderReachedEof.load(std::memory_order_acquire) &&
             mRingBuffer->getAvailableRead() == 0 &&
             mPlayedSampleCount.load(std::memory_order_relaxed) > 0) {
-            if (!mIsEof.load(std::memory_order_relaxed)) {
-                mIsEof.store(true, std::memory_order_release);
-                LOG_OBOE_I("onAudioReady: Hardware playback reached EOF! Total samples played: %lld", (long long)mPlayedSampleCount.load());
+            mIsEof.store(true, std::memory_order_release);
+        }
+
+        uint64_t fadeTotal = mCrossfadeDurationFrames.load(std::memory_order_acquire);
+        if (fadeTotal == 0) fadeTotal = 1;
+        int32_t safeCh = std::max(1, channelCount);
+        int32_t maxChunkFrames = std::max(1, static_cast<int32_t>(mNextMixBuffer.size()) / safeCh);
+        int32_t framesProcessed = 0;
+
+        while (framesProcessed < numFrames) {
+            int32_t chunkFrames = std::min(numFrames - framesProcessed, maxChunkFrames);
+            int32_t chunkSamples = chunkFrames * safeCh;
+            int32_t samplesB = mNextRingBuffer->read(mNextMixBuffer.data(), chunkSamples);
+            if (samplesB > 0) {
+                mNextPlayedSampleCount.fetch_add((uint64_t)samplesB, std::memory_order_relaxed);
+            }
+            for (int32_t s = samplesB; s < chunkSamples; ++s) {
+                mNextMixBuffer[s] = 0.0f;
+            }
+            if (samplesB < chunkSamples &&
+                mNextDecoderReachedEof.load(std::memory_order_acquire) &&
+                mNextRingBuffer->getAvailableRead() == 0 &&
+                mNextPlayedSampleCount.load(std::memory_order_relaxed) > 0) {
+                mNextEof.store(true, std::memory_order_release);
+            }
+
+            int32_t baseSample = framesProcessed * safeCh;
+            for (int32_t f = 0; f < chunkFrames; ++f) {
+                float t = (mCrossfadeElapsedFrames < fadeTotal)
+                              ? (static_cast<float>(mCrossfadeElapsedFrames) / static_cast<float>(fadeTotal))
+                              : 1.0f;
+                float angle = t * 1.57079632679f;
+                float gainA = std::cos(angle);
+                float gainB = std::sin(angle);
+                for (int32_t ch = 0; ch < safeCh; ++ch) {
+                    int32_t idx = baseSample + f * safeCh + ch;
+                    float sA = floatData[idx] * rgA;
+                    float sB = mNextMixBuffer[f * safeCh + ch] * rgB;
+                    floatData[idx] = sA * gainA + sB * gainB;
+                }
+                if (mCrossfadeElapsedFrames < fadeTotal) {
+                    mCrossfadeElapsedFrames++;
+                }
+            }
+            framesProcessed += chunkFrames;
+        }
+
+        if (mNextRingBuffer->getAvailableWrite() >= 8192) {
+            mNextDecodeCv.notify_one();
+        }
+        if (mEqualizer) {
+            mEqualizer->processBuffer(floatData, totalSamples);
+        }
+        if (mCrossfadeElapsedFrames >= fadeTotal) {
+            mCrossfadeActive.store(false, std::memory_order_release);
+            mCrossfadeCompleted.store(true, std::memory_order_release);
+        }
+        postRgGain = 1.0f;
+    } else {
+        // Normal single-deck playback
+        int32_t samplesRead = mRingBuffer->read(floatData, totalSamples);
+
+        // Wake up decode thread immediately if space opened up in RingBuffer
+        if (samplesRead > 0 && mRingBuffer->getAvailableWrite() >= 8192) {
+            mDecodeCv.notify_one();
+        }
+
+        // Track actual samples played for accurate position
+        if (samplesRead > 0) {
+            mPlayedSampleCount.fetch_add((uint64_t)samplesRead, std::memory_order_relaxed);
+        }
+
+        // Fill the rest with silence if we had an underrun
+        if (samplesRead < totalSamples) {
+            for (int32_t i = samplesRead; i < totalSamples; ++i) {
+                floatData[i] = 0.0f;
+            }
+
+            // Only set EOF if decoder finished reading AND ring buffer is completely drained AND we played frames
+            if (mDecoderReachedEof.load(std::memory_order_acquire) &&
+                mRingBuffer->getAvailableRead() == 0 &&
+                mPlayedSampleCount.load(std::memory_order_relaxed) > 0) {
+                if (!mIsEof.load(std::memory_order_relaxed)) {
+                    mIsEof.store(true, std::memory_order_release);
+                    LOG_OBOE_I("onAudioReady: Hardware playback reached EOF! Total samples played: %lld", (long long)mPlayedSampleCount.load());
+                }
             }
         }
+
+        // Process DSP (Equalizer & Bass Boost) in-place on actual decoded audio
+        if (mEqualizer && samplesRead > 0) {
+            mEqualizer->processBuffer(floatData, samplesRead);
+        }
+
+        // Fixed per-track ReplayGain (no dynamic AGC compression in callback)
+        postRgGain = rgA;
     }
 
-    // Process DSP (Equalizer & Bass Boost) in-place on actual decoded audio
-    if (mEqualizer && samplesRead > 0) {
-        mEqualizer->processBuffer(floatData, samplesRead);
-    }
-
-    // Apply ReplayGain loudness normalization and smooth Crossfade/Master Volume ramping
+    // Smooth Stereo-Linked Peak Envelope Limiter: zero distortion up to 0.96, smoothly rides peaks down
+    // across channels without squaring/clipping bass sine waves (no harmonic "farting" on sub-bass).
     float targetVol = mTargetVolume.load(std::memory_order_relaxed);
-    float rgGain = mReplayGainEnabled.load(std::memory_order_relaxed)
-                       ? mTrackReplayGainLinear.load(std::memory_order_relaxed)
-                       : 1.0f;
+    float rampCoeff = mVolumeRampCoeff.load(std::memory_order_relaxed);
+    uint32_t outSr = mOutputSampleRate.load(std::memory_order_relaxed);
+    float srF = (outSr > 0) ? static_cast<float>(outSr) : 48000.0f;
+    float limAttack = 1.0f - std::exp(-1.0f / (0.0003f * srF));
+    float limRelease = 1.0f - std::exp(-1.0f / (0.120f * srF));
+    constexpr float kEnvThresh = 0.96f;
+    constexpr float kHardCeil = 0.996f;
 
-    // Continuously refine ReplayGain estimate on active audio blocks when enabled
-    if (mReplayGainEnabled.load(std::memory_order_relaxed) && samplesRead > 0) {
-        double blockSq = 0.0;
-        int32_t activeCount = 0;
-        for (int32_t i = 0; i < samplesRead; i += 4) {
-            float v = std::fabs(floatData[i]);
-            if (v > 0.005f) {
-                blockSq += (double)v * (double)v;
-                activeCount++;
+    int32_t safeCh = std::max<int32_t>(1, channelCount);
+    for (int32_t f = 0; f < numFrames; ++f) {
+        int32_t base = f * safeCh;
+        float framePeak = 0.0f;
+        for (int32_t ch = 0; ch < safeCh; ++ch) {
+            mCurrentVolume += (targetVol - mCurrentVolume) * rampCoeff;
+            float s = floatData[base + ch] * mCurrentVolume * postRgGain;
+            if (!std::isfinite(s)) s = 0.0f;
+            floatData[base + ch] = s;
+            float a = std::fabs(s);
+            if (a > framePeak) framePeak = a;
+        }
+
+        float desiredLim = (framePeak > kEnvThresh) ? (kEnvThresh / framePeak) : 1.0f;
+        if (desiredLim < mLimiterGain) {
+            mLimiterGain += (desiredLim - mLimiterGain) * limAttack;
+            if (framePeak * mLimiterGain > kHardCeil && framePeak > 0.0f) {
+                mLimiterGain = kHardCeil / framePeak;
             }
-        }
-        if (activeCount > 16) {
-            float blockRms = (float)std::sqrt(blockSq / (double)activeCount);
-            float blockTarget = std::clamp(0.18f / blockRms, 0.5f, 2.0f);
-            float smoothedRg = rgGain * 0.995f + blockTarget * 0.005f;
-            mTrackReplayGainLinear.store(smoothedRg, std::memory_order_relaxed);
-            rgGain = smoothedRg;
-        }
-    }
-
-    // Safety guard + smooth volume/ReplayGain application + soft limiting:
-    // ensure no NaN/Inf or >0dBFS overflow ever reaches OpenSL ES / AAudio hardware
-    for (int32_t i = 0; i < totalSamples; ++i) {
-        mCurrentVolume += (targetVol - mCurrentVolume) * 0.0015f;
-        float s = floatData[i] * mCurrentVolume * rgGain;
-        if (std::isnan(s) || std::isinf(s)) {
-            floatData[i] = 0.0f;
-        } else if (s > 1.0f) {
-            floatData[i] = 1.0f;
-        } else if (s < -1.0f) {
-            floatData[i] = -1.0f;
         } else {
-            floatData[i] = s;
+            mLimiterGain += (desiredLim - mLimiterGain) * limRelease;
+        }
+
+        if (mLimiterGain < 0.9999f) {
+            for (int32_t ch = 0; ch < safeCh; ++ch) {
+                floatData[base + ch] = std::clamp(floatData[base + ch] * mLimiterGain, -0.9999f, 0.9999f);
+            }
         }
     }
 
@@ -573,23 +839,58 @@ void AudioEngine::onErrorBeforeClose(oboe::AudioStream *oboeStream, oboe::Result
 void AudioEngine::onErrorAfterClose(oboe::AudioStream *oboeStream, oboe::Result error) {
     LOG_OBOE_E("onErrorAfterClose: %s (%d)", oboe::convertToText(error), (int)error);
 
-    // Automatically recover audio stream on device routing change (Bluetooth disconnect/connect, USB DAC change)
+    // Automatically recover audio stream on device routing change (Bluetooth disconnect/connect, USB DAC change).
+    // Defer to mRecoveryThread so this Oboe callback never contends on mLock while another thread calls close().
     if (error == oboe::Result::ErrorDisconnected ||
         error == oboe::Result::ErrorUnavailable ||
         error == oboe::Result::ErrorInternal ||
         error == oboe::Result::ErrorInvalidState) {
-        LOG_OBOE_I("Device disconnected or routing changed, recovering audio stream...");
-        reopenStream(mIsPlaying.load(std::memory_order_acquire));
+        LOG_OBOE_I("Device disconnected or routing changed, scheduling async stream recovery...");
+        {
+            std::lock_guard<std::mutex> lock(mRecoveryMutex);
+            mPendingRecoveryStream = oboeStream;
+            mRecoveryPending = true;
+        }
+        mRecoveryCv.notify_one();
     } else {
         mIsPlaying.store(false, std::memory_order_release);
         mDecodeThreadRunning.store(false, std::memory_order_release);
         mDecodeCv.notify_all();
+        mNextDecodeThreadRunning.store(false, std::memory_order_release);
+        mNextDecodeCv.notify_all();
+    }
+}
+
+void AudioEngine::recoveryLoop() {
+    while (true) {
+        oboe::AudioStream* erroredStream = nullptr;
+        {
+            std::unique_lock<std::mutex> lock(mRecoveryMutex);
+            mRecoveryCv.wait(lock, [this]() {
+                return mRecoveryShutdown || mRecoveryPending;
+            });
+            if (mRecoveryShutdown) {
+                return;
+            }
+            erroredStream = mPendingRecoveryStream;
+            mPendingRecoveryStream = nullptr;
+            mRecoveryPending = false;
+        }
+
+        std::lock_guard<std::mutex> engineLock(mLock);
+        // Only recover if mStream still refers to the stream that actually errored
+        if (mStream && mStream.get() == erroredStream) {
+            reopenStreamLocked(mIsPlaying.load(std::memory_order_acquire));
+        }
     }
 }
 
 bool AudioEngine::reopenStream(bool restartIfPlaying) {
     std::lock_guard<std::mutex> lock(mLock);
+    return reopenStreamLocked(restartIfPlaying);
+}
 
+bool AudioEngine::reopenStreamLocked(bool restartIfPlaying) {
     if (!mDecoder || mDecoder->getSampleRate() == 0) {
         LOG_OBOE_D("reopenStream: No active decoder / file loaded");
         return false;
@@ -597,8 +898,9 @@ bool AudioEngine::reopenStream(bool restartIfPlaying) {
 
     LOG_OBOE_I("reopenStream: Reopening stream (restartIfPlaying=%d, wasPlaying=%d)", restartIfPlaying, (int)mIsPlaying.load());
 
-    // Stop decode thread safely
+    // Stop decode thread(s) safely
     stopDecodeThread();
+    stopNextDecodeThread();
 
     bool shouldPlay = restartIfPlaying && mIsPlaying.load(std::memory_order_acquire);
     mIsPlaying.store(false, std::memory_order_release);
@@ -612,7 +914,8 @@ bool AudioEngine::reopenStream(bool restartIfPlaying) {
         return false;
     }
 
-    // Seek decoder back to exact playback frame (preserves mPlayedSampleCount)
+    // Match decoder output rate if Oboe hardware forced a different sample rate, then seek
+    syncDecoderSampleRateToStreamLocked();
     beginBufferReset();
     int64_t currentFrame = getCurrentFrame();
     mDecoder->seek(currentFrame);
@@ -623,6 +926,10 @@ bool AudioEngine::reopenStream(bool restartIfPlaying) {
         mIsPlaying.store(true, std::memory_order_release);
         mDecodeThreadRunning.store(true, std::memory_order_release);
         mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
+        if (mNextIsActive.load(std::memory_order_acquire) && mNextDecoder && mNextDecoder->getSampleRate() > 0) {
+            mNextDecodeThreadRunning.store(true, std::memory_order_release);
+            mNextDecodeThread = std::thread(&AudioEngine::nextDecodeLoop, this);
+        }
         oboe::Result res = mStream->requestStart();
         if (res != oboe::Result::OK) {
             LOG_OBOE_E("reopenStream: requestStart failed: %s", oboe::convertToText(res));
@@ -641,8 +948,9 @@ bool AudioEngine::recreateStream(int mode) {
 
     if (!mDecoder || mDecoder->getSampleRate() == 0) return false;
 
-    // Stop decode thread
+    // Stop decode thread(s)
     stopDecodeThread();
+    stopNextDecodeThread();
 
     bool wasPlaying = mIsPlaying.load(std::memory_order_acquire);
     mIsPlaying.store(false, std::memory_order_release);
@@ -654,7 +962,8 @@ bool AudioEngine::recreateStream(int mode) {
 
     if (!openStream(mDecoder->getChannels(), mDecoder->getSampleRate())) return false;
 
-    // Re-sync decoder to current playback frame
+    // Match decoder output rate if new API forced a different sample rate, then seek
+    syncDecoderSampleRateToStreamLocked();
     beginBufferReset();
     int64_t currentFrame = getCurrentFrame();
     mDecoder->seek(currentFrame);
@@ -665,6 +974,10 @@ bool AudioEngine::recreateStream(int mode) {
         mIsPlaying.store(true, std::memory_order_release);
         mDecodeThreadRunning.store(true, std::memory_order_release);
         mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
+        if (mNextIsActive.load(std::memory_order_acquire) && mNextDecoder && mNextDecoder->getSampleRate() > 0) {
+            mNextDecodeThreadRunning.store(true, std::memory_order_release);
+            mNextDecodeThread = std::thread(&AudioEngine::nextDecodeLoop, this);
+        }
         mStream->requestStart();
     }
 
@@ -672,20 +985,37 @@ bool AudioEngine::recreateStream(int mode) {
 }
 
 bool AudioEngine::setAudioDeviceId(int deviceId) {
+    std::lock_guard<std::mutex> lock(mLock);
     LOG_OBOE_I("setAudioDeviceId: changing device ID to %d", deviceId);
     mDeviceId = deviceId;
-    return reopenStream(mIsPlaying);
+    return reopenStreamLocked(mIsPlaying.load(std::memory_order_acquire));
 }
 
 bool AudioEngine::setSafeBufferMode(bool enabled) {
+    std::lock_guard<std::mutex> lock(mLock);
     LOG_OBOE_I("setSafeBufferMode: changing to %d (was %d)", (int)enabled, (int)mSafeBufferMode.load());
     mSafeBufferMode.store(enabled);
-    return reopenStream(mIsPlaying);
+    return reopenStreamLocked(mIsPlaying.load(std::memory_order_acquire));
 }
 
 void AudioEngine::setVolume(float volume) {
     float clamped = std::clamp(volume, 0.0f, 1.0f);
     mTargetVolume.store(clamped, std::memory_order_release);
+}
+
+void AudioEngine::beginPauseFade(int durationMs) {
+    uint32_t sr = mOutputSampleRate.load(std::memory_order_acquire);
+    if (sr == 0) sr = 44100;
+    float durSec = static_cast<float>(std::clamp(durationMs, 30, 500)) / 1000.0f;
+    // Settle to -50 dB (~0.003x) within durationMs for a smooth exponential pause taper
+    float coeff = std::clamp(5.8f / (durSec * static_cast<float>(sr) * 2.0f), 0.0001f, 0.01f);
+    mVolumeRampCoeff.store(coeff, std::memory_order_release);
+    mTargetVolume.store(0.0f, std::memory_order_release);
+}
+
+void AudioEngine::cancelPauseFade() {
+    mVolumeRampCoeff.store(0.0015f, std::memory_order_release);
+    mTargetVolume.store(1.0f, std::memory_order_release);
 }
 
 void AudioEngine::setReplayGainEnabled(bool enabled) {
@@ -700,4 +1030,193 @@ void AudioEngine::setGaplessEnabled(bool enabled) {
 
 bool AudioEngine::isEof() const {
     return mIsEof.load();
+}
+
+bool AudioEngine::initNextDeckAfterLoad() {
+    uint32_t nextSr = mNextDecoder->getSampleRate();
+    uint32_t nextCh = mNextDecoder->getChannels();
+    if (nextSr == 0 || nextCh == 0) return false;
+
+    mNextOutputSampleRate.store(nextSr, std::memory_order_release);
+    uint64_t framesToRead = (uint64_t)(mNextPreBuffer.size() / nextCh);
+    uint64_t framesDecoded = mNextDecoder->decodeFrames(mNextPreBuffer.data(), framesToRead);
+    if (framesDecoded > 0) {
+        int32_t totalSamples = (int32_t)(framesDecoded * nextCh);
+        mNextRingBuffer->write(mNextPreBuffer.data(), totalSamples);
+        float rgLinear = mNextDecoder->hasReplayGain()
+                             ? mNextDecoder->getReplayGainLinear()
+                             : estimatePrebufferReplayGain(mNextPreBuffer.data(), totalSamples);
+        mNextTrackReplayGainLinear.store(rgLinear, std::memory_order_release);
+    } else {
+        float rgLinear = mNextDecoder->hasReplayGain() ? mNextDecoder->getReplayGainLinear() : 1.0f;
+        mNextTrackReplayGainLinear.store(rgLinear, std::memory_order_release);
+    }
+    LOG_OBOE_I("initNextDeckAfterLoad: Pre-buffered %llu frames (SR=%u, RG=%.2f)",
+               (unsigned long long)framesDecoded, nextSr, mNextTrackReplayGainLinear.load());
+    return true;
+}
+
+bool AudioEngine::preloadNextFd(int fd) {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (!mDecoder || mDecoder->getSampleRate() == 0) {
+        LOG_OBOE_W("preloadNextFd: No primary track active");
+        return false;
+    }
+
+    resetNextDeckLocked();
+    if (!mNextDecoder || !mNextRingBuffer) return false;
+
+    // Force Deck B output rate to match active stream sample rate so dual-deck mix is 1:1
+    uint32_t targetSr = mOutputSampleRate.load(std::memory_order_acquire);
+    if (targetSr == 0) targetSr = mDecoder->getSampleRate();
+
+    if (!mNextDecoder->openFd(fd, targetSr)) {
+        LOG_OBOE_E("preloadNextFd: Failed to open fd %d in mNextDecoder", fd);
+        return false;
+    }
+
+    if (!initNextDeckAfterLoad()) {
+        resetNextDeckLocked();
+        return false;
+    }
+
+    mNextPreloaded.store(true, std::memory_order_release);
+    return true;
+}
+
+bool AudioEngine::preloadNextFile(const std::string& filePath) {
+    if (filePath.rfind("/proc/self/fd/", 0) == 0) {
+        int fd = -1;
+        if (sscanf(filePath.c_str(), "/proc/self/fd/%d", &fd) == 1 && fd >= 0) {
+            return preloadNextFd(fd);
+        }
+    }
+
+    std::lock_guard<std::mutex> lock(mLock);
+    if (!mDecoder || mDecoder->getSampleRate() == 0) {
+        LOG_OBOE_W("preloadNextFile: No primary track active");
+        return false;
+    }
+
+    resetNextDeckLocked();
+    if (!mNextDecoder || !mNextRingBuffer) return false;
+
+    uint32_t targetSr = mOutputSampleRate.load(std::memory_order_acquire);
+    if (targetSr == 0) targetSr = mDecoder->getSampleRate();
+
+    if (!mNextDecoder->openFile(filePath, targetSr)) {
+        LOG_OBOE_E("preloadNextFile: Failed to open '%s' in mNextDecoder", filePath.c_str());
+        return false;
+    }
+
+    if (!initNextDeckAfterLoad()) {
+        resetNextDeckLocked();
+        return false;
+    }
+
+    mNextPreloaded.store(true, std::memory_order_release);
+    return true;
+}
+
+bool AudioEngine::startCrossfade(int durationMs) {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (!mNextPreloaded.load(std::memory_order_acquire) || !mNextDecoder || mNextDecoder->getSampleRate() == 0) {
+        LOG_OBOE_W("startCrossfade: Next track not preloaded");
+        return false;
+    }
+    if (mCrossfadeActive.load(std::memory_order_acquire) || mCrossfadeCompleted.load(std::memory_order_acquire)) {
+        return false;
+    }
+
+    uint32_t sr = mOutputSampleRate.load(std::memory_order_acquire);
+    if (sr == 0) sr = mDecoder ? mDecoder->getSampleRate() : 44100;
+    if (sr == 0) sr = 44100;
+
+    int64_t clampedMs = std::max(100, durationMs);
+    uint64_t fadeFrames = static_cast<uint64_t>((clampedMs * static_cast<int64_t>(sr)) / 1000LL);
+    if (fadeFrames == 0) fadeFrames = 1;
+
+    stopNextDecodeThread();
+    mCrossfadeElapsedFrames = 0;
+    mCrossfadeDurationFrames.store(fadeFrames, std::memory_order_release);
+    mCrossfadeCompleted.store(false, std::memory_order_release);
+    mNextIsActive.store(true, std::memory_order_release);
+    mCrossfadeActive.store(true, std::memory_order_release);
+
+    if (mIsPlaying.load(std::memory_order_acquire)) {
+        mNextDecodeThreadRunning.store(true, std::memory_order_release);
+        mNextDecodeThread = std::thread(&AudioEngine::nextDecodeLoop, this);
+    }
+
+    LOG_OBOE_I("startCrossfade: Started dual-deck crossfade (%lld ms, %llu frames @ %u Hz)",
+               (long long)clampedMs, (unsigned long long)fadeFrames, sr);
+    return true;
+}
+
+void AudioEngine::cancelCrossfade() {
+    std::lock_guard<std::mutex> lock(mLock);
+    resetNextDeckLocked();
+}
+
+bool AudioEngine::isCrossfadeCompleted() const {
+    return mCrossfadeCompleted.load(std::memory_order_acquire);
+}
+
+bool AudioEngine::promotePreloadedTrack() {
+    std::lock_guard<std::mutex> lock(mLock);
+    if (!mNextDecoder || mNextDecoder->getSampleRate() == 0) {
+        return false;
+    }
+
+    stopDecodeThread();
+    stopNextDecodeThread();
+
+    // Allocate replacement decoder outside the RT reset fence
+    auto freshNextDecoder = std::make_unique<AudioDecoder>();
+    std::unique_ptr<AudioDecoder> oldPrimaryDecoder;
+
+    beginBufferReset();
+    oldPrimaryDecoder = std::move(mDecoder);
+    mDecoder = std::move(mNextDecoder);
+    mNextDecoder = std::move(freshNextDecoder);
+    std::swap(mRingBuffer, mNextRingBuffer);
+
+    mPlayedSampleCount.store(mNextPlayedSampleCount.load(std::memory_order_acquire), std::memory_order_release);
+    mNextPlayedSampleCount.store(0, std::memory_order_release);
+
+    mDecoderReachedEof.store(mNextDecoderReachedEof.load(std::memory_order_acquire), std::memory_order_release);
+    mNextDecoderReachedEof.store(false, std::memory_order_release);
+
+    mIsEof.store(mNextEof.load(std::memory_order_acquire), std::memory_order_release);
+    mNextEof.store(false, std::memory_order_release);
+
+    mOutputSampleRate.store(mNextOutputSampleRate.load(std::memory_order_acquire), std::memory_order_release);
+    mNextOutputSampleRate.store(0, std::memory_order_release);
+
+    mTrackReplayGainLinear.store(mNextTrackReplayGainLinear.load(std::memory_order_acquire), std::memory_order_release);
+    mNextTrackReplayGainLinear.store(1.0f, std::memory_order_release);
+
+    mCrossfadeActive.store(false, std::memory_order_release);
+    mCrossfadeCompleted.store(false, std::memory_order_release);
+    mNextIsActive.store(false, std::memory_order_release);
+    mNextPreloaded.store(false, std::memory_order_release);
+    mCrossfadeDurationFrames.store(0, std::memory_order_release);
+    mCrossfadeElapsedFrames = 0;
+    endBufferReset();
+
+    if (mNextRingBuffer) {
+        mNextRingBuffer->clear();
+    }
+    if (oldPrimaryDecoder) {
+        oldPrimaryDecoder->close();
+    }
+
+    if (mIsPlaying.load(std::memory_order_acquire) && mDecoder && mDecoder->getSampleRate() > 0) {
+        mDecodeThreadRunning.store(true, std::memory_order_release);
+        mDecodeThread = std::thread(&AudioEngine::decodeLoop, this);
+    }
+
+    LOG_OBOE_I("promotePreloadedTrack: Promoted Deck B to primary (SR=%u, PlayedFrames=%lld)",
+               mOutputSampleRate.load(std::memory_order_relaxed), (long long)getCurrentFrame());
+    return true;
 }

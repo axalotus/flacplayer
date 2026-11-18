@@ -1,5 +1,5 @@
-# ProGuard / R8 rules for FlacPlayer
--keep class com.antigravity.audioplayer.audio.NativeAudioEngine { *; }
+# ProGuard / R8 rules for Zuna
+-keep class com.zuna.player.audio.NativeAudioEngine { *; }
 -keepclasseswithmembernames class * {
     native <methods>;
 }

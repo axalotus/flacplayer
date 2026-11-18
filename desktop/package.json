@@ -1,19 +1,21 @@
 {
-  "name": "flacplayer-desktop",
-  "version": "1.0.0",
-  "description": "FlacPlayer — Monochrome Hi-Res Lossless Audio Player",
-  "homepage": "https://github.com/axalotus/flacplayer",
+  "name": "zuna-desktop",
+  "version": "1.1.0",
+  "description": "Zuna — Monochrome Hi-Res Lossless Audio Player",
+  "homepage": "https://github.com/axalotus/zuna-player",
   "main": "main.js",
   "author": "Antigravity AI",
   "license": "MIT",
+  "gypfile": true,
   "scripts": {
+    "install": "node-gyp rebuild",
     "start": "electron .",
     "dist:linux": "electron-builder --linux AppImage deb tar.gz",
     "dist:win": "electron-builder --win portable nsis"
   },
   "build": {
-    "appId": "com.antigravity.flacplayer.desktop",
-    "productName": "FlacPlayer",
+    "appId": "com.zuna.player.desktop",
+    "productName": "Zuna",
     "directories": {
       "output": "dist"
     },
@@ -21,7 +23,11 @@
       "main.js",
       "preload.js",
       "renderer/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "build/Release/*.node"
+    ],
+    "asarUnpack": [
+      "build/Release/*.node"
     ],
     "linux": {
       "target": [
@@ -31,8 +37,8 @@
       ],
       "icon": "assets/icon.png",
       "category": "AudioVideo;Audio;Player",
-      "maintainer": "FlacPlayer <axalotus@github.com>",
-      "artifactName": "FlacPlayer-${version}-Linux-${arch}.${ext}"
+      "maintainer": "Zuna <axalotus@github.com>",
+      "artifactName": "Zuna-${version}-Linux-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -42,7 +48,7 @@
       "icon": "assets/icon.png"
     },
     "portable": {
-      "artifactName": "FlacPlayer-${version}-Windows-x64-Portable.exe"
+      "artifactName": "Zuna-${version}-Windows-x64-Portable.exe"
     },
     "nsis": {
       "oneClick": false,
@@ -50,8 +56,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "FlacPlayer",
-      "artifactName": "FlacPlayer-${version}-Windows-x64-Setup.exe"
+      "shortcutName": "Zuna",
+      "artifactName": "Zuna-${version}-Windows-x64-Setup.exe"
     }
   },
   "dependencies": {

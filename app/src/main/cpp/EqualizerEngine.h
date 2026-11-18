@@ -5,10 +5,12 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
+#include <cstdint>
 
 class EqualizerEngine {
 public:
     static constexpr int NUM_BANDS = 10;
+    static constexpr int MAX_CHANNELS = 8;
     static constexpr float BAND_FREQUENCIES[NUM_BANDS] = {
         31.0f, 62.0f, 125.0f, 250.0f, 500.0f, 
         1000.0f, 2000.0f, 4000.0f, 8000.0f, 16000.0f
@@ -32,13 +34,18 @@ private:
         float sampleRate = 44100.0f;
         int channels = 2;
         bool hasActiveFilter = false;
+        float preampLinear = 1.0f;
         BiquadCoeffs bassCoeff;
         BiquadCoeffs bandCoeffs[NUM_BANDS];
     };
 
     std::mutex mConfigLock;
-    std::mutex mSnapshotLock;
     std::atomic<bool> mResetRequested{false};
+    // Lock-free triple-buffer: low 8 bits = middle slot index (0..2), TRIPLE_DIRTY_BIT = new snapshot ready.
+    static constexpr uint32_t TRIPLE_DIRTY_BIT = 0x100u;
+    std::atomic<uint32_t> mMiddleState{2u};
+    int mWriterSlot = 1; // Protected by mConfigLock
+    int mReaderSlot = 0; // Owned exclusively by real-time audio thread
     
     bool mEnabled = true;
     float mSampleRate = 44100.0f;
@@ -47,9 +54,9 @@ private:
     float mBandGains[NUM_BANDS];
     float mBassBoostStrength = 0.0f;
 
-    EqCoeffsSnapshot mPublishedSnapshot;
+    EqCoeffsSnapshot mSnapshots[3];
     
-    // Filter delay states owned exclusively by the audio processing thread
+    // Filter delay states pre-allocated up to MAX_CHANNELS and owned exclusively by the audio processing thread
     std::vector<std::vector<BiquadFilter>> mFilters;
     std::vector<BiquadFilter> mBassFilters;
 
