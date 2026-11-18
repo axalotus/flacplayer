@@ -1,86 +1,81 @@
-# Zuna — Hi-Res Lossless Audio Player (Android & Desktop)
+# Zuna
 
-![Version](https://img.shields.io/badge/Version-v1.1-00B4D8?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platforms-Android%20%7C%20Linux%20%7C%20Windows-06D6A0?style=for-the-badge)
-![Engine](https://img.shields.io/badge/Audio-C%2B%2B17%20Oboe%20%7C%20miniaudio-FFB703?style=for-the-badge)
-![100% AI Generated](https://img.shields.io/badge/100%25%20AI%20Written-Google%20Antigravity-9B5DE5?style=for-the-badge)
+Локальный аудиоплеер для **Android**, **Linux** и **Windows** со своим аудиодвижком, эксклюзивным выводом на ЦАП и кастомизируемым интерфейсом.
 
-**Zuna** (`zuna-player`) — монохромный аудиофильский монорепозиторий, объединяющий мобильный клиент для **Android** (собственный C++17 / NDK DSP-движок на базе Google Oboe + Jetpack Compose) и десктопный клиент для **Linux / Windows** (`desktop/` на базе Electron + нативного C++17 аддона на `miniaudio` / FFmpeg).
+Готовые сборки (`.apk`, `.exe`, `AppImage` / `.deb`): [Releases](https://github.com/axalotus/zuna-player/releases)
 
-> **Дисклеймер: 100% AI-Generated Code**  
-> Весь код в этом репозитории написан нейросетью **Google Antigravity AI** под руководством человека-архитектора в диалоговом режиме: нативные C++17 аудиодвижки, кольцевые буферы `RingBuffer`, 10-полосные каскадные биквадратные эквалайзеры, декодеры форматов, синхронизированная караоке-лирика, OTA-апдейтер, система тем `.zunatheme`, интерфейс на Jetpack Compose и весь десктоп-клиент на Electron.
+## Аудиотракт и форматы
 
----
+### Android (`app/`)
+- Вывод через **Google Oboe**: `AAudio` (Low Latency), `OpenSL ES` и обход системного микшера (`Hi-Res Direct`, где поддерживает железо).
+- Декодеры в C++: `dr_flac`, `dr_wav`, `minimp3`, встроенный декодер `ALAC` и NDK `MediaExtractor` / `MediaCodec` для остальных форматов.
+- Форматы: `FLAC`, `WAV`, `MP3`, `ALAC`, `AAC / M4A`, `Ogg Vorbis`, `Opus`, `AIFF / AIFC`.
 
-## Zuna Desktop (`desktop/`) — Linux & Windows
+### Desktop (`desktop/`)
+- Свой нативный N-API аддон `zuna_native.node` на **C++17 + `miniaudio`**:
+  - **Linux:** `PipeWire` / `PulseAudio` в обычном режиме, `ALSA Direct Exclusive` (с приостановкой sink в PipeWire и синхронизацией системного регулятора громкости) в эксклюзивном режиме; для `AAC/M4A`, `Ogg Vorbis`, `Opus` и `AIFF` подключён `FFmpeg` (`libavformat` / `libavcodec` / `libswresample`).
+  - **Windows:** `WASAPI` (`Shared` и строгий `Exclusive` без тихого отката в микшер, с перебором `S32 -> S24 -> F32 -> S16`); то, что не декодируется в нативе, автоматически падает на `WebAudio` внутри Electron.
 
-Кроссплатформенный десктопный клиент на Electron с GPU-ускоренным интерфейсом, нативным C++17 аудиотрактом и гибкой кастомизацией.
-
-### Возможности Desktop-версии:
-- **Нативный C++17 движок (`miniaudio` + FFmpeg) и WebAudio fallback:**
-  - Поддержка **FLAC, WAV, MP3, ALAC, AAC/M4A, Ogg Vorbis, Opus, AIFF/AIFC**.
-  - **Эксклюзивный захват ЦАП:** `ALSA Direct Exclusive` (с временной приостановкой PipeWire-sink и аппаратным регулятором громкости) на Linux и `WASAPI Exclusive / Shared` на Windows, без программного ресемплинга.
-  - **Bit-Transparent тракт и 10-полосный EQ:** при выключенном или плоском эквалайзере звук идёт в обход IIR-фильтров; при включении работают `Preamp`, `Sub-Bass 80 Hz`, 10 полос с живым графиком АЧХ, а также `Gapless`, `Crossfade` и `ReplayGain`.
-- **Полный стоп и системная интеграция:**
-  - Кнопка полного стопа на мини-плеере и полноэкранной сцене: останавливает поток ЦАП, сбрасывает позицию на `0:00` и выставляет `Stopped` в медиаконтролах.
-  - Нативный **MPRIS2 D-Bus сервис** на Linux (`org.mpris.MediaPlayer2.zuna`) для Noctalia/KDE/GNOME (обложка, метаданные, прогресс, перемотка, Play/Pause/Stop/Next/Prev, Loop/Shuffle, громкость).
-- **Энергосбережение без влияния на звук:**
-  - Режимы **Standard**, **Balanced**, **Автоматически при низком заряде (≤ 20%)** и **Battery Saver** + ручные переключатели («Снижение нагрузки»): отключение тяжёлого blur, уменьшение анимаций, статичный фон вместо видео, отключение визуализатора, ограничение частоты обновления UI и миниатюры обложек.
-  - Автоматическая пауза фонового видео при переходе в полноэкранный режим или скрытии окна.
-- **Тексты песен и темы `.zunatheme` / `.flactheme`:**
-  - Автоопределение кодировок UTF-8 / UTF-16 / Windows-1251 для `.lrc`/`.txt`, поиск в тегах и **LRCLIB**, послоговый караоке-рендеринг и индивидуальный сдвиг тайминга по каждому треку.
-  - Экспорт/импорт тем вместе с прикреплёнными фонами в ZIP-пакет **`.zunatheme`** (поддерживается импорт старых **`.flactheme`**).
-
-### Запуск и сборка Desktop:
-```bash
-cd desktop
-npm install            # Установит зависимости и соберёт zuna_native.node через node-gyp
-npm start              # Запуск в режиме разработки
-npm run dist:linux     # Сборка AppImage / deb / tar.gz для Linux
-npm run dist:win       # Сборка Portable / NSIS Setup для Windows (запускать на Windows)
-```
+### Общее для обеих платформ
+- **10-полосный параметрический Biquad-эквалайзер** + `Preamp` + `Sub-Bass 80 Hz`.
+- **Gapless**, **Crossfade**, **ReplayGain**.
 
 ---
 
-## Zuna Mobile (`app/`) — Android
+## Интерфейс, тексты, энергосбережение
 
-### Ключевые возможности Android-версии:
-- **Нативный C++17 / NDK Аудиодвижок (Google Oboe):** вывод через `AAudio` (`LowLatency`) / `OpenSL ES` / `Hi-Res Direct` для **FLAC, WAV, MP3, ALAC, AAC/M4A, Ogg Vorbis, Opus, AIFF**, событийный `RingBuffer`, `Gapless`, `Crossfade`, `ReplayGain` и кнопка полного стопа (`STATE_STOPPED`, освобождение аудиопотока и сброс на `0:00`).
-- **10-полосный параметрический Biquad Эквалайзер + Bass Boost 80 Hz** с контролем устойчивости полюсов и lock-free снимками коэффициентов.
-- **Энергосбережение (Android):** интеграция с системным `PowerManager.isPowerSaveMode` и уровнем батареи `≤ 20%`, профили `Standard` / `Balanced` / `Авто` / `Battery Saver` и ручные переключатели без какого-либо вмешательства в аудиотракт.
-- **Синхронизированные тексты и темы:** SYLT / USLT / FLAC LYRICS / `.lrc` / LRCLIB API с караоке-подсветкой, а также совместимость тем `.zunatheme` / `.flactheme` с Desktop.
-- **Встроенный OTA-апдейтер** через GitHub Releases API (`axalotus/zuna-player`).
+- **Тексты песен:** читает `.lrc` / `.txt`, встроенные теги (`SYLT`, `USLT`, `FLAC LYRICS`) и подтягивает тайминги из **LRCLIB**. Тайминг можно сдвигать вручную отдельно для каждого трека.
+- **Кастомизация и перенос тем:** акценты, цвет/прозрачность/блюр панелей, скругления, шрифты, отдельные фоны для главного экрана и полноэкранного плеера (сплошной цвет, размытая обложка, фото, GIF или видео). Вся тема вместе с медиафайлами пакуется в один файл `.zunatheme`. Темы совместимы между Android и Desktop.
+- **Энергосбережение:** профили **Standard**, **Balanced**, **Автоматически при низком заряде** (`PowerManager` на Android / батарея <= 20% без зарядки) и **Battery Saver** + ручные тумблеры на каждый эффект (блюр, анимации, видеофон, визуализатор, частота обновления UI, миниатюры обложек). На качество звука, частоту дискретизации, Gapless и эксклюзивный режим это не влияет.
 
-### Сборка релизного APK:
+---
+
+## Сборка из исходников
+
+### Android
+Требуется Android SDK + NDK и JDK 17:
 ```bash
 ./gradlew :app:assembleRelease
 ```
-Готовый APK: `app/build/outputs/apk/release/app-release.apk`
+Готовый APK: `app/build/outputs/apk/release/app-release.apk` (`applicationId`: `com.zuna.player`).
 
----
+### Desktop (Linux)
+Нужны Node.js, Python 3, компилятор C++ и dev-библиотеки `FFmpeg` / `glib`:
+```bash
+# Пример зависимостей для Arch / CachyOS
+sudo pacman -S ffmpeg glib2 pkgconf base-devel
 
-## Архитектура репозитория
+# Для Debian / Ubuntu
+sudo apt install pkg-config libglib2.0-dev libavformat-dev libavcodec-dev libavutil-dev libswresample-dev build-essential
 
-```text
-zuna-player/
-├── desktop/                         # Десктоп-клиент (Linux & Windows, Electron + C++17)
-│   ├── main.js                      # Главный процесс, сканер, кэш обложек, .zunatheme ZIP, LRCLIB
-│   ├── preload.js                   # ContextBridge IPC API
-│   ├── binding.gyp                  # Сборка нативного N-API аддона zuna_native.node
-│   ├── native/                      # C++17 движок (miniaudio, FFmpeg, ALAC, EQ, Linux MPRIS2)
-│   ├── package.json                 # Конфигурация Electron и electron-builder
-│   ├── assets/                      # Иконка приложения
-│   └── renderer/                    # Интерфейс, WebAudio fallback, темизация, визуализатор
-└── app/src/main/
-    ├── cpp/                         # Нативный C++17 аудиодвижок (NDK + CMake + Oboe)
-    └── java/com/zuna/player/
-        ├── audio/                   # NativeAudioEngine, DacDetector, EqualizerController, Notification
-        ├── data/                    # AudioRepository, LyricsRepository, LRCLIB, OTA, Preferences
-        ├── service/                 # AudioPlayerService & Foreground MusicPlaybackService
-        └── ui/                      # Экраны и компоненты на Jetpack Compose
+cd desktop
+npm install
+npm start            # запуск в dev-режиме
+npm run dist:linux   # сборка AppImage / deb / tar.gz
+```
+
+### Desktop (Windows)
+Нужны Node.js x64, Python 3 и Visual Studio Build Tools (компонент *Desktop development with C++*):
+```powershell
+cd desktop
+npm install
+npm run dist:win     # соберёт Portable.exe и Setup.exe в desktop/dist/
 ```
 
 ---
 
-## Лицензия
-Проект распространяется свободно в образовательных и энтузиастских целях. Сторонние декодеры (`miniaudio`, `dr_flac`, `dr_wav`, `minimp3`, `FFmpeg`) и `Google Oboe` распространяются под своими оригинальными лицензиями.
+## Структура проекта
+
+```text
+zuna-player/
+├── app/src/main/
+│   ├── cpp/                    # C++17 аудиодвижок для Android (Oboe, декодеры, Biquad EQ)
+│   └── java/com/zuna/player/   # Jetpack Compose UI, AudioPlayerService, база треков, LRCLIB, OTA
+├── desktop/
+│   ├── native/                 # C++17 N-API аддон (miniaudio, WASAPI/ALSA, FFmpeg, MPRIS2)
+│   ├── renderer/               # Интерфейс, WebAudio fallback, темизация, визуализатор
+│   ├── main.js                 # Electron main, сканер, кэш обложек, .zunatheme, LRCLIB
+│   ├── preload.js              # IPC bridge
+│   └── binding.gyp             # Конфиг сборки zuna_native.node
+└── .github/workflows/          # Автосборка релизов под Android, Linux и Windows
+```
