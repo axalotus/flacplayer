@@ -2,7 +2,7 @@
 
 Локальный аудиоплеер для **Android**, **Linux** и **Windows** со своим аудиодвижком, эксклюзивным выводом на ЦАП и кастомизируемым интерфейсом.
 
-Готовые сборки (`.apk`, `.exe`, `AppImage` / `.deb`): [Releases](https://github.com/axalotus/zuna-player/releases)
+Готовые сборки (`.apk`, `.exe`, `AppImage` / `.deb`): [Releases](https://github.com/debilxxx/Zuna-player)
 
 ## Скриншоты
 
